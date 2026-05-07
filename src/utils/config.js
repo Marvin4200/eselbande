@@ -125,6 +125,18 @@ function getTopSongs(guildId) {
     return topSongsStmt.all(String(guildId));
 }
 
+const lastPlayedStmt = db.prepare(`
+    SELECT track_uri, title, author, last_played
+    FROM song_stats
+    WHERE guild_id = ?
+    ORDER BY last_played DESC
+    LIMIT 1
+`);
+
+function getLastPlayedSong(guildId) {
+    return lastPlayedStmt.get(String(guildId)) || null;
+}
+
 const getAllIs247Stmt = db.prepare(`
     SELECT guild_id, voice_channel_id, music_channel_id, volume
     FROM guild_settings
@@ -135,4 +147,4 @@ function getAllIs247Guilds() {
     return getAllIs247Stmt.all();
 }
 
-module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS, recordPlay, getTopSongs, getAllIs247Guilds };
+module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS, recordPlay, getTopSongs, getAllIs247Guilds, getLastPlayedSong };

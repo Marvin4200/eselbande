@@ -4,7 +4,7 @@ const { Shoukaku, Connectors } = require('shoukaku');
 const fs = require('fs');
 const path = require('path');
 
-const { players, destroyPlayer, setDiscordClient, createGuildPlayer } = require('./src/utils/playerManager');
+const { players, destroyPlayer, setDiscordClient, setShoukaku, createGuildPlayer, playNext } = require('./src/utils/playerManager');
 const { getPlaybackControlError } = require('./src/utils/djCheck');
 const { getGuildSettings, getAllIs247Guilds } = require('./src/utils/config');
 const { updateMusicPanel } = require('./src/utils/musicPanel');
@@ -63,6 +63,7 @@ for (const file of commandFiles) {
 client.once('clientReady', async () => {
     console.log(`✅ Logged in as ${client.user.username}`);
     setDiscordClient(client);
+    setShoukaku(shoukaku);
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     // Register per-guild for instant availability (no 1-hour propagation delay).
@@ -99,6 +100,7 @@ client.once('clientReady', async () => {
                     textChannel: textChannel || null,
                     shoukaku,
                 });
+                await playNext(row.guild_id, { silent: true });
                 textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist dem Channel nach Neustart wieder beigetreten.' }] }).catch(() => { });
                 console.log(`[247] Rejoined voice channel ${row.voice_channel_id} in guild ${row.guild_id}`);
             } catch (err) {
@@ -316,6 +318,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                         textChannel,
                         shoukaku,
                     });
+                    await playNext(oldState.guild.id, { silent: true });
                     textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist nach Disconnect wieder beigetreten.' }] }).catch(() => { });
                 } catch (err) {
                     console.warn('[247] Auto-rejoin after kick failed:', err.message);

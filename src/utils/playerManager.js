@@ -1,12 +1,16 @@
 const { formatDuration } = require('./formatDuration');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getGuildSettings, setGuildSettings, recordPlay } = require('./config');
+const { getGuildSettings, setGuildSettings, recordPlay, getLastPlayedSong } = require('./config');
 const { buildBrandPayload } = require('./brandAssets');
 const { updateMusicPanel } = require('./musicPanel');
 
 /** @type {import('discord.js').Client|null} */
 let _client = null;
 function setDiscordClient(c) { _client = c; }
+
+/** @type {import('shoukaku').Shoukaku|null} */
+let _shoukaku = null;
+function setShoukaku(s) { _shoukaku = s; }
 
 /** @type {Map<string, NodeJS.Timeout>} guildId → refresh interval */
 const refreshIntervals = new Map();
@@ -25,6 +29,36 @@ function startPanelRefresh(guildId) {
 function stopPanelRefresh(guildId) {
     const existing = refreshIntervals.get(guildId);
     if (existing) { clearInterval(existing); refreshIntervals.delete(guildId); }
+}
+
+async function getRelatedTrackFor247(guildId) {
+    if (!_shoukaku) return null;
+    const node = _shoukaku.getIdealNode();
+    if (!node) return null;
+
+    const last = getLastPlayedSong(guildId);
+    if (!last?.title) return null;
+
+    // Prefer mixes/related results based on the latest played song.
+    const base = `${last.title} ${last.author || ''}`.trim();
+    const identifiers = [`ytmsearch:${base} mix`, `ytsearch:${base} related`, `ytsearch:${base}`];
+
+    for (const identifier of identifiers) {
+        try {
+            const resolved = await node.rest.resolve(identifier);
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) {
+                continue;
+            }
+
+            const candidates = resolved.data.slice(0, 10);
+            const picked = candidates.find(t => t?.info?.uri && t.info.uri !== last.track_uri) || candidates[0];
+            if (picked) return { track: picked, seed: last };
+        } catch {
+            // Try next fallback query.
+        }
+    }
+
+    return null;
 }
 
 /** @type {Map<string, PlayerState>} guildId → state */
@@ -148,7 +182,19 @@ async function playNext(guildId, { silent = false } = {}) {
         state.current = null;
         stopPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, null).catch(() => { });
-        if (state.is247) return;
+        if (state.is247) {
+            const related = await getRelatedTrackFor247(guildId);
+            if (!related?.track) {
+                state.textChannel?.send({ embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 aktiv, aber keine verwandten Songs gefunden.' }] }).catch(() => { });
+                return;
+            }
+
+            state.queue.push(related.track);
+            state.textChannel?.send({
+                embeds: [{ color: 0x5865F2, description: `🔁 **24/7 AutoMix**: Verwandter Song zu **${related.seed.title}** geladen.` }],
+            }).catch(() => { });
+            return playNext(guildId, { silent: true });
+        }
         try {
             state.player.connection.disconnect();
         } catch { }
@@ -302,4 +348,5 @@ module.exports = {
     buildPlayerControlsRow,
     applyPlayerVolume,
     setDiscordClient,
+    setShoukaku,
 };
