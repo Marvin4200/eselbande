@@ -41,7 +41,7 @@ module.exports = {
             const node = shoukaku.getIdealNode();
             if (!node) throw new Error('No Lavalink node available. Is Lavalink running?');
             const isUrl = /^https?:\/\//i.test(query);
-            const identifier = isUrl ? query : `ytmsearch:${query}`;
+            const identifier = isUrl ? query : `ytsearch:${query}`;
             resolved = await node.rest.resolve(identifier);
         } catch (err) {
             console.error('[play] Resolve error:', err);
