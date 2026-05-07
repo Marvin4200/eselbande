@@ -87,4 +87,38 @@ function setGuildSettings(guildId, update) {
     });
 }
 
-module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS };
+const recordPlayStmt = db.prepare(`
+    INSERT INTO song_stats (guild_id, track_uri, title, author, play_count, last_played)
+    VALUES (@guild_id, @track_uri, @title, @author, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT(guild_id, track_uri) DO UPDATE SET
+        play_count = play_count + 1,
+        title = excluded.title,
+        author = excluded.author,
+        last_played = CURRENT_TIMESTAMP
+`);
+
+function recordPlay(guildId, trackInfo) {
+    if (!trackInfo?.uri || trackInfo.isStream) return; // skip radio streams
+    try {
+        recordPlayStmt.run({
+            guild_id: String(guildId),
+            track_uri: trackInfo.uri,
+            title: (trackInfo.title || 'Unknown').slice(0, 255),
+            author: (trackInfo.author || '').slice(0, 255),
+        });
+    } catch { /* non-critical */ }
+}
+
+const topSongsStmt = db.prepare(`
+    SELECT title, author, play_count, last_played
+    FROM song_stats
+    WHERE guild_id = ?
+    ORDER BY play_count DESC
+    LIMIT 10
+`);
+
+function getTopSongs(guildId) {
+    return topSongsStmt.all(String(guildId));
+}
+
+module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS, recordPlay, getTopSongs };

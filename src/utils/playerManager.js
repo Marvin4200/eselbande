@@ -1,6 +1,6 @@
 const { formatDuration } = require('./formatDuration');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getGuildSettings } = require('./config');
+const { getGuildSettings, recordPlay } = require('./config');
 const { buildBrandPayload } = require('./brandAssets');
 const { updateMusicPanel } = require('./musicPanel');
 
@@ -161,6 +161,7 @@ async function playNext(guildId, { silent = false } = {}) {
 
     try {
         await state.player.playTrack({ track: { encoded: next.encoded } });
+        recordPlay(guildId, next.info);
         startPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
         if (!silent) {

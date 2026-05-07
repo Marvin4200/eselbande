@@ -1,7 +1,27 @@
 const { SlashCommandBuilder } = require('discord.js');
+const https = require('https');
 const { createGuildPlayer, playNext, players } = require('../utils/playerManager');
 const { formatDuration } = require('../utils/formatDuration');
 const { buildBrandPayload } = require('../utils/brandAssets');
+
+/** Fetch Spotify track/album/playlist metadata without an API key via oEmbed fallback,
+ *  then return a search query string for YouTube. */
+function resolveSpotifyUrl(url) {
+    return new Promise((resolve, reject) => {
+        const oembed = `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`;
+        https.get(oembed, { headers: { 'User-Agent': 'EselMusic-Bot/1.0' } }, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    // title is usually "Track – Artist" or "Playlist Name"
+                    resolve(json.title || null);
+                } catch { resolve(null); }
+            });
+        }).on('error', () => resolve(null));
+    });
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -67,12 +87,24 @@ module.exports = {
             const node = shoukaku.getIdealNode();
             if (!node) throw new Error('No Lavalink node available. Is Lavalink running?');
             const isUrl = /^https?:\/\//i.test(query);
-            if (isUrl) {
+            const isSpotify = isUrl && /open\.spotify\.com/i.test(query);
+
+            let searchQuery = query;
+            if (isSpotify) {
+                const spotifyTitle = await resolveSpotifyUrl(query);
+                if (spotifyTitle) {
+                    searchQuery = spotifyTitle; // e.g. "Bad Guy – Billie Eilish"
+                } else {
+                    return interaction.editReply({ embeds: [{ color: 0xFEE75C, description: '⚠️ Spotify-Link konnte nicht aufgelöst werden.' }] });
+                }
+            }
+
+            if (isUrl && !isSpotify) {
                 resolved = await node.rest.resolve(query);
             } else {
                 // Fallback across search prefixes because different YouTube clients
                 // (WEB/WEB_REMIX/IOS/etc.) can behave differently for text search.
-                const identifiers = [`ytsearch:${query}`, `ytmsearch:${query}`];
+                const identifiers = [`ytsearch:${searchQuery}`, `ytmsearch:${searchQuery}`];
                 for (const identifier of identifiers) {
                     resolved = await node.rest.resolve(identifier);
                     if (resolved && resolved.loadType !== 'empty' && resolved.loadType !== 'error') {

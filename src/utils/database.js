@@ -22,6 +22,18 @@ CREATE TABLE IF NOT EXISTS guild_settings (
 );
 `);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS song_stats (
+    guild_id TEXT NOT NULL,
+    track_uri TEXT NOT NULL,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL DEFAULT '',
+    play_count INTEGER NOT NULL DEFAULT 1,
+    last_played TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (guild_id, track_uri)
+);
+`);
+
 // Add columns if they don't exist yet (for existing DBs after migration).
 for (const col of [
     'ALTER TABLE guild_settings ADD COLUMN music_channel_id TEXT',
