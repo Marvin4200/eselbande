@@ -66,8 +66,15 @@ client.once('clientReady', async () => {
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
-        await rest.put(Routes.applicationCommands(client.user.id), { body: commandData });
-        console.log(`✅ Registered ${commandData.length} slash command(s) globally`);
+        // Register per-guild for instant availability. Falls back to global if no GUILD_ID set.
+        const guildId = process.env.GUILD_ID;
+        if (guildId) {
+            await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: commandData });
+            console.log(`✅ Registered ${commandData.length} slash command(s) in guild ${guildId}`);
+        } else {
+            await rest.put(Routes.applicationCommands(client.user.id), { body: commandData });
+            console.log(`✅ Registered ${commandData.length} slash command(s) globally`);
+        }
     } catch (err) {
         console.error('❌ Failed to register slash commands:', err);
     }
