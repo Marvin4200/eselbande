@@ -80,6 +80,19 @@ client.once('clientReady', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    // ── Autocomplete ──────────────────────────────────────────────────────────
+    if (interaction.isAutocomplete()) {
+        const command = client.commands.get(interaction.commandName);
+        if (command?.autocomplete) {
+            try {
+                await command.autocomplete(interaction, { shoukaku, client });
+            } catch {
+                interaction.respond([]).catch(() => { });
+            }
+        }
+        return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith('music:')) {
         const state = players.get(interaction.guildId);
         if (!state) {

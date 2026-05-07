@@ -8,6 +8,25 @@ const { updateMusicPanel } = require('./musicPanel');
 let _client = null;
 function setDiscordClient(c) { _client = c; }
 
+/** @type {Map<string, NodeJS.Timeout>} guildId → refresh interval */
+const refreshIntervals = new Map();
+
+function startPanelRefresh(guildId) {
+    stopPanelRefresh(guildId);
+    const interval = setInterval(() => {
+        if (!_client) return;
+        const state = players.get(guildId);
+        if (!state?.current) { stopPanelRefresh(guildId); return; }
+        updateMusicPanel(_client, guildId, state).catch(() => { });
+    }, 15_000);
+    refreshIntervals.set(guildId, interval);
+}
+
+function stopPanelRefresh(guildId) {
+    const existing = refreshIntervals.get(guildId);
+    if (existing) { clearInterval(existing); refreshIntervals.delete(guildId); }
+}
+
 /** @type {Map<string, PlayerState>} guildId → state */
 const players = new Map();
 
@@ -127,6 +146,7 @@ async function playNext(guildId, { silent = false } = {}) {
 
     if (!next) {
         state.current = null;
+        stopPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, null).catch(() => { });
         if (state.is247) return;
         try {
@@ -141,6 +161,7 @@ async function playNext(guildId, { silent = false } = {}) {
 
     try {
         await state.player.playTrack({ track: { encoded: next.encoded } });
+        startPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
         if (!silent) {
             state.textChannel?.send({
@@ -261,6 +282,7 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
 function destroyPlayer(guildId, shoukaku) {
     const state = players.get(guildId);
     if (!state) return;
+    stopPanelRefresh(guildId);
     try {
         shoukaku.leaveVoiceChannel(guildId);
     } catch { }

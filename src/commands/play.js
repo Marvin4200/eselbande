@@ -11,7 +11,32 @@ module.exports = {
             opt.setName('query')
                 .setDescription('Song name, YouTube URL, or Spotify URL')
                 .setRequired(true)
+                .setAutocomplete(true)
         ),
+
+    async autocomplete(interaction, { shoukaku }) {
+        const focused = interaction.options.getFocused();
+        if (!focused || focused.length < 2) {
+            return interaction.respond([]);
+        }
+        try {
+            const node = shoukaku.getIdealNode();
+            if (!node) return interaction.respond([]);
+
+            const resolved = await node.rest.resolve(`ytsearch:${focused}`);
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data)) {
+                return interaction.respond([]);
+            }
+
+            const choices = resolved.data.slice(0, 8).map(t => ({
+                name: `${t.info.title} — ${t.info.author || 'Unknown'}`.slice(0, 100),
+                value: t.info.uri || `ytsearch:${t.info.title}`,
+            }));
+            return interaction.respond(choices);
+        } catch {
+            return interaction.respond([]);
+        }
+    },
 
     async execute(interaction, { shoukaku }) {
         await interaction.deferReply();
