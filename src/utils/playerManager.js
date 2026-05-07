@@ -1,6 +1,6 @@
 const { formatDuration } = require('./formatDuration');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getGuildSettings, recordPlay } = require('./config');
+const { getGuildSettings, setGuildSettings, recordPlay } = require('./config');
 const { buildBrandPayload } = require('./brandAssets');
 const { updateMusicPanel } = require('./musicPanel');
 
@@ -232,6 +232,9 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
     }
 
     const settings = getGuildSettings(guildId);
+
+    // Persist the voice channel so 24/7 can rejoin after restart/kick
+    setGuildSettings(guildId, { voiceChannelId });
 
     /** @type {PlayerState & { retryCounts: Map<string, number> }} */
     const state = {

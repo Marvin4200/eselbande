@@ -1,28 +1,56 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { players } = require('../utils/playerManager');
-const { setGuildSettings } = require('../utils/config');
+const { players, createGuildPlayer } = require('../utils/playerManager');
+const { getGuildSettings, setGuildSettings } = require('../utils/config');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('247')
         .setDescription('Toggle 24/7 mode — bot stays in the channel even when queue is empty'),
 
-    async execute(interaction) {
+    async execute(interaction, { shoukaku }) {
         if (!interaction.memberPermissions?.has('Administrator')) {
             return interaction.reply({ embeds: [{ color: 0xED4245, description: '❌ Only admins can toggle 24/7 mode!' }], flags: [64] });
         }
 
         const state = players.get(interaction.guildId);
-        if (!state) {
-            return interaction.reply({ embeds: [{ color: 0xFEE75C, description: '⚠️ The bot is not in a voice channel. Use `/play` first!' }], flags: [64] });
+        const settings = getGuildSettings(interaction.guildId);
+        const current247 = state ? state.is247 : settings.is247;
+        const new247 = !current247;
+
+        // Update in-memory state if player exists
+        if (state) state.is247 = new247;
+
+        // Always persist to DB
+        setGuildSettings(interaction.guildId, { is247: new247 });
+
+        const icon = new247 ? '🟢' : '🔴';
+        const statusText = new247 ? 'aktiviert' : 'deaktiviert';
+
+        // If enabling 24/7 and bot is not in a channel but user is, auto-join
+        if (new247 && !state) {
+            const voiceChannel = interaction.member.voice.channel;
+            if (voiceChannel) {
+                try {
+                    await createGuildPlayer({
+                        guildId: interaction.guildId,
+                        voiceChannelId: voiceChannel.id,
+                        shardId: interaction.guild.shardId,
+                        textChannel: interaction.channel,
+                        shoukaku,
+                    });
+                    return interaction.reply({
+                        embeds: [{ color: 0x5865F2, description: `${icon} 24/7 Modus **${statusText}** — Bot ist deinem Channel beigetreten und bleibt dort.` }],
+                    });
+                } catch { /* fall through to normal reply */ }
+            }
         }
 
-        state.is247 = !state.is247;
-        setGuildSettings(interaction.guildId, { is247: state.is247 });
-        const icon = state.is247 ? '🟢' : '🔴';
+        const hint = new247 && !state
+            ? '\n> Tipp: Nutze `/play` um den Bot in deinen Channel zu holen.'
+            : '';
 
         return interaction.reply({
-            embeds: [{ color: 0x5865F2, description: `${icon} 24/7 mode **${state.is247 ? 'enabled' : 'disabled'}**` }],
+            embeds: [{ color: 0x5865F2, description: `${icon} 24/7 Modus **${statusText}**${hint}` }],
         });
     },
 };

@@ -9,23 +9,25 @@ const DEFAULT_GUILD_SETTINGS = {
     volume: 100,
     musicChannelId: null,
     musicPanelMsgId: null,
+    voiceChannelId: null,
 };
 
 const getStmt = db.prepare(`
-SELECT guild_id, dj_role_id, is_247, volume, music_channel_id, music_panel_msg_id
+SELECT guild_id, dj_role_id, is_247, volume, music_channel_id, music_panel_msg_id, voice_channel_id
 FROM guild_settings
 WHERE guild_id = ?
 `);
 
 const upsertStmt = db.prepare(`
-INSERT INTO guild_settings (guild_id, dj_role_id, is_247, volume, music_channel_id, music_panel_msg_id, updated_at)
-VALUES (@guild_id, @dj_role_id, @is_247, @volume, @music_channel_id, @music_panel_msg_id, CURRENT_TIMESTAMP)
+INSERT INTO guild_settings (guild_id, dj_role_id, is_247, volume, music_channel_id, music_panel_msg_id, voice_channel_id, updated_at)
+VALUES (@guild_id, @dj_role_id, @is_247, @volume, @music_channel_id, @music_panel_msg_id, @voice_channel_id, CURRENT_TIMESTAMP)
 ON CONFLICT(guild_id) DO UPDATE SET
     dj_role_id = excluded.dj_role_id,
     is_247 = excluded.is_247,
     volume = excluded.volume,
     music_channel_id = excluded.music_channel_id,
     music_panel_msg_id = excluded.music_panel_msg_id,
+    voice_channel_id = excluded.voice_channel_id,
     updated_at = CURRENT_TIMESTAMP
 `);
 
@@ -70,6 +72,7 @@ function getGuildSettings(guildId) {
         volume: Number.isFinite(row.volume) ? Math.max(0, Math.min(150, row.volume)) : 100,
         musicChannelId: row.music_channel_id || null,
         musicPanelMsgId: row.music_panel_msg_id || null,
+        voiceChannelId: row.voice_channel_id || null,
     };
 }
 
@@ -84,6 +87,7 @@ function setGuildSettings(guildId, update) {
         volume: Number.isFinite(merged.volume) ? Math.max(0, Math.min(150, merged.volume)) : 100,
         music_channel_id: merged.musicChannelId || null,
         music_panel_msg_id: merged.musicPanelMsgId || null,
+        voice_channel_id: merged.voiceChannelId || null,
     });
 }
 
@@ -121,4 +125,14 @@ function getTopSongs(guildId) {
     return topSongsStmt.all(String(guildId));
 }
 
-module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS, recordPlay, getTopSongs };
+const getAllIs247Stmt = db.prepare(`
+    SELECT guild_id, voice_channel_id, music_channel_id, volume
+    FROM guild_settings
+    WHERE is_247 = 1 AND voice_channel_id IS NOT NULL
+`);
+
+function getAllIs247Guilds() {
+    return getAllIs247Stmt.all();
+}
+
+module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS, recordPlay, getTopSongs, getAllIs247Guilds };

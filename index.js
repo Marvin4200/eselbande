@@ -4,9 +4,9 @@ const { Shoukaku, Connectors } = require('shoukaku');
 const fs = require('fs');
 const path = require('path');
 
-const { players, destroyPlayer, setDiscordClient } = require('./src/utils/playerManager');
+const { players, destroyPlayer, setDiscordClient, createGuildPlayer } = require('./src/utils/playerManager');
 const { getPlaybackControlError } = require('./src/utils/djCheck');
-const { getGuildSettings } = require('./src/utils/config');
+const { getGuildSettings, getAllIs247Guilds } = require('./src/utils/config');
 const { updateMusicPanel } = require('./src/utils/musicPanel');
 
 // ─── Discord Client ───────────────────────────────────────────────────────────
@@ -77,6 +77,35 @@ client.once('clientReady', async () => {
         }
     }
     console.log(`✅ Registered ${commandData.length} slash command(s) in ${registered}/${guilds.length} guild(s)`);
+
+    // ── 24/7 Auto-Rejoin after restart ────────────────────────────────────────
+    // Wait a moment for Lavalink node to be ready before rejoining
+    setTimeout(async () => {
+        const is247Guilds = getAllIs247Guilds();
+        for (const row of is247Guilds) {
+            try {
+                const guild = client.guilds.cache.get(row.guild_id);
+                if (!guild) continue;
+                const voiceChannel = guild.channels.cache.get(row.voice_channel_id);
+                if (!voiceChannel) continue;
+                // Find a text channel to use (music channel if configured, else system channel)
+                const textChannel = row.music_channel_id
+                    ? guild.channels.cache.get(row.music_channel_id)
+                    : guild.systemChannel;
+                await createGuildPlayer({
+                    guildId: row.guild_id,
+                    voiceChannelId: row.voice_channel_id,
+                    shardId: guild.shardId,
+                    textChannel: textChannel || null,
+                    shoukaku,
+                });
+                textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist dem Channel nach Neustart wieder beigetreten.' }] }).catch(() => { });
+                console.log(`[247] Rejoined voice channel ${row.voice_channel_id} in guild ${row.guild_id}`);
+            } catch (err) {
+                console.warn(`[247] Failed to rejoin guild ${row.guild_id}:`, err.message);
+            }
+        }
+    }, 8000);
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -262,16 +291,48 @@ client.on('messageCreate', async (message) => {
 });
 
 // ─── Auto-leave when bot is alone in voice channel ───────────────────────────
-client.on('voiceStateUpdate', (oldState) => {
-    if (!oldState.channelId) return;
+client.on('voiceStateUpdate', async (oldState, newState) => {
     const botId = client.user?.id;
     if (!botId) return;
 
+    // ── Bot itself was disconnected/kicked ────────────────────────────────────
+    if (oldState.id === botId && oldState.channelId && !newState.channelId) {
+        const guildState = players.get(oldState.guild.id);
+        const settings = getGuildSettings(oldState.guild.id);
+        if (settings.is247 && settings.voiceChannelId) {
+            // Wait briefly then rejoin
+            setTimeout(async () => {
+                try {
+                    const guild = client.guilds.cache.get(oldState.guild.id);
+                    const voiceChannel = guild?.channels.cache.get(settings.voiceChannelId);
+                    if (!voiceChannel) return;
+                    const textChannel = settings.musicChannelId
+                        ? guild.channels.cache.get(settings.musicChannelId)
+                        : guildState?.textChannel ?? null;
+                    await createGuildPlayer({
+                        guildId: oldState.guild.id,
+                        voiceChannelId: settings.voiceChannelId,
+                        shardId: guild.shardId,
+                        textChannel,
+                        shoukaku,
+                    });
+                    textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist nach Disconnect wieder beigetreten.' }] }).catch(() => { });
+                } catch (err) {
+                    console.warn('[247] Auto-rejoin after kick failed:', err.message);
+                }
+            }, 3000);
+        } else {
+            // Not 24/7 — clean up player state
+            players.delete(oldState.guild.id);
+        }
+        return;
+    }
+
+    // ── All humans left the voice channel ─────────────────────────────────────
+    if (!oldState.channelId) return;
     const channel = oldState.channel;
     if (!channel) return;
-
     if (!channel.members.has(botId)) return;
-
     const humanMembers = channel.members.filter(m => !m.user.bot);
     if (humanMembers.size > 0) return;
 
