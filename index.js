@@ -53,7 +53,7 @@ for (const file of commandFiles) {
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     console.log(`✅ Logged in as ${client.user.username}`);
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
