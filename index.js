@@ -65,19 +65,18 @@ client.once('clientReady', async () => {
     setDiscordClient(client);
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-    try {
-        // Register per-guild for instant availability. Falls back to global if no GUILD_ID set.
-        const guildId = process.env.GUILD_ID;
-        if (guildId) {
+    // Register per-guild for instant availability (no 1-hour propagation delay).
+    const guilds = client.guilds.cache.map(g => g.id);
+    let registered = 0;
+    for (const guildId of guilds) {
+        try {
             await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: commandData });
-            console.log(`✅ Registered ${commandData.length} slash command(s) in guild ${guildId}`);
-        } else {
-            await rest.put(Routes.applicationCommands(client.user.id), { body: commandData });
-            console.log(`✅ Registered ${commandData.length} slash command(s) globally`);
+            registered++;
+        } catch (err) {
+            console.error(`❌ Failed to register commands in guild ${guildId}:`, err.message);
         }
-    } catch (err) {
-        console.error('❌ Failed to register slash commands:', err);
     }
+    console.log(`✅ Registered ${commandData.length} slash command(s) in ${registered}/${guilds.length} guild(s)`);
 });
 
 client.on('interactionCreate', async (interaction) => {
