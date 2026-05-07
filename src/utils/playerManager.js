@@ -18,10 +18,10 @@ const refreshIntervals = new Map();
 const automixRetryTimeouts = new Map();
 
 const AUTOPLAY_RETRY_MS = 15_000;
-const FALLBACK_STREAMS = [
-    'https://ice1.somafm.com/groovesalad-256-mp3',
-    'https://ice1.somafm.com/dronezone-256-mp3',
-    'https://ice1.somafm.com/beatblender-128-mp3',
+const DEUTSCHRAP_HINT = 'deutschrap';
+const DEUTSCHRAP_KEYWORDS = [
+    'deutschrap', 'deutsch rap', 'german rap', 'german hip hop', 'hip hop deutsch',
+    'haftbefehl', 'bonez', '187', 'capital bra', 'samra', 'luciano', 'ufo361', 'apache', 'pashanim',
 ];
 
 function startPanelRefresh(guildId) {
@@ -70,7 +70,12 @@ async function getRelatedTrackFor247(guildId) {
 
     // Prefer mixes/related results based on the latest played song.
     const base = `${last.title} ${last.author || ''}`.trim();
-    const identifiers = [`ytmsearch:${base} mix`, `ytsearch:${base} related`, `ytsearch:${base}`];
+    const identifiers = [
+        `ytmsearch:${base} ${DEUTSCHRAP_HINT} mix`,
+        `ytsearch:${base} ${DEUTSCHRAP_HINT} related`,
+        `ytsearch:${base} ${DEUTSCHRAP_HINT}`,
+        `ytmsearch:${DEUTSCHRAP_HINT} mix`,
+    ];
 
     for (const identifier of identifiers) {
         try {
@@ -79,8 +84,13 @@ async function getRelatedTrackFor247(guildId) {
                 continue;
             }
 
-            const candidates = resolved.data.slice(0, 10);
-            const picked = candidates.find(t => t?.info?.uri && t.info.uri !== last.track_uri) || candidates[0];
+            const candidates = resolved.data.slice(0, 15);
+            const deutschrapCandidates = candidates.filter((t) => {
+                const text = `${t?.info?.title || ''} ${t?.info?.author || ''}`.toLowerCase();
+                return DEUTSCHRAP_KEYWORDS.some(k => text.includes(k));
+            });
+            const pool = deutschrapCandidates.length > 0 ? deutschrapCandidates : candidates;
+            const picked = pool.find(t => t?.info?.uri && t.info.uri !== last.track_uri) || pool[0];
             if (picked) return { track: picked, seed: last };
         } catch {
             // Try next fallback query.
@@ -90,29 +100,36 @@ async function getRelatedTrackFor247(guildId) {
     return null;
 }
 
-async function getFallbackStreamTrackFor247() {
+async function getFallbackDeutschrapTrackFor247() {
     if (!_shoukaku) return null;
     const node = _shoukaku.getIdealNode();
     if (!node) return null;
 
-    for (const url of FALLBACK_STREAMS) {
-        try {
-            const resolved = await node.rest.resolve(url);
-            if (!resolved || resolved.loadType === 'empty' || resolved.loadType === 'error') continue;
+    const fallbackQueries = [
+        'ytmsearch:deutschrap mix',
+        'ytsearch:deutschrap 2026',
+        'ytsearch:german rap playlist',
+    ];
 
-            const track = resolved.loadType === 'track' ? resolved.data
-                : resolved.loadType === 'search' ? resolved.data?.[0]
-                : resolved.data?.tracks?.[0];
+    for (const query of fallbackQueries) {
+        try {
+            const resolved = await node.rest.resolve(query);
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) continue;
+
+            const candidates = resolved.data.slice(0, 15);
+            const track = candidates.find((t) => {
+                const text = `${t?.info?.title || ''} ${t?.info?.author || ''}`.toLowerCase();
+                return DEUTSCHRAP_KEYWORDS.some(k => text.includes(k));
+            }) || candidates[0];
 
             if (track) {
                 if (track.info) {
-                    track.info.isStream = true;
-                    track.info.author = track.info.author || 'AutoMix Radio';
+                    track.info.author = track.info.author || 'Deutschrap AutoMix';
                 }
                 return track;
             }
         } catch {
-            // Try next fallback stream URL.
+            // Try next fallback query.
         }
     }
 
@@ -251,17 +268,17 @@ async function playNext(guildId, { silent = false } = {}) {
                 return playNext(guildId, { silent: true });
             }
 
-            const fallbackStream = await getFallbackStreamTrackFor247();
-            if (fallbackStream) {
-                state.queue.push(fallbackStream);
+            const fallbackTrack = await getFallbackDeutschrapTrackFor247();
+            if (fallbackTrack) {
+                state.queue.push(fallbackTrack);
                 state.textChannel?.send({
-                    embeds: [{ color: 0x5865F2, description: '📻 **24/7 AutoMix**: Keine Related-Songs gefunden, starte Fallback-Radio.' }],
+                    embeds: [{ color: 0x5865F2, description: '🎤 **24/7 Deutschrap AutoMix**: Keine direkten Related-Songs gefunden, nutze Deutschrap-Fallback.' }],
                 }).catch(() => { });
                 return playNext(guildId, { silent: true });
             }
 
             state.textChannel?.send({
-                embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 15s...' }],
+                embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 Deutschrap aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 15s...' }],
             }).catch(() => { });
             scheduleAutomixRetry(guildId);
             return;
