@@ -4,22 +4,42 @@ const { createGuildPlayer, playNext, players } = require('../utils/playerManager
 const { formatDuration } = require('../utils/formatDuration');
 const { buildBrandPayload } = require('../utils/brandAssets');
 
-/** Fetch Spotify track/album/playlist metadata without an API key via oEmbed fallback,
- *  then return a search query string for YouTube. */
+/** Fetch Spotify track metadata by scraping the page <title> tag.
+ *  Format is usually "Track Name - Artist Name | Spotify"
+ *  Returns a YouTube search query string, or null on failure. */
 function resolveSpotifyUrl(url) {
-    return new Promise((resolve, reject) => {
-        const oembed = `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`;
-        https.get(oembed, { headers: { 'User-Agent': 'EselMusic-Bot/1.0' } }, (res) => {
+    // Normalize URL: strip /intl-XX/ prefix and query params
+    const match = url.match(/spotify\.com(?:\/intl-[a-z]+)?\/track\/([A-Za-z0-9]+)/);
+    if (!match) return Promise.resolve(null);
+    const trackId = match[1];
+    const trackUrl = `https://open.spotify.com/track/${trackId}`;
+
+    return new Promise((resolve) => {
+        const req = https.get(trackUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; EselMusic-Bot/1.0)',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+        }, (res) => {
             let data = '';
-            res.on('data', c => data += c);
+            res.on('data', c => { data += c; if (data.length > 50_000) req.destroy(); });
             res.on('end', () => {
-                try {
-                    const json = JSON.parse(data);
-                    // title is usually "Track – Artist" or "Playlist Name"
-                    resolve(json.title || null);
-                } catch { resolve(null); }
+                // Try <title>Track - Artist | Spotify</title>
+                const titleMatch = data.match(/<title>([^<]+)<\/title>/i);
+                if (titleMatch) {
+                    // Strip " | Spotify" suffix
+                    const raw = titleMatch[1].replace(/\s*\|\s*Spotify\s*$/i, '').trim();
+                    // Format is "Track Name - Artist Name" — use as-is for YouTube search
+                    if (raw) return resolve(raw);
+                }
+                // Fallback: og:title meta tag
+                const ogMatch = data.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+                if (ogMatch) return resolve(ogMatch[1].trim());
+                resolve(null);
             });
-        }).on('error', () => resolve(null));
+        });
+        req.on('error', () => resolve(null));
+        req.setTimeout(8000, () => { req.destroy(); resolve(null); });
     });
 }
 
