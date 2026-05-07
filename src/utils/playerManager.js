@@ -52,6 +52,14 @@ function stopPanelRefresh(guildId) {
     if (existing) { clearInterval(existing); refreshIntervals.delete(guildId); }
 }
 
+/** Send a message that auto-deletes after `ms` milliseconds (default 10s). */
+function sendTemp(channel, payload, ms = 10_000) {
+    if (!channel) return;
+    channel.send(payload)
+        .then(msg => setTimeout(() => msg.delete().catch(() => { }), ms))
+        .catch(() => { });
+}
+
 function clearAutomixRetry(guildId) {
     const timeout = automixRetryTimeouts.get(guildId);
     if (timeout) {
@@ -237,10 +245,10 @@ async function tryRecoverTrack(guildId, state, shoukaku) {
 
             await state.player.playTrack({ track: { encoded: recovered.encoded } });
             if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
-            state.textChannel?.send({
+            sendTemp(state.textChannel, {
                 ...buildBrandPayload(buildNowPlayingEmbed(recovered), { includeBanner: true }),
                 components: [buildPlayerControlsRow()],
-            }).catch(() => { });
+            });
             return true;
         } catch {
             // Try next fallback identifier
@@ -274,24 +282,24 @@ async function playNext(guildId, { silent = false } = {}) {
             const related = await getRelatedTrackFor247(guildId);
             if (related?.track) {
                 state.queue.push(related.track);
-                state.textChannel?.send({
+                sendTemp(state.textChannel, {
                     embeds: [{ color: 0x5865F2, description: `🔁 **24/7 AutoMix**: Verwandter Song zu **${related.seed.title}** geladen.` }],
-                }).catch(() => { });
+                });
                 return playNext(guildId, { silent: true });
             }
 
             const fallbackTrack = await getFallbackDeutschrapTrackFor247();
             if (fallbackTrack) {
                 state.queue.push(fallbackTrack);
-                state.textChannel?.send({
+                sendTemp(state.textChannel, {
                     embeds: [{ color: 0x5865F2, description: '🎤 **24/7 Deutschrap AutoMix**: Keine direkten Related-Songs gefunden, nutze Deutschrap-Fallback.' }],
-                }).catch(() => { });
+                });
                 return playNext(guildId, { silent: true });
             }
 
-            state.textChannel?.send({
+            sendTemp(state.textChannel, {
                 embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 Deutschrap aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 15s...' }],
-            }).catch(() => { });
+            });
             scheduleAutomixRetry(guildId);
             return;
         }
@@ -299,7 +307,7 @@ async function playNext(guildId, { silent = false } = {}) {
             state.player.connection.disconnect();
         } catch { }
         players.delete(guildId);
-        state.textChannel?.send({ embeds: [{ color: 0x5865F2, description: '✅ Queue ended. Leaving voice channel.' }] }).catch(() => { });
+        sendTemp(state.textChannel, { embeds: [{ color: 0x5865F2, description: '✅ Queue ended. Leaving voice channel.' }] });
         return;
     }
 
@@ -312,14 +320,14 @@ async function playNext(guildId, { silent = false } = {}) {
         startPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
         if (!silent) {
-            state.textChannel?.send({
+            sendTemp(state.textChannel, {
                 ...buildBrandPayload(buildNowPlayingEmbed(next), { includeBanner: true }),
                 components: [buildPlayerControlsRow()],
-            }).catch(() => { });
+            });
         }
     } catch (err) {
         console.error('[PLAYER_001] playNext error:', err);
-        state.textChannel?.send({ embeds: [{ color: 0xED4245, description: '❌ Failed to play track, skipping...' }] }).catch(() => { });
+        sendTemp(state.textChannel, { embeds: [{ color: 0xED4245, description: '❌ Failed to play track, skipping...' }] });
         await playNext(guildId);
     }
 }

@@ -101,7 +101,9 @@ client.once('clientReady', async () => {
                     shoukaku,
                 });
                 await playNext(row.guild_id, { silent: true });
-                textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist dem Channel nach Neustart wieder beigetreten.' }] }).catch(() => { });
+                textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist dem Channel nach Neustart wieder beigetreten.' }] })
+                    .then(m => setTimeout(() => m.delete().catch(() => {}), 10_000))
+                    .catch(() => { });
                 console.log(`[247] Rejoined voice channel ${row.voice_channel_id} in guild ${row.guild_id}`);
             } catch (err) {
                 console.warn(`[247] Failed to rejoin guild ${row.guild_id}:`, err.message);
@@ -319,7 +321,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                         shoukaku,
                     });
                     await playNext(oldState.guild.id, { silent: true });
-                    textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist nach Disconnect wieder beigetreten.' }] }).catch(() => { });
+                    textChannel?.send({ embeds: [{ color: 0x5865F2, description: '🔁 **24/7 Modus** — Bot ist nach Disconnect wieder beigetreten.' }] })
+                        .then(m => setTimeout(() => m.delete().catch(() => {}), 10_000))
+                        .catch(() => { });
                 } catch (err) {
                     console.warn('[247] Auto-rejoin after kick failed:', err.message);
                 }
@@ -343,7 +347,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     if (!state || state.is247) return;
 
     destroyPlayer(oldState.guild.id, shoukaku);
-    state.textChannel?.send({ embeds: [{ color: 0x5865F2, description: '👋 Left voice channel (everyone left).' }] }).catch(() => { });
+    state.textChannel?.send({ embeds: [{ color: 0x5865F2, description: '👋 Left voice channel (everyone left).' }] })
+        .then(m => setTimeout(() => m.delete().catch(() => {}), 10_000))
+        .catch(() => { });
 });
 
 // ─── Login ────────────────────────────────────────────────────────────────────
