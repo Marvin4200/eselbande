@@ -16,6 +16,18 @@ function setShoukaku(s) { _shoukaku = s; }
 const refreshIntervals = new Map();
 /** @type {Map<string, NodeJS.Timeout>} guildId → 24/7 retry timeout */
 const automixRetryTimeouts = new Map();
+/** @type {Map<string, string[]>} guildId → recently played URIs (last 25) */
+const recentlyPlayedUris = new Map();
+const RECENTLY_PLAYED_MAX = 25;
+
+function addRecentUri(guildId, uri) {
+    if (!uri) return;
+    const list = recentlyPlayedUris.get(guildId) || [];
+    if (list.includes(uri)) return;
+    list.push(uri);
+    if (list.length > RECENTLY_PLAYED_MAX) list.shift();
+    recentlyPlayedUris.set(guildId, list);
+}
 
 const AUTOPLAY_RETRY_MS = 15_000;
 const DEUTSCHRAP_HINT = 'deutschrap';
@@ -111,7 +123,10 @@ async function getRelatedTrackFor247(guildId) {
             });
             // Strict: only pick from confirmed Deutschrap results.
             if (deutschrapCandidates.length === 0) continue;
-            const picked = deutschrapCandidates.find(t => t?.info?.uri && t.info.uri !== last.track_uri) || deutschrapCandidates[0];
+            const seenUris = recentlyPlayedUris.get(guildId) || [];
+            const picked = deutschrapCandidates.find(t => t?.info?.uri && !seenUris.includes(t.info.uri))
+                ?? deutschrapCandidates.find(t => t?.info?.uri && t.info.uri !== last.track_uri)
+                ?? null;
             if (picked) return { track: picked, seed: last };
         } catch {
             // Try next fallback query.
@@ -317,6 +332,7 @@ async function playNext(guildId, { silent = false } = {}) {
         clearAutomixRetry(guildId);
         await state.player.playTrack({ track: { encoded: next.encoded } });
         recordPlay(guildId, next.info);
+        addRecentUri(guildId, next.info?.uri);
         startPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
         if (!silent) {
@@ -443,6 +459,7 @@ function destroyPlayer(guildId, shoukaku) {
     if (!state) return;
     stopPanelRefresh(guildId);
     clearAutomixRetry(guildId);
+    recentlyPlayedUris.delete(guildId);
     try {
         shoukaku.leaveVoiceChannel(guildId);
     } catch { }
