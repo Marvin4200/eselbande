@@ -125,8 +125,15 @@ async function updateMusicPanel(client, guildId, state) {
             const existing = await channel.messages.fetch(settings.musicPanelMsgId);
             await existing.edit(payload);
             return;
-        } catch {
-            // Message gone — fall through and send a fresh one.
+        } catch (err) {
+            // Message deleted or inaccessible — clear stored ID and send a fresh one.
+            const code = err?.code ?? err?.rawError?.code;
+            if (code === 10008 /* Unknown Message */ || code === 50001 /* Missing Access */) {
+                setGuildSettings(guildId, { musicPanelMsgId: null });
+            } else {
+                // Transient error (rate-limit, network) — don't resend, just skip this cycle.
+                return;
+            }
         }
     }
 
