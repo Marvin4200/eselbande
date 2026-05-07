@@ -1,55 +1,105 @@
 const { SlashCommandBuilder } = require('discord.js');
-const Genius = require('genius-lyrics');
+const https = require('https');
 const { players } = require('../utils/playerManager');
+
+/** Fetch from lyrics.ovh — no API key required. */
+function fetchLyrics(artist, title) {
+    return new Promise((resolve, reject) => {
+        const path = `/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+        const req = https.get({ hostname: 'api.lyrics.ovh', path, headers: { 'User-Agent': 'EselMusic-Bot/1.0' } }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    if (json.lyrics) resolve(json.lyrics.trim());
+                    else reject(new Error(json.error || 'No lyrics found'));
+                } catch {
+                    reject(new Error('Invalid response from lyrics API'));
+                }
+            });
+        });
+        req.on('error', reject);
+        req.setTimeout(8000, () => { req.destroy(); reject(new Error('Request timed out')); });
+    });
+}
+
+/** Strip common YouTube suffix noise like "(Official Video)", "[Lyrics]", "ft. …" etc. */
+function cleanTitle(raw) {
+    return raw
+        .replace(/\s*[\[(].*?[\])]/g, '')   // remove (…) and […]
+        .replace(/\s*ft\..*$/i, '')          // remove ft. …
+        .replace(/\s*feat\..*$/i, '')        // remove feat. …
+        .trim();
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('lyrics')
-        .setDescription('Get lyrics for the current or a specific song')
+        .setDescription('Zeigt den Songtext des aktuellen oder eines bestimmten Songs')
         .addStringOption(opt =>
             opt.setName('song')
-                .setDescription('Song name to search (optional, defaults to current song)')
+                .setDescription('Songname (optional, Standard: aktueller Song)')
         ),
 
     async execute(interaction) {
         await interaction.deferReply();
 
         const state = players.get(interaction.guildId);
-        const query = interaction.options.getString('song') || state?.current?.info?.title;
+        const manualQuery = interaction.options.getString('song');
 
-        if (!query) {
-            return interaction.editReply({ embeds: [{ color: 0xFEE75C, description: '⚠️ No song specified and nothing is playing!' }] });
+        let artist, title;
+
+        if (manualQuery) {
+            // User provided "Artist - Title" or just "Title"
+            const dash = manualQuery.indexOf(' - ');
+            if (dash !== -1) {
+                artist = manualQuery.slice(0, dash).trim();
+                title = manualQuery.slice(dash + 3).trim();
+            } else {
+                artist = '';
+                title = manualQuery.trim();
+            }
+        } else if (state?.current?.info) {
+            artist = cleanTitle(state.current.info.author || '');
+            title  = cleanTitle(state.current.info.title  || '');
+        } else {
+            return interaction.editReply({
+                embeds: [{ color: 0xFEE75C, description: '⚠️ Kein Song angegeben und nichts spielt gerade.' }],
+            });
         }
 
-        try {
-            const genius = new Genius.Client(process.env.GENIUS_API_KEY || undefined);
-            const searches = await genius.songs.search(query);
+        // lyrics.ovh needs both fields; if artist is empty use title only with a placeholder
+        const effectiveArtist = artist || title;
+        const effectiveTitle  = artist ? title : title;
 
-            if (!searches.length) {
-                return interaction.editReply({ embeds: [{ color: 0xFEE75C, description: `⚠️ No lyrics found for: **${query}**` }] });
+        try {
+            const lyrics = await fetchLyrics(effectiveArtist, effectiveTitle);
+
+            // Discord embed description cap: 4096 chars
+            const pages = [];
+            let remaining = lyrics;
+            while (remaining.length > 0) {
+                pages.push(remaining.slice(0, 3900));
+                remaining = remaining.slice(3900);
             }
 
-            const song = searches[0];
-            const lyrics = await song.lyrics();
-
-            // Embed description limit is 4096 chars
-            const trimmed = lyrics.length > 3900
-                ? lyrics.substring(0, 3900) + '\n\n*... (lyrics truncated)*'
-                : lyrics;
+            const displayTitle = artist ? `${artist} — ${title}` : title;
+            const description  = pages[0] + (pages.length > 1 ? '\n\n*... (Text zu lang, gekürzt)*' : '');
 
             return interaction.editReply({
                 embeds: [{
                     color: 0x5865F2,
-                    title: `🎤 ${song.title}`,
-                    description: trimmed,
-                    url: song.url,
-                    ...(song.thumbnail ? { thumbnail: { url: song.thumbnail } } : {}),
-                    footer: { text: `${song.artist.name} · via Genius` },
+                    title: `🎤 ${displayTitle}`,
+                    description,
+                    footer: { text: 'via lyrics.ovh' },
                 }],
             });
         } catch (err) {
-            console.error('[lyrics]', err);
-            return interaction.editReply({ embeds: [{ color: 0xED4245, description: `❌ Couldn't fetch lyrics: ${err.message}` }] });
+            const displayQuery = artist ? `${artist} — ${title}` : title;
+            return interaction.editReply({
+                embeds: [{ color: 0xFEE75C, description: `⚠️ Keine Lyrics gefunden für: **${displayQuery}**\n\nTipp: Versuche \`/lyrics song:Artist - Titel\`` }],
+            });
         }
     },
 };
