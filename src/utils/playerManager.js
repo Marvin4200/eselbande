@@ -80,47 +80,48 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
         return existing;
     }
 
-    const stalePlayer = shoukaku.players?.get(guildId);
-    if (stalePlayer) {
-        /** @type {PlayerState} */
-        const recoveredState = {
-            player: stalePlayer,
-            queue: [],
-            current: null,
-            loop: 'none',
-            volume: 100,
-            textChannel,
-            is247: false,
-        };
-        players.set(guildId, recoveredState);
-        return recoveredState;
-    }
-
-    let player;
-    try {
-        player = await shoukaku.joinVoiceChannel({
-            guildId,
-            channelId: voiceChannelId,
-            shardId,
-            deaf: true,
-        });
-    } catch (err) {
-        const message = err?.message || '';
-        if (!message.includes('already have an existing connection')) {
-            throw err;
-        }
-
-        // If Lavalink still has a stale voice session, clear it and retry once.
+    // Clear stale guild connection handles before creating a fresh player.
+    if (shoukaku.players?.has(guildId)) {
         try {
             shoukaku.leaveVoiceChannel(guildId);
         } catch { }
+        await new Promise(resolve => setTimeout(resolve, 350));
+    }
 
-        player = await shoukaku.joinVoiceChannel({
-            guildId,
-            channelId: voiceChannelId,
-            shardId,
-            deaf: true,
-        });
+    let player = null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+            player = await shoukaku.joinVoiceChannel({
+                guildId,
+                channelId: voiceChannelId,
+                shardId,
+                deaf: true,
+            });
+            break;
+        } catch (err) {
+            lastError = err;
+            const message = err?.message || '';
+            const isExisting = message.includes('already have an existing connection');
+            const noNodes = message.includes("Can't find any nodes to connect on");
+
+            if (isExisting) {
+                try {
+                    shoukaku.leaveVoiceChannel(guildId);
+                } catch { }
+            }
+
+            if ((isExisting || noNodes) && attempt < 2) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+
+    if (!player) {
+        throw lastError || new Error('Failed to create voice connection');
     }
 
     /** @type {PlayerState} */
