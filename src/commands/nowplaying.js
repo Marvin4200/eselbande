@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { players } = require('../utils/playerManager');
 const { formatDuration } = require('../utils/formatDuration');
+const { buildBrandPayload } = require('../utils/brandAssets');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,20 +26,18 @@ module.exports = {
         const thumbnail = t.info.artworkUrl
             || (t.info.identifier ? `https://img.youtube.com/vi/${t.info.identifier}/mqdefault.jpg` : null);
 
-        return interaction.reply({
-            embeds: [{
-                color: 0x5865F2,
-                title: '🎵 Now Playing',
-                description: `**[${t.info.title}](${t.info.uri})**\n\n${bar}\n${posLabel}`,
-                fields: [
-                    { name: 'Artist', value: t.info.author || 'Unknown', inline: true },
-                    { name: 'Volume', value: `${state.volume}%`, inline: true },
-                    { name: 'Loop', value: state.loop, inline: true },
-                    { name: 'Queue', value: `${state.queue.length} track(s)`, inline: true },
-                    { name: '24/7', value: state.is247 ? '✅ On' : '❌ Off', inline: true },
-                ],
-                ...(thumbnail ? { thumbnail: { url: thumbnail } } : {}),
-            }],
-        });
+        return interaction.reply(buildBrandPayload({
+            color: 0x5865F2,
+            title: '🎵 Now Playing',
+            description: `**[${t.info.title}](${t.info.uri})**\n\n${bar}\n${posLabel}`,
+            fields: [
+                { name: 'Artist', value: t.info.author || 'Unknown', inline: true },
+                { name: 'Volume', value: `${state.volume}%`, inline: true },
+                { name: 'Loop', value: state.loop, inline: true },
+                { name: 'Queue', value: `${state.queue.length} track(s)`, inline: true },
+                { name: '24/7', value: state.is247 ? '✅ On' : '❌ Off', inline: true },
+            ],
+            ...(thumbnail ? { thumbnail: { url: thumbnail } } : {}),
+        }, { includeBanner: true }));
     },
 };

@@ -2,6 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 const SETTINGS_PATH = path.join(__dirname, '../../data/guildSettings.json');
+const DEFAULT_GUILD_SETTINGS = {
+    djRoleId: null,
+    is247: false,
+    volume: 100,
+};
 
 function loadSettings() {
     if (!fs.existsSync(SETTINGS_PATH)) return {};
@@ -18,13 +23,13 @@ function saveSettings(data) {
 }
 
 function getGuildSettings(guildId) {
-    return loadSettings()[guildId] || {};
+    return { ...DEFAULT_GUILD_SETTINGS, ...(loadSettings()[guildId] || {}) };
 }
 
 function setGuildSettings(guildId, update) {
     const settings = loadSettings();
-    settings[guildId] = { ...(settings[guildId] || {}), ...update };
+    settings[guildId] = { ...DEFAULT_GUILD_SETTINGS, ...(settings[guildId] || {}), ...update };
     saveSettings(settings);
 }
 
-module.exports = { getGuildSettings, setGuildSettings };
+module.exports = { getGuildSettings, setGuildSettings, DEFAULT_GUILD_SETTINGS };

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { createGuildPlayer, playNext, players } = require('../utils/playerManager');
 const { formatDuration } = require('../utils/formatDuration');
+const { buildBrandPayload } = require('../utils/brandAssets');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -106,7 +107,7 @@ module.exports = {
             };
         }
 
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.editReply(buildBrandPayload(embed, { includeBanner: true }));
 
         // Start playing if idle
         if (!state.current) {

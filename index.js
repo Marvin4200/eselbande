@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { players, destroyPlayer } = require('./src/utils/playerManager');
+const { getPlaybackControlError } = require('./src/utils/djCheck');
 
 // ─── Discord Client ───────────────────────────────────────────────────────────
 const client = new Client({
@@ -69,6 +70,63 @@ client.once('clientReady', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    if (interaction.isButton() && interaction.customId.startsWith('music:')) {
+        const state = players.get(interaction.guildId);
+        if (!state) {
+            return interaction.reply({ embeds: [{ color: 0xFEE75C, description: '⚠️ Nothing is playing!' }], flags: [64] });
+        }
+
+        const accessError = getPlaybackControlError(interaction, { requireDj: true });
+        if (accessError) {
+            return interaction.reply({ embeds: [{ color: 0xED4245, description: accessError }], flags: [64] });
+        }
+
+        try {
+            switch (interaction.customId) {
+                case 'music:pause': {
+                    const paused = state.player.paused;
+                    await state.player.setPaused(!paused);
+                    return interaction.reply({
+                        embeds: [{ color: 0x5865F2, description: paused ? '▶️ Resumed!' : '⏸️ Paused!' }],
+                        flags: [64],
+                    });
+                }
+                case 'music:skip': {
+                    const skipped = state.current?.info?.title || 'current track';
+                    await state.player.stopTrack();
+                    return interaction.reply({ embeds: [{ color: 0x5865F2, description: `⏭️ Skipped **${skipped}**` }], flags: [64] });
+                }
+                case 'music:shuffle': {
+                    if (state.queue.length < 2) {
+                        return interaction.reply({
+                            embeds: [{ color: 0xFEE75C, description: '⚠️ Need at least 2 tracks in the queue to shuffle!' }],
+                            flags: [64],
+                        });
+                    }
+
+                    for (let i = state.queue.length - 1; i > 0; i -= 1) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [state.queue[i], state.queue[j]] = [state.queue[j], state.queue[i]];
+                    }
+
+                    return interaction.reply({ embeds: [{ color: 0x5865F2, description: `🔀 Shuffled **${state.queue.length}** tracks!` }], flags: [64] });
+                }
+                case 'music:stop': {
+                    state.queue = [];
+                    state.current = null;
+                    state.loop = 'none';
+                    destroyPlayer(interaction.guildId, shoukaku);
+                    return interaction.reply({ embeds: [{ color: 0x5865F2, description: '⏹️ Stopped and cleared the queue.' }], flags: [64] });
+                }
+                default:
+                    return interaction.reply({ embeds: [{ color: 0xFEE75C, description: '⚠️ Unknown control action.' }], flags: [64] });
+            }
+        } catch (err) {
+            console.error(`[Button Error] ${interaction.customId}:`, err);
+            return interaction.reply({ embeds: [{ color: 0xED4245, description: `❌ Control failed: ${err.message || 'Unknown error'}` }], flags: [64] });
+        }
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);

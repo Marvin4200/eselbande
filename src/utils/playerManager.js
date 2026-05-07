@@ -1,4 +1,7 @@
 const { formatDuration } = require('./formatDuration');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getGuildSettings } = require('./config');
+const { buildBrandPayload } = require('./brandAssets');
 
 /** @type {Map<string, PlayerState>} guildId → state */
 const players = new Map();
@@ -28,6 +31,77 @@ function buildNowPlayingEmbed(track) {
         ],
         ...(thumbnail ? { thumbnail: { url: thumbnail } } : {}),
     };
+}
+
+function buildPlayerControlsRow() {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('music:pause').setLabel('Pause/Resume').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('music:skip').setLabel('Skip').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('music:shuffle').setLabel('Shuffle').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('music:stop').setLabel('Stop').setStyle(ButtonStyle.Danger),
+    );
+}
+
+async function applyPlayerVolume(player, level) {
+    if (typeof player.setGlobalVolume === 'function') {
+        await player.setGlobalVolume(level);
+        return;
+    }
+    if (typeof player.setVolume === 'function') {
+        await player.setVolume(level);
+        return;
+    }
+    if (typeof player.update === 'function') {
+        await player.update({ volume: level });
+        return;
+    }
+    throw new Error('Volume control is not supported by the current player implementation');
+}
+
+async function tryRecoverTrack(guildId, state, shoukaku) {
+    const failedTrack = state.current;
+    if (!failedTrack?.info) return false;
+
+    const key = failedTrack.info.identifier
+        || failedTrack.info.uri
+        || `${failedTrack.info.title}|${failedTrack.info.author || ''}`;
+
+    const retries = state.retryCounts.get(key) || 0;
+    if (retries >= 1) return false;
+
+    const node = shoukaku.getIdealNode();
+    if (!node) return false;
+
+    const query = `${failedTrack.info.title} ${failedTrack.info.author || ''}`.trim();
+    const identifiers = [`ytmsearch:${query}`, `ytsearch:${query}`];
+
+    for (const identifier of identifiers) {
+        try {
+            const resolved = await node.rest.resolve(identifier);
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) {
+                continue;
+            }
+
+            const recovered = resolved.data[0];
+            state.retryCounts.set(key, retries + 1);
+            state.current = recovered;
+
+            state.textChannel?.send({
+                embeds: [{ color: 0xFEE75C, description: `⚠️ Playback error on **${failedTrack.info.title}**. Retrying with an alternative source...` }],
+            }).catch(() => { });
+
+            await state.player.playTrack({ track: { encoded: recovered.encoded } });
+            state.textChannel?.send({
+                ...buildBrandPayload(buildNowPlayingEmbed(recovered), { includeBanner: true }),
+                components: [buildPlayerControlsRow()],
+            }).catch(() => { });
+            return true;
+        } catch {
+            // Try next fallback identifier
+        }
+    }
+
+    return false;
 }
 
 async function playNext(guildId, { silent = false } = {}) {
@@ -61,11 +135,14 @@ async function playNext(guildId, { silent = false } = {}) {
     try {
         await state.player.playTrack({ track: { encoded: next.encoded } });
         if (!silent) {
-            state.textChannel?.send({ embeds: [buildNowPlayingEmbed(next)] }).catch(() => { });
+            state.textChannel?.send({
+                ...buildBrandPayload(buildNowPlayingEmbed(next), { includeBanner: true }),
+                components: [buildPlayerControlsRow()],
+            }).catch(() => { });
         }
     } catch (err) {
-        console.error('[PlayerManager] playNext error:', err);
-        state.textChannel?.send({ embeds: [{ color: 0xED4245, description: `❌ Failed to play track, skipping...` }] }).catch(() => { });
+        console.error('[PLAYER_001] playNext error:', err);
+        state.textChannel?.send({ embeds: [{ color: 0xED4245, description: '❌ Failed to play track, skipping...' }] }).catch(() => { });
         await playNext(guildId);
     }
 }
@@ -124,18 +201,27 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
         throw lastError || new Error('Failed to create voice connection');
     }
 
-    /** @type {PlayerState} */
+    const settings = getGuildSettings(guildId);
+
+    /** @type {PlayerState & { retryCounts: Map<string, number> }} */
     const state = {
         player,
         queue: [],
         current: null,
         loop: 'none',
-        volume: 100,
+        volume: Number.isFinite(settings.volume) ? Math.max(0, Math.min(150, settings.volume)) : 100,
         textChannel,
-        is247: false,
+        is247: Boolean(settings.is247),
+        retryCounts: new Map(),
     };
 
     players.set(guildId, state);
+
+    try {
+        await applyPlayerVolume(player, state.volume);
+    } catch (err) {
+        console.warn('[PLAYER_002] Failed to apply initial volume:', err?.message || err);
+    }
 
     player.on('end', async (data) => {
         if (data.reason === 'replaced') return;
@@ -148,7 +234,11 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
 
     player.on('exception', async (error) => {
         if (!players.has(guildId)) return;
-        console.error(`[Player] Exception in guild ${guildId}:`, error?.message || error);
+        console.error(`[PLAYER_003] Exception in guild ${guildId}:`, error?.message || error);
+
+        const recovered = await tryRecoverTrack(guildId, state, shoukaku);
+        if (recovered) return;
+
         state.textChannel?.send({ embeds: [{ color: 0xED4245, description: '❌ Track error, skipping...' }] }).catch(() => { });
         await playNext(guildId);
     });
@@ -169,4 +259,12 @@ function destroyPlayer(guildId, shoukaku) {
     players.delete(guildId);
 }
 
-module.exports = { players, createGuildPlayer, playNext, destroyPlayer, buildNowPlayingEmbed };
+module.exports = {
+    players,
+    createGuildPlayer,
+    playNext,
+    destroyPlayer,
+    buildNowPlayingEmbed,
+    buildPlayerControlsRow,
+    applyPlayerVolume,
+};
