@@ -20,8 +20,12 @@ const automixRetryTimeouts = new Map();
 const rejoinTimeouts = new Map();
 /** @type {Map<string, number>} guildId → consecutive failed rejoin attempts */
 const rejoinFailCounts = new Map();
+/** @type {Map<string, NodeJS.Timeout>} guildId → timer to reset reconnect-failure counter after stable voice connection */
+const rejoinStabilityTimers = new Map();
 /** Stop retrying rejoin after this many consecutive failures and clear 24/7 state */
 const MAX_REJOIN_ATTEMPTS = 5;
+/** Consider a rejoin stable only after this many ms without another close event */
+const REJOIN_STABLE_RESET_MS = 120_000;
 /** @type {Map<string, string[]>} guildId → recently played URIs (last 25) */
 const recentlyPlayedUris = new Map();
 /** @type {Map<string, string[]>} guildId → recently played authors (last 10) */
@@ -127,6 +131,27 @@ function clearRejoin(guildId) {
     if (t) { clearTimeout(t); rejoinTimeouts.delete(guildId); }
 }
 
+function clearRejoinStability(guildId) {
+    const t = rejoinStabilityTimers.get(guildId);
+    if (t) {
+        clearTimeout(t);
+        rejoinStabilityTimers.delete(guildId);
+    }
+}
+
+function armRejoinStabilityReset(guildId) {
+    clearRejoinStability(guildId);
+    const t = setTimeout(() => {
+        rejoinStabilityTimers.delete(guildId);
+        // Reset only if the player is still alive (connection did not flap again).
+        if (players.has(guildId)) {
+            rejoinFailCounts.delete(guildId);
+            console.log(`[247] Voice connection stabilized in guild ${guildId}; reconnect counter reset.`);
+        }
+    }, REJOIN_STABLE_RESET_MS);
+    rejoinStabilityTimers.set(guildId, t);
+}
+
 /**
  * Schedules an automatic voice-channel rejoin for a 24/7 guild after a disconnect.
  * Retries up to MAX_REJOIN_ATTEMPTS times with exponential back-off (10s → 20s → … 60s cap).
@@ -137,6 +162,7 @@ function scheduleRejoin(guildId, delayMs = 10_000, attempt = 1) {
 
     if (attempt > MAX_REJOIN_ATTEMPTS) {
         console.warn(`[247] Max rejoin attempts (${MAX_REJOIN_ATTEMPTS}) reached for guild ${guildId}. Disabling 24/7 to prevent infinite loops.`);
+        clearRejoinStability(guildId);
         rejoinFailCounts.delete(guildId);
         // Clear persisted 24/7 state so the bot doesn't keep trying on next restart.
         const { setGuildSettings: _set } = require('./config');
@@ -148,8 +174,8 @@ function scheduleRejoin(guildId, delayMs = 10_000, attempt = 1) {
         rejoinTimeouts.delete(guildId);
 
         if (players.has(guildId)) {
-            // Already reconnected (e.g., by a concurrent path) — reset counter.
-            rejoinFailCounts.delete(guildId);
+            // Already reconnected (e.g., by a concurrent path).
+            armRejoinStabilityReset(guildId);
             return;
         }
 
@@ -161,6 +187,7 @@ function scheduleRejoin(guildId, delayMs = 10_000, attempt = 1) {
         const { getGuildSettings } = require('./config');
         const settings = getGuildSettings(guildId);
         if (!settings.is247 || !settings.voiceChannelId) {
+            clearRejoinStability(guildId);
             rejoinFailCounts.delete(guildId);
             return;
         }
@@ -184,9 +211,10 @@ function scheduleRejoin(guildId, delayMs = 10_000, attempt = 1) {
                 shoukaku: _shoukaku,
             });
             await playNext(guildId, { silent: true });
-            rejoinFailCounts.delete(guildId); // success — reset counter
+            armRejoinStabilityReset(guildId);
             console.log(`[247] Rejoined voice channel in guild ${guildId} after ${attempt} attempt(s)`);
         } catch (err) {
+            rejoinFailCounts.set(guildId, attempt);
             console.warn(`[247] Rejoin attempt ${attempt}/${MAX_REJOIN_ATTEMPTS} failed for guild ${guildId}: ${err.message}`);
             scheduleRejoin(guildId, Math.min(delayMs * 2, 60_000), attempt + 1);
         }
@@ -594,8 +622,12 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
         const wasIs247 = state.is247;
         players.delete(guildId);
         if (wasIs247) {
-            console.warn(`[247] Voice connection closed in guild ${guildId}, scheduling rejoin...`);
-            scheduleRejoin(guildId);
+            clearRejoinStability(guildId);
+            const failures = (rejoinFailCounts.get(guildId) || 0) + 1;
+            rejoinFailCounts.set(guildId, failures);
+            const nextDelay = Math.min(10_000 * Math.pow(2, Math.max(0, failures - 1)), 60_000);
+            console.warn(`[247] Voice connection closed in guild ${guildId}, scheduling rejoin (${failures}/${MAX_REJOIN_ATTEMPTS})...`);
+            scheduleRejoin(guildId, nextDelay, failures);
         }
     });
 
@@ -608,6 +640,8 @@ function destroyPlayer(guildId, shoukaku) {
     stopPanelRefresh(guildId);
     clearAutomixRetry(guildId);
     clearRejoin(guildId);
+    clearRejoinStability(guildId);
+    rejoinFailCounts.delete(guildId);
     recentlyPlayedUris.delete(guildId);
     recentlyPlayedAuthors.delete(guildId);
     try {
