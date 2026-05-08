@@ -10,6 +10,9 @@ const { getPlaybackControlError } = require('./src/utils/djCheck');
 const { getGuildSettings, getAllIs247Guilds } = require('./src/utils/config');
 const { updateMusicPanel } = require('./src/utils/musicPanel');
 
+// Cooldown for music-channel diagnostic warnings to avoid spam.
+const musicChannelWarnCooldown = new Map();
+
 // ─── Discord Client ───────────────────────────────────────────────────────────
 const client = new Client({
     intents: [
@@ -218,91 +221,109 @@ client.on('interactionCreate', async (interaction) => {
 
 // ─── Music Channel: treat plain text messages as play requests ──────────────
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-    if (!message.guild) return;
-
-    const settings = getGuildSettings(message.guildId);
-    if (!settings.musicChannelId || message.channelId !== settings.musicChannelId) return;
-
-    // Delete the user's message to keep the channel clean.
-    message.delete().catch(() => { });
-
-    const query = message.content.trim();
-    if (!query) return;
-
-    // Re-use the play command logic inline.
-    const voiceChannel = message.member?.voice?.channel;
-    if (!voiceChannel) {
-        const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ ${message.author}, du musst in einem Voice-Channel sein!` }] });
-        setTimeout(() => warn.delete().catch(() => { }), 5000);
-        return;
-    }
-
-    const { createGuildPlayer, playNext, players: playerMap } = require('./src/utils/playerManager');
-    const { formatDuration } = require('./src/utils/formatDuration');
-
-    let state;
     try {
-        state = await createGuildPlayer({
-            guildId: message.guildId,
-            voiceChannelId: voiceChannel.id,
-            shardId: message.guild.shardId ?? 0,
-            textChannel: message.channel,
-            shoukaku,
+        if (message.author.bot) return;
+        if (!message.guild) return;
+
+        const settings = getGuildSettings(message.guildId);
+        if (!settings.musicChannelId || message.channelId !== settings.musicChannelId) return;
+
+        // Delete the user's message to keep the channel clean.
+        message.delete().catch(() => { });
+
+        const query = (message.content || '').trim();
+        if (!query) {
+            const now = Date.now();
+            const nextAllowed = musicChannelWarnCooldown.get(message.guildId) || 0;
+            if (now >= nextAllowed) {
+                musicChannelWarnCooldown.set(message.guildId, now + 60_000);
+                const warn = await message.channel.send({
+                    embeds: [{
+                        color: 0xFEE75C,
+                        description: '⚠️ Ich kann den Nachrichtentext nicht lesen. Bitte pruefe, ob **Message Content Intent** fuer den Bot aktiv ist, oder nutze vorerst Slash-Commands wie `/play`.',
+                    }],
+                }).catch(() => null);
+                if (warn) setTimeout(() => warn.delete().catch(() => { }), 8000);
+            }
+            return;
+        }
+
+        // Re-use the play command logic inline.
+        const voiceChannel = message.member?.voice?.channel;
+        if (!voiceChannel) {
+            const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ ${message.author}, du musst in einem Voice-Channel sein!` }] });
+            setTimeout(() => warn.delete().catch(() => { }), 5000);
+            return;
+        }
+
+        const { createGuildPlayer, playNext } = require('./src/utils/playerManager');
+        const { formatDuration } = require('./src/utils/formatDuration');
+
+        let state;
+        try {
+            state = await createGuildPlayer({
+                guildId: message.guildId,
+                voiceChannelId: voiceChannel.id,
+                shardId: message.guild.shardId ?? 0,
+                textChannel: message.channel,
+                shoukaku,
+            });
+        } catch (err) {
+            const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ Konnte nicht connecten: ${err.message}` }] });
+            setTimeout(() => warn.delete().catch(() => { }), 6000);
+            return;
+        }
+
+        const node = shoukaku.getIdealNode();
+        if (!node) {
+            const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: '❌ Kein Lavalink-Node verfügbar.' }] });
+            setTimeout(() => warn.delete().catch(() => { }), 5000);
+            return;
+        }
+
+        let resolved;
+        try {
+            const identifiers = [`ytsearch:${query}`, `ytmsearch:${query}`];
+            for (const id of identifiers) {
+                resolved = await node.rest.resolve(id);
+                if (resolved && resolved.loadType !== 'empty' && resolved.loadType !== 'error') break;
+            }
+        } catch (err) {
+            const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ Suche fehlgeschlagen: ${err.message}` }] });
+            setTimeout(() => warn.delete().catch(() => { }), 6000);
+            return;
+        }
+
+        const track = resolved?.loadType === 'search' ? resolved.data?.[0] : null;
+        if (!track) {
+            const warn = await message.channel.send({ embeds: [{ color: 0xFEE75C, description: `⚠️ Keine Ergebnisse für: **${query}**` }] });
+            setTimeout(() => warn.delete().catch(() => { }), 5000);
+            return;
+        }
+
+        state.queue.push(track);
+
+        const position = state.current ? state.queue.length : 1;
+        const durLabel = track.info.isStream ? 'LIVE 🔴' : formatDuration(track.info.length);
+        const addedMsg = await message.channel.send({
+            embeds: [{
+                color: 0x5865F2,
+                description: state.current
+                    ? `➕ **${track.info.title}** zur Queue hinzugefügt (Position #${position})`
+                    : `▶️ **${track.info.title}** wird jetzt gespielt`,
+                footer: { text: `${track.info.author || 'Unknown'} • ${durLabel} • von ${message.author.username}` },
+            }],
         });
-    } catch (err) {
-        const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ Konnte nicht connecten: ${err.message}` }] });
-        setTimeout(() => warn.delete().catch(() => { }), 6000);
-        return;
-    }
+        setTimeout(() => addedMsg.delete().catch(() => { }), 8000);
 
-    const node = shoukaku.getIdealNode();
-    if (!node) {
-        const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: '❌ Kein Lavalink-Node verfügbar.' }] });
-        setTimeout(() => warn.delete().catch(() => { }), 5000);
-        return;
-    }
-
-    let resolved;
-    try {
-        const identifiers = [`ytsearch:${query}`, `ytmsearch:${query}`];
-        for (const id of identifiers) {
-            resolved = await node.rest.resolve(id);
-            if (resolved && resolved.loadType !== 'empty' && resolved.loadType !== 'error') break;
+        if (!state.current) {
+            await playNext(message.guildId, { silent: true });
+            await updateMusicPanel(client, message.guildId, state);
+        } else {
+            await updateMusicPanel(client, message.guildId, state);
         }
     } catch (err) {
-        const warn = await message.channel.send({ embeds: [{ color: 0xED4245, description: `❌ Suche fehlgeschlagen: ${err.message}` }] });
-        setTimeout(() => warn.delete().catch(() => { }), 6000);
-        return;
-    }
-
-    const track = resolved?.loadType === 'search' ? resolved.data?.[0] : null;
-    if (!track) {
-        const warn = await message.channel.send({ embeds: [{ color: 0xFEE75C, description: `⚠️ Keine Ergebnisse für: **${query}**` }] });
-        setTimeout(() => warn.delete().catch(() => { }), 5000);
-        return;
-    }
-
-    state.queue.push(track);
-
-    const position = state.current ? state.queue.length : 1;
-    const durLabel = track.info.isStream ? 'LIVE 🔴' : formatDuration(track.info.length);
-    const addedMsg = await message.channel.send({
-        embeds: [{
-            color: 0x5865F2,
-            description: state.current
-                ? `➕ **${track.info.title}** zur Queue hinzugefügt (Position #${position})`
-                : `▶️ **${track.info.title}** wird jetzt gespielt`,
-            footer: { text: `${track.info.author || 'Unknown'} • ${durLabel} • von ${message.author.username}` },
-        }],
-    });
-    setTimeout(() => addedMsg.delete().catch(() => { }), 8000);
-
-    if (!state.current) {
-        await playNext(message.guildId, { silent: true });
-        await updateMusicPanel(client, message.guildId, state);
-    } else {
-        await updateMusicPanel(client, message.guildId, state);
+        console.error('[MUSIC_CHANNEL_001] messageCreate handler error:', err);
     }
 });
 
