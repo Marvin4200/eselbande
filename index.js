@@ -1,4 +1,5 @@
 require('dotenv').config();
+const express = require('express');
 const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
 const { Shoukaku, Connectors } = require('shoukaku');
 const fs = require('fs');
@@ -354,4 +355,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 // ─── Login ────────────────────────────────────────────────────────────────────
+const app = express();
+app.get('/health', (req, res) => res.json({ status: 'ok', service: 'musikbot', uptime: process.uptime() }));
+app.listen(3020, () => console.log('[musikbot] Health endpoint running on port 3020'));
+
 client.login(process.env.DISCORD_TOKEN);
