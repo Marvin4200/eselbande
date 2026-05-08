@@ -16,6 +16,8 @@ function setShoukaku(s) { _shoukaku = s; }
 const refreshIntervals = new Map();
 /** @type {Map<string, NodeJS.Timeout>} guildId → 24/7 retry timeout */
 const automixRetryTimeouts = new Map();
+/** @type {Map<string, NodeJS.Timeout>} guildId → 24/7 voice rejoin timeout */
+const rejoinTimeouts = new Map();
 /** @type {Map<string, string[]>} guildId → recently played URIs (last 25) */
 const recentlyPlayedUris = new Map();
 /** @type {Map<string, string[]>} guildId → recently played authors (last 10) */
@@ -116,6 +118,53 @@ function clearAutomixRetry(guildId) {
     }
 }
 
+function clearRejoin(guildId) {
+    const t = rejoinTimeouts.get(guildId);
+    if (t) { clearTimeout(t); rejoinTimeouts.delete(guildId); }
+}
+
+/**
+ * Schedules an automatic voice-channel rejoin for a 24/7 guild after a disconnect.
+ * Retries indefinitely with exponential back-off (10s → 30s → 60s cap).
+ */
+function scheduleRejoin(guildId, delayMs = 10_000) {
+    clearRejoin(guildId);
+    const t = setTimeout(async () => {
+        rejoinTimeouts.delete(guildId);
+        if (players.has(guildId)) return; // already reconnected
+        if (!_client || !_shoukaku) {
+            scheduleRejoin(guildId, Math.min(delayMs * 2, 60_000));
+            return;
+        }
+        const { getGuildSettings } = require('./config');
+        const settings = getGuildSettings(guildId);
+        if (!settings.is247 || !settings.voiceChannelId) return;
+        const guild = _client.guilds.cache.get(guildId);
+        if (!guild) {
+            scheduleRejoin(guildId, Math.min(delayMs * 2, 60_000));
+            return;
+        }
+        try {
+            const textChannel = settings.musicChannelId
+                ? guild.channels.cache.get(settings.musicChannelId)
+                : null;
+            await createGuildPlayer({
+                guildId,
+                voiceChannelId: settings.voiceChannelId,
+                shardId: guild.shardId,
+                textChannel: textChannel || null,
+                shoukaku: _shoukaku,
+            });
+            await playNext(guildId, { silent: true });
+            console.log(`[247] Rejoined voice channel after disconnect in guild ${guildId}`);
+        } catch (err) {
+            console.warn(`[247] Rejoin attempt failed for guild ${guildId}: ${err.message}`);
+            scheduleRejoin(guildId, Math.min(delayMs * 2, 60_000));
+        }
+    }, delayMs);
+    rejoinTimeouts.set(guildId, t);
+}
+
 function scheduleAutomixRetry(guildId) {
     clearAutomixRetry(guildId);
     const timeout = setTimeout(() => {
@@ -139,10 +188,19 @@ async function getRelatedTrackFor247(guildId) {
     const overusedAuthors = getOverusedAuthors(guildId);
     const lastAuthorOverused = last.author && overusedAuthors.has(last.author.toLowerCase());
 
+    // 30% chance to force a fully random seed regardless — breaks repetitive chains after restart
+    const forceRandomSeed = Math.random() < 0.3;
     // When the current artist is over-represented, inject a diverse seed as first query
     const diverseSeed = pickDiverseSeedArtist(guildId);
     const base = `${last.title} ${last.author || ''}`.trim();
-    const identifiers = lastAuthorOverused
+    const identifiers = forceRandomSeed
+        ? [
+            `ytmsearch:${diverseSeed} ${DEUTSCHRAP_HINT}`,
+            `ytsearch:${diverseSeed} ${DEUTSCHRAP_HINT} mix`,
+            `ytmsearch:${base} ${DEUTSCHRAP_HINT} mix`,
+            `ytmsearch:${DEUTSCHRAP_HINT} mix`,
+        ]
+        : lastAuthorOverused
         ? [
             `ytmsearch:${diverseSeed} ${DEUTSCHRAP_HINT}`,
             `ytmsearch:${base} ${DEUTSCHRAP_HINT} mix`,
@@ -171,11 +229,15 @@ async function getRelatedTrackFor247(guildId) {
             });
             // Strict: only pick from confirmed Deutschrap results.
             if (deutschrapCandidates.length === 0) continue;
-            // Prefer tracks from artists not over-represented and not seen recently
+            // Pick randomly from each priority tier to avoid always-same-order
+            const freshDiverse = deutschrapCandidates.filter(t => t?.info?.uri && !seenUris.includes(t.info.uri) && !overusedAuthors.has((t.info.author || '').toLowerCase()));
+            const fresh = deutschrapCandidates.filter(t => t?.info?.uri && !seenUris.includes(t.info.uri));
+            const notLast = deutschrapCandidates.filter(t => t?.info?.uri && t.info.uri !== last.track_uri);
+            const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
             const picked =
-                deutschrapCandidates.find(t => t?.info?.uri && !seenUris.includes(t.info.uri) && !overusedAuthors.has((t.info.author || '').toLowerCase()))
-                ?? deutschrapCandidates.find(t => t?.info?.uri && !seenUris.includes(t.info.uri))
-                ?? deutschrapCandidates.find(t => t?.info?.uri && t.info.uri !== last.track_uri)
+                (freshDiverse.length > 0 ? pickRandom(freshDiverse) : null)
+                ?? (fresh.length > 0 ? pickRandom(fresh) : null)
+                ?? (notLast.length > 0 ? pickRandom(notLast) : null)
                 ?? null;
             if (picked) return { track: picked, seed: last };
         } catch {
@@ -203,12 +265,14 @@ async function getFallbackDeutschrapTrackFor247() {
             if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) continue;
 
             const candidates = resolved.data.slice(0, 15);
-            const track = candidates.find((t) => {
+            const matchedCandidates = candidates.filter((t) => {
                 const text = `${t?.info?.title || ''} ${t?.info?.author || ''}`.toLowerCase();
                 return DEUTSCHRAP_KEYWORDS.some(k => text.includes(k));
             });
             // Strict: skip this query if nothing matches Deutschrap.
-            if (!track) continue;
+            if (matchedCandidates.length === 0) continue;
+            // Pick randomly to avoid always returning the same fallback track
+            const track = matchedCandidates[Math.floor(Math.random() * matchedCandidates.length)];
             if (track.info) {
                 track.info.author = track.info.author || 'Deutschrap AutoMix';
             }
@@ -498,7 +562,12 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
     });
 
     player.on('closed', () => {
+        const wasIs247 = state.is247;
         players.delete(guildId);
+        if (wasIs247) {
+            console.warn(`[247] Voice connection closed in guild ${guildId}, scheduling rejoin...`);
+            scheduleRejoin(guildId);
+        }
     });
 
     return state;
@@ -509,6 +578,7 @@ function destroyPlayer(guildId, shoukaku) {
     if (!state) return;
     stopPanelRefresh(guildId);
     clearAutomixRetry(guildId);
+    clearRejoin(guildId);
     recentlyPlayedUris.delete(guildId);
     recentlyPlayedAuthors.delete(guildId);
     try {
