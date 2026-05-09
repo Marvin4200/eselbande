@@ -529,7 +529,11 @@ async function tryRecoverTrack(guildId, state, shoukaku) {
 
 async function playNext(guildId, { silent = false } = {}) {
     const state = players.get(guildId);
-    if (!state) return;
+    if (!state) {
+        console.warn(`[DEBUG-247] playNext(${guildId}): NO STATE — player was removed before playNext ran`);
+        return;
+    }
+    console.log(`[DEBUG-247] playNext(${guildId}): is247=${state.is247} queue=${state.queue.length} current=${!!state.current} loop=${state.loop}`);
 
     let next = null;
 
