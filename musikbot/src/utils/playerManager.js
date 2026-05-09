@@ -75,7 +75,7 @@ function pickDiverseSeedArtist(guildId) {
     return pool[Math.floor(Math.random() * pool.length)];
 }
 
-const AUTOPLAY_RETRY_MS = 15_000;
+const AUTOPLAY_RETRY_MS = 5_000;
 const DEUTSCHRAP_HINT = 'deutschrap';
 const DEUTSCHRAP_KEYWORDS = [
     'deutschrap', 'deutsch rap', 'german rap', 'german hip hop', 'hip hop deutsch',
@@ -161,12 +161,10 @@ function scheduleRejoin(guildId, delayMs = 10_000, attempt = 1) {
     clearRejoin(guildId);
 
     if (attempt > MAX_REJOIN_ATTEMPTS) {
-        console.warn(`[247] Max rejoin attempts (${MAX_REJOIN_ATTEMPTS}) reached for guild ${guildId}. Disabling 24/7 to prevent infinite loops.`);
-        clearRejoinStability(guildId);
-        rejoinFailCounts.delete(guildId);
-        // Clear persisted 24/7 state so the bot doesn't keep trying on next restart.
-        const { setGuildSettings: _set } = require('./config');
-        _set(guildId, { is247: false, voiceChannelId: null });
+        // Never disable 24/7 — reset counter and keep retrying at 60s intervals
+        console.warn(`[247] Soft cap (${MAX_REJOIN_ATTEMPTS}) reached for guild ${guildId}. Resetting counter, retrying at 60s intervals.`);
+        rejoinFailCounts.set(guildId, 0);
+        scheduleRejoin(guildId, 60_000, 1);
         return;
     }
 
@@ -303,6 +301,38 @@ async function getRelatedTrackFor247(guildId) {
     }
 
     return null;
+}
+
+/**
+ * Pre-fetches the next 24/7 track in the background and pushes it to the queue,
+ * so there is no audible gap when the current track ends.
+ */
+async function prefetchNextFor247(guildId) {
+    const state = players.get(guildId);
+    if (!state || !state.is247 || state.queue.length > 0) return;
+
+    try {
+        const related = await getRelatedTrackFor247(guildId);
+        if (related?.track) {
+            const st = players.get(guildId);
+            if (st && st.is247 && st.queue.length === 0) {
+                st.queue.push(related.track);
+                console.log(`[247] Pre-buffered next track for guild ${guildId}: ${related.track.info?.title}`);
+            }
+            return;
+        }
+
+        const fallback = await getFallbackDeutschrapTrackFor247();
+        if (fallback) {
+            const st = players.get(guildId);
+            if (st && st.is247 && st.queue.length === 0) {
+                st.queue.push(fallback);
+                console.log(`[247] Pre-buffered fallback track for guild ${guildId}: ${fallback.info?.title}`);
+            }
+        }
+    } catch (err) {
+        console.warn(`[247] Pre-buffer failed for guild ${guildId}: ${err.message}`);
+    }
 }
 
 async function getFallbackDeutschrapTrackFor247() {
@@ -511,6 +541,10 @@ async function playNext(guildId, { silent = false } = {}) {
                 ...buildBrandPayload(buildNowPlayingEmbed(next), { includeBanner: true }),
                 components: [buildPlayerControlsRow()],
             });
+        }
+        // Pre-buffer the next track in 24/7 mode so the queue is never empty when this track ends
+        if (state.is247 && state.queue.length === 0) {
+            prefetchNextFor247(guildId).catch(() => { });
         }
     } catch (err) {
         console.error('[PLAYER_001] playNext error:', err);
