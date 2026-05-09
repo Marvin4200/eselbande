@@ -14,243 +14,53 @@
             --surface:      rgba(255,255,255,0.04);
             --surface2:     rgba(255,255,255,0.07);
             --border:       rgba(255,255,255,0.08);
-            --border-hover: rgba(255,255,255,0.14);
+            --border-hover: rgba(255,255,255,0.16);
             --text:         #e2e8f0;
             --muted:        #64748b;
             --accent:       #818cf8;
             --accent2:      #667eea;
             --pink:         #f093fb;
-            --success:      #10b981;
-            --danger:       #ef4444;
             --discord:      #5865F2;
         }
+
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Inter', 'Segoe UI', sans-serif;
             background: var(--bg);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            padding-top: calc(20px + 54px);
             color: var(--text);
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        /* Animated background */
-        body::before {
-            content: '';
+        /* ── Background ── */
+        .bg-orbs {
             position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.08) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.08) 0%, transparent 50%),
-                        radial-gradient(ellipse at 50% 50%, rgba(240, 147, 251, 0.04) 0%, transparent 60%);
+            inset: 0;
             z-index: -1;
-            animation: bgPulse 8s ease-in-out infinite alternate;
+            pointer-events: none;
         }
-
-        @keyframes bgPulse {
-            0% { transform: scale(1) rotate(0deg); }
-            100% { transform: scale(1.05) rotate(2deg); }
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .logo {
-            font-size: 2.8rem;
-            margin-bottom: 0.5rem;
-            display: block;
-            filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.4));
-            animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        h1 {
-            font-size: 2.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #a78bfa, #667eea, #f093fb);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 4s linear infinite;
-            letter-spacing: -1px;
-            margin-bottom: 0.75rem;
-        }
-
-        @keyframes shine {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
-
-        .subtitle {
-            color: #555;
-            font-size: 1.05rem;
-            font-weight: 500;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
-
-        /* Cards */
-        .cards {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 760px;
-            width: 100%;
-        }
-
-        .card {
-            position: relative;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 20px;
-            padding: 1.75rem 1.75rem;
-            width: 340px;
-            text-align: center;
-            text-decoration: none;
-            color: white;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-            backdrop-filter: blur(10px);
-            overflow: hidden;
-        }
-
-        .card::before {
+        .bg-orbs::before {
             content: '';
             position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            width: 700px; height: 700px;
+            top: -200px; left: -200px;
+            background: radial-gradient(circle, rgba(102,126,234,0.09) 0%, transparent 70%);
+            animation: orbDrift 12s ease-in-out infinite alternate;
+        }
+        .bg-orbs::after {
+            content: '';
+            position: absolute;
+            width: 600px; height: 600px;
+            bottom: -150px; right: -150px;
+            background: radial-gradient(circle, rgba(240,147,251,0.07) 0%, transparent 70%);
+            animation: orbDrift 10s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes orbDrift {
+            from { transform: translate(0, 0); }
+            to   { transform: translate(40px, 30px); }
         }
 
-        .card-fahrstuhl::before {
-            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
-        }
-
-        .card-eseltokens::before {
-            background: linear-gradient(135deg, rgba(240,147,251,0.08), rgba(245,87,108,0.08));
-        }
-
-        .card:hover::before { opacity: 1; }
-
-        .card-fahrstuhl:hover {
-            border-color: rgba(102, 126, 234, 0.4);
-            transform: translateY(-6px);
-            box-shadow: 0 24px 60px rgba(102, 126, 234, 0.15), 0 0 0 1px rgba(102,126,234,0.1);
-        }
-
-        .card-eseltokens:hover {
-            border-color: rgba(240, 147, 251, 0.4);
-            transform: translateY(-6px);
-            box-shadow: 0 24px 60px rgba(240, 147, 251, 0.15), 0 0 0 1px rgba(240,147,251,0.1);
-        }
-
-        .card-icon {
-            font-size: 2.2rem;
-            margin-bottom: 0.75rem;
-            display: block;
-        }
-
-        .card-tag {
-            display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            padding: 0.25rem 0.75rem;
-            border-radius: 99px;
-            margin-bottom: 1rem;
-        }
-
-        .card-fahrstuhl .card-tag {
-            background: rgba(102,126,234,0.15);
-            color: #818cf8;
-            border: 1px solid rgba(102,126,234,0.2);
-        }
-
-        .card-eseltokens .card-tag {
-            background: rgba(240,147,251,0.15);
-            color: #e879f9;
-            border: 1px solid rgba(240,147,251,0.2);
-        }
-
-        .card-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            letter-spacing: -0.3px;
-        }
-
-        .card-desc {
-            color: var(--muted);
-            font-size: 0.88rem;
-            line-height: 1.6;
-            margin-bottom: 1.25rem;
-        }
-
-        .card-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1.4rem;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: filter 0.2s ease, transform 0.2s ease;
-        }
-
-        .card:hover .card-btn {
-            filter: brightness(1.1);
-            transform: scale(1.03);
-        }
-
-        .card-fahrstuhl .card-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .card-eseltokens .card-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            color: white;
-        }
-
-        /* Discord link */
-        .discord-link {
-            margin-top: 1.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .discord-link:hover { color: #5865F2; }
-
-        footer {
-            margin-top: 1.5rem;
-            color: #2a2a2a;
-            font-size: 0.8rem;
-            letter-spacing: 0.05em;
-        }
-
-        /* Top nav */
+        /* ── Nav ── */
         .topnav {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -258,8 +68,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.8rem 2rem;
-            background: rgba(8,8,16,0.75);
-            backdrop-filter: blur(14px);
+            background: rgba(8,8,16,0.8);
+            backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
             z-index: 100;
         }
@@ -280,72 +90,600 @@
         }
         .nav-link:hover { color: var(--text); border-color: var(--border-hover); }
 
-        @media (max-width: 480px) {
-            .topnav {
-                max-width: 100%;
-                min-width: 0;
-                overflow: hidden;
-                padding: 0.6rem 0.75rem;
-            }
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 7rem 2rem 5rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(102,126,234,0.12);
+            border: 1px solid rgba(102,126,234,0.25);
+            color: #818cf8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.35rem 1rem;
+            border-radius: 99px;
+            margin-bottom: 2rem;
+        }
+        .hero-badge-dot {
+            width: 6px; height: 6px;
+            background: #818cf8;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .hero-logo {
+            font-size: 4.5rem;
+            display: block;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 40px rgba(102,126,234,0.35));
+            animation: float 5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-12px); }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1.05;
+            background: linear-gradient(135deg, #c4b5fd 0%, #818cf8 40%, #f093fb 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 5s linear infinite;
+            margin-bottom: 1.25rem;
+        }
+        @keyframes shine {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .hero-sub {
+            font-size: 1.2rem;
+            color: var(--muted);
+            max-width: 520px;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.8rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transition: transform 0.2s, filter 0.2s;
+            box-shadow: 0 8px 32px rgba(102,126,234,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-discord {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.8rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            background: #5865F2;
+            color: white;
+            transition: transform 0.2s, filter 0.2s;
+            box-shadow: 0 8px 32px rgba(88,101,242,0.3);
+        }
+        .btn-discord:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.8rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--text);
+            border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .btn-ghost:hover { transform: translateY(-2px); border-color: var(--border-hover); }
+
+        .hero-scroll {
+            margin-top: 4rem;
+            color: var(--muted);
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeInUp 1s 0.5s both;
+        }
+        .scroll-arrow {
+            width: 20px; height: 20px;
+            border-right: 2px solid var(--muted);
+            border-bottom: 2px solid var(--muted);
+            transform: rotate(45deg);
+            animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: rotate(45deg) translateY(0); }
+            50%       { transform: rotate(45deg) translateY(4px); }
+        }
+
+        /* ── Section ── */
+        section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 0.75rem;
+        }
+        .section-sub {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 500px;
+            margin-bottom: 3rem;
+        }
+
+        /* ── Highlight cards (Fahrstuhl + EselTokens) ── */
+        .highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 5rem;
+        }
+
+        .highlight-card {
+            position: relative;
+            border-radius: 24px;
+            padding: 2.25rem 2rem;
+            text-decoration: none;
+            color: var(--text);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .highlight-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .highlight-card:hover { transform: translateY(-6px); }
+        .highlight-card:hover::before { opacity: 1; }
+
+        .hc-purple::before { background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.08)); }
+        .hc-purple:hover   { border-color: rgba(102,126,234,0.4); box-shadow: 0 24px 60px rgba(102,126,234,0.15); }
+
+        .hc-pink::before { background: linear-gradient(135deg, rgba(240,147,251,0.1), rgba(245,87,108,0.08)); }
+        .hc-pink:hover   { border-color: rgba(240,147,251,0.4); box-shadow: 0 24px 60px rgba(240,147,251,0.15); }
+
+        .hc-glow {
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.25;
+        }
+        .hc-purple .hc-glow { background: #667eea; }
+        .hc-pink   .hc-glow { background: #f093fb; }
+
+        .hc-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            margin-bottom: 1.5rem;
+            width: fit-content;
+        }
+        .hc-purple .hc-tag { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.25); }
+        .hc-pink   .hc-tag { background: rgba(240,147,251,0.15); color: #e879f9; border: 1px solid rgba(240,147,251,0.25); }
+
+        .hc-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
+
+        .hc-title {
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .hc-desc {
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.65;
+            flex: 1;
+            margin-bottom: 1.75rem;
+        }
+
+        .hc-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+        }
+        .hc-feature {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.7rem;
+            border-radius: 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .hc-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.4rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            width: fit-content;
+            transition: filter 0.2s, transform 0.2s;
+        }
+        .highlight-card:hover .hc-btn { filter: brightness(1.12); transform: scale(1.03); }
+        .hc-purple .hc-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .hc-pink   .hc-btn { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
+
+        /* ── Services grid ── */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .service-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem 1.25rem;
+            text-decoration: none;
+            color: var(--text);
+            transition: border-color 0.2s, background 0.2s, transform 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .service-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface2);
+            transform: translateY(-3px);
+        }
+        .service-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .service-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .service-desc {
+            font-size: 0.78rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── Discord CTA ── */
+        .cta-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem 6rem;
+        }
+        .cta-box {
+            background: linear-gradient(135deg, rgba(88,101,242,0.12), rgba(102,126,234,0.08));
+            border: 1px solid rgba(88,101,242,0.25);
+            border-radius: 28px;
+            padding: 3.5rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -80px; left: 50%;
+            transform: translateX(-50%);
+            width: 400px; height: 200px;
+            background: radial-gradient(ellipse, rgba(88,101,242,0.15) 0%, transparent 70%);
+        }
+        .cta-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .cta-title {
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 0.75rem;
+        }
+        .cta-sub {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.65;
+            max-width: 420px;
+            margin: 0 auto 2rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .footer-brand {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .footer-links {
+            display: flex;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+        }
+        .footer-link {
+            font-size: 0.82rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-link:hover { color: var(--text); }
+        .footer-copy {
+            font-size: 0.8rem;
+            color: #2e2e3a;
+            width: 100%;
+            text-align: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeInUp 0.6s ease both; }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .topnav { padding: 0.6rem 0.75rem; }
             .nav-brand { font-size: 0.85rem; white-space: nowrap; }
             .nav-links {
-                min-width: 0;
-                max-width: 100%;
-                overflow-x: auto;
-                overflow-y: hidden;
-                flex-wrap: nowrap;
+                overflow-x: auto; flex-wrap: nowrap;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
             }
             .nav-links::-webkit-scrollbar { display: none; }
             .nav-links > * { flex: 0 0 auto; }
-            .nav-links a { white-space: nowrap; }
-            html, body { max-width: 100%; overflow-x: hidden; }
+            footer { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orbs"></div>
+
+    <!-- Nav -->
     <nav class="topnav">
         <a class="nav-brand" href="https://eselbande.com">🫏 eselbande.com</a>
         <div class="nav-links">
             <a class="nav-link" href="https://go.eselbande.com">🔗 Links</a>
             <a class="nav-link" href="https://files.eselbande.com">📁 Files</a>
-            <a class="nav-link" href="https://esel.eselbande.com">🫏 Esel</a>
             <a class="nav-link" href="https://quotes.eselbande.com">💬 Zitate</a>
             <a class="nav-link" href="https://team.eselbande.com">👥 Team</a>
             <a class="nav-link" href="https://status.eselbande.com">📡 Status</a>
         </div>
     </nav>
 
-    <div class="header">
-        <span class="logo">🫏</span>
+    <!-- Hero -->
+    <div class="hero">
+        <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            Alle Services online
+        </div>
+        <span class="hero-logo">🫏</span>
         <h1>eselbande.com</h1>
-        <p class="subtitle">Home of the Esel</p>
+        <p class="hero-sub">Die Heimat der Eselbande. Discord-Bot, Token-System, Tools und mehr — alles an einem Ort.</p>
+        <div class="hero-actions">
+            <a class="btn-discord" href="https://dc.eselbande.com">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                Discord beitreten
+            </a>
+            <a class="btn-ghost" href="#services">Services entdecken ↓</a>
+        </div>
+        <div class="hero-scroll">
+            <div class="scroll-arrow"></div>
+        </div>
     </div>
 
-    <div class="cards">
-        <a class="card card-fahrstuhl" href="/fahrstuhl/">
-            <span class="card-icon">🚀</span>
-            <span class="card-tag">Discord Bot</span>
-            <div class="card-title">Fahrstuhl Bot</div>
-            <div class="card-desc">Discord Troll-Bot Dashboard. Verwalte Shields, Stats und Server-Einstellungen.</div>
-            <span class="card-btn">Dashboard öffnen →</span>
-        </a>
+    <!-- Main Services -->
+    <section id="services">
+        <div class="section-label">Highlights</div>
+        <div class="section-title">Das Herzstück der Bande</div>
+        <p class="section-sub">Zwei große Projekte, die alles zusammenhalten.</p>
 
-        <a class="card card-eseltokens" href="/eseltokens/">
-            <span class="card-icon">🪙</span>
-            <span class="card-tag">Live</span>
-            <div class="card-title">EselTokens</div>
-            <div class="card-desc">Sammle Tokens, spiele Coinflip, Blackjack, Crash & Jackpot. Steige im Ranking auf.</div>
-            <span class="card-btn">Jetzt spielen →</span>
-        </a>
+        <div class="highlights">
+            <a class="highlight-card hc-purple" href="/fahrstuhl/">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">🚀 Discord Bot</span>
+                <span class="hc-icon">🚀</span>
+                <div class="hc-title">Fahrstuhl Bot</div>
+                <div class="hc-desc">Der Bot der Eselbande. Moderation, Leveling, Reaction Roles, Temp Voice, Tickets und ein vollständiges Dashboard — alles in einem.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Moderation</span>
+                    <span class="hc-feature">Leveling</span>
+                    <span class="hc-feature">Reaction Roles</span>
+                    <span class="hc-feature">Temp Voice</span>
+                    <span class="hc-feature">Tickets</span>
+                    <span class="hc-feature">Dashboard</span>
+                </div>
+                <span class="hc-btn">Dashboard öffnen →</span>
+            </a>
+
+            <a class="highlight-card hc-pink" href="/eseltokens/">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">🪙 Casino</span>
+                <span class="hc-icon">🪙</span>
+                <div class="hc-title">EselTokens</div>
+                <div class="hc-desc">Das Community-Token-System. Verdiene Tokens durch Aktivität, riskiere sie in Spielen und klettere die Rangliste hoch.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Coinflip</span>
+                    <span class="hc-feature">Blackjack</span>
+                    <span class="hc-feature">Crash</span>
+                    <span class="hc-feature">Jackpot</span>
+                    <span class="hc-feature">Slots</span>
+                    <span class="hc-feature">Rangliste</span>
+                </div>
+                <span class="hc-btn">Jetzt spielen →</span>
+            </a>
+        </div>
+
+        <div class="section-label">Alle Services</div>
+        <div class="section-title">Tools & Seiten</div>
+        <p class="section-sub">Alles was die Eselbande am Laufen hält.</p>
+
+        <div class="services-grid">
+            <a class="service-card" href="https://go.eselbande.com">
+                <span class="service-icon">🔗</span>
+                <div>
+                    <div class="service-name">Link-Shortener</div>
+                    <div class="service-desc">Kurze Links erstellen und verwalten. go.eselbande.com</div>
+                </div>
+            </a>
+            <a class="service-card" href="https://files.eselbande.com">
+                <span class="service-icon">📁</span>
+                <div>
+                    <div class="service-name">File-Hoster</div>
+                    <div class="service-desc">Dateien schnell hochladen und teilen. files.eselbande.com</div>
+                </div>
+            </a>
+            <a class="service-card" href="https://quotes.eselbande.com">
+                <span class="service-icon">💬</span>
+                <div>
+                    <div class="service-name">Zitat-Board</div>
+                    <div class="service-desc">Die besten Zitate der Community gesammelt. quotes.eselbande.com</div>
+                </div>
+            </a>
+            <a class="service-card" href="https://team.eselbande.com">
+                <span class="service-icon">👥</span>
+                <div>
+                    <div class="service-name">Team-Seite</div>
+                    <div class="service-desc">Wer steckt hinter der Eselbande? team.eselbande.com</div>
+                </div>
+            </a>
+            <a class="service-card" href="https://esel.eselbande.com">
+                <span class="service-icon">🫏</span>
+                <div>
+                    <div class="service-name">Esel-Seite</div>
+                    <div class="service-desc">Der Esel persönlich. esel.eselbande.com</div>
+                </div>
+            </a>
+            <a class="service-card" href="https://status.eselbande.com">
+                <span class="service-icon">📡</span>
+                <div>
+                    <div class="service-name">Status-Page</div>
+                    <div class="service-desc">Live-Uptime aller Services. status.eselbande.com</div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Discord CTA -->
+    <div class="cta-section">
+        <div class="cta-box">
+            <span class="cta-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+            </span>
+            <div class="cta-title">Werde Teil der Eselbande</div>
+            <p class="cta-sub">Tritt dem Discord-Server bei und sei dabei, wenn was Dummes passiert.</p>
+            <a class="btn-discord" href="https://dc.eselbande.com">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                Jetzt beitreten
+            </a>
+        </div>
     </div>
 
-    <a class="discord-link" href="https://dc.eselbande.com">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-        Discord beitreten
-    </a>
+    <!-- Footer -->
+    <footer>
+        <a class="footer-brand" href="https://eselbande.com">🫏 eselbande.com</a>
+        <div class="footer-links">
+            <a class="footer-link" href="https://dc.eselbande.com">Discord</a>
+            <a class="footer-link" href="https://status.eselbande.com">Status</a>
+            <a class="footer-link" href="https://team.eselbande.com">Team</a>
+            <a class="footer-link" href="/fahrstuhl/">Dashboard</a>
+            <a class="footer-link" href="/eseltokens/">EselTokens</a>
+        </div>
+        <div class="footer-copy">© 2026 eselbande.com &nbsp;·&nbsp; created by Txxle &amp; Elite</div>
+    </footer>
 
-    <footer>© 2026 eselbande.com &nbsp;·&nbsp; created by Txxle &amp; Elite</footer>
 </body>
 </html>
