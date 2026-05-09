@@ -76,6 +76,10 @@ function pickDiverseSeedArtist(guildId) {
 }
 
 const AUTOPLAY_RETRY_MS = 5_000;
+/** How many tracks to keep buffered ahead in 24/7 mode */
+const BUFFER_TARGET = 3;
+/** Guards against concurrent pre-fetch for the same guild */
+const prefetchingGuilds = new Set();
 const DEUTSCHRAP_HINT = 'deutschrap';
 const DEUTSCHRAP_KEYWORDS = [
     'deutschrap', 'deutsch rap', 'german rap', 'german hip hop', 'hip hop deutsch',
@@ -304,36 +308,59 @@ async function getRelatedTrackFor247(guildId) {
 }
 
 /**
- * Pre-fetches the next 24/7 track in the background and pushes it to the queue,
- * so there is no audible gap when the current track ends.
+ * Fills the 24/7 queue up to BUFFER_TARGET tracks in the background.
+ * Safe to call at any time — concurrent calls for the same guild are deduped.
  */
-async function prefetchNextFor247(guildId) {
-    const state = players.get(guildId);
-    if (!state || !state.is247 || state.queue.length > 0) return;
-
+async function fillBufferFor247(guildId) {
+    if (prefetchingGuilds.has(guildId)) return;
+    prefetchingGuilds.add(guildId);
     try {
-        const related = await getRelatedTrackFor247(guildId);
-        if (related?.track) {
-            const st = players.get(guildId);
-            if (st && st.is247 && st.queue.length === 0) {
-                st.queue.push(related.track);
-                console.log(`[247] Pre-buffered next track for guild ${guildId}: ${related.track.info?.title}`);
-            }
-            return;
-        }
+        let attempts = 0;
+        while (attempts < BUFFER_TARGET * 2) {
+            attempts++;
+            const state = players.get(guildId);
+            if (!state || !state.is247) break;
+            if (state.queue.length >= BUFFER_TARGET) break;
 
-        const fallback = await getFallbackDeutschrapTrackFor247();
-        if (fallback) {
-            const st = players.get(guildId);
-            if (st && st.is247 && st.queue.length === 0) {
-                st.queue.push(fallback);
-                console.log(`[247] Pre-buffered fallback track for guild ${guildId}: ${fallback.info?.title}`);
+            const related = await getRelatedTrackFor247(guildId);
+            if (related?.track) {
+                const st = players.get(guildId);
+                if (st && st.is247 && st.queue.length < BUFFER_TARGET) {
+                    st.queue.push(related.track);
+                    console.log(`[247] Buffer [${st.queue.length}/${BUFFER_TARGET}] guild ${guildId}: ${related.track.info?.title}`);
+                }
+                continue;
             }
+
+            const fallback = await getFallbackDeutschrapTrackFor247();
+            if (fallback) {
+                const st = players.get(guildId);
+                if (st && st.is247 && st.queue.length < BUFFER_TARGET) {
+                    st.queue.push(fallback);
+                    console.log(`[247] Buffer fallback [${st.queue.length}/${BUFFER_TARGET}] guild ${guildId}: ${fallback.info?.title}`);
+                }
+                continue;
+            }
+
+            // Both search paths failed — stop this cycle
+            console.warn(`[247] fillBuffer: no track found for guild ${guildId}, stopping cycle`);
+            break;
         }
     } catch (err) {
-        console.warn(`[247] Pre-buffer failed for guild ${guildId}: ${err.message}`);
+        console.warn(`[247] fillBuffer failed for guild ${guildId}: ${err.message}`);
+    } finally {
+        prefetchingGuilds.delete(guildId);
     }
 }
+
+// Global 24/7 buffer watchdog — every 30 s, top up any queue that fell below target
+setInterval(() => {
+    for (const [guildId, state] of players) {
+        if (state.is247 && state.queue.length < BUFFER_TARGET && !prefetchingGuilds.has(guildId)) {
+            fillBufferFor247(guildId).catch(() => { });
+        }
+    }
+}, 30_000);
 
 async function getFallbackDeutschrapTrackFor247() {
     if (!_shoukaku) return null;
@@ -514,7 +541,7 @@ async function playNext(guildId, { silent = false } = {}) {
             }
 
             sendTemp(state.textChannel, {
-                embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 Deutschrap aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 15s...' }],
+                embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 Deutschrap aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 5s...' }],
             });
             scheduleAutomixRetry(guildId);
             return;
@@ -542,9 +569,9 @@ async function playNext(guildId, { silent = false } = {}) {
                 components: [buildPlayerControlsRow()],
             });
         }
-        // Pre-buffer the next track in 24/7 mode so the queue is never empty when this track ends
-        if (state.is247 && state.queue.length === 0) {
-            prefetchNextFor247(guildId).catch(() => { });
+        // Keep the buffer filled — trigger fill whenever queue is below target
+        if (state.is247 && state.queue.length < BUFFER_TARGET) {
+            fillBufferFor247(guildId).catch(() => { });
         }
     } catch (err) {
         console.error('[PLAYER_001] playNext error:', err);
