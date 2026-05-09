@@ -23,9 +23,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3012
-      FAHRSTUHL_HEALTH_URL: ${FAHRSTUHL_HEALTH_URL:-http://host.docker.internal:3102/health}
-      ESELTOKENS_HEALTH_URL: ${ESELTOKENS_HEALTH_URL:-http://host.docker.internal:3100/}
-      ESELMUSIC_HEALTH_URL: ${ESELMUSIC_HEALTH_URL:-http://host.docker.internal:3181/health}
+      FAHRSTUHL_HEALTH_URL: ${FAHRSTUHL_HEALTH_URL:-http://fahrstuhl-docker:3002/health}
+      ESELTOKENS_HEALTH_URL: ${ESELTOKENS_HEALTH_URL:-http://eseltokens-docker:3000/eseltokens/api/health}
+      ESELMUSIC_HEALTH_URL: ${ESELMUSIC_HEALTH_URL:-http://musikbot-docker:3020/health}
       ESEL_HEALTH_URL: ${ESEL_HEALTH_URL:-http://esel:3015/health}
       LINKSHORTENER_HEALTH_URL: ${LINKSHORTENER_HEALTH_URL:-http://linkshortener:3010/health}
       FILEHOSTER_HEALTH_URL: ${FILEHOSTER_HEALTH_URL:-http://filehoster:3011/health}
@@ -295,7 +295,7 @@ services:
       PORT: 9001
       COMPOSE_FILE: /home/marvin/fahrstuhl/docker-compose.yml
       ESELTOKENS_SERVICE: eseltokens-docker
-      ESELTOKENS_REPO_DIR: /home/marvin
+      ESELTOKENS_REPO_DIR: /home/marvin/eseltokens
     ports:
       - "127.0.0.1:9101:9001"
     command: ["node", "scripts/eseltokens-webhook.js"]
@@ -327,10 +327,15 @@ services:
       DASHBOARD_PHP_HEALTH_URL: http://dashboard-php:8081/health
       DASHBOARD_HEALTH_URL: http://dashboard-php:8081/
       DEPLOY_WEBHOOK_HEALTH_URL: http://deploy-webhook:9000/health
-      ESELTOKENS_HEALTH_URL: http://eseltokens-docker:3000/
+      ESELTOKENS_HEALTH_URL: http://eseltokens-docker:3000/eseltokens/api/health
       ESELTOKENS_WEBHOOK_HEALTH_URL: http://eseltokens-webhook-docker:9001/health
       ESEL_HEALTH_URL: http://esel:3015/health
-      MUSIKBOT_HEALTH_URL: http://musikbot-docker:3020/health
+      ESELMUSIC_HEALTH_URL: http://musikbot-docker:3020/health
+      FILEHOSTER_HEALTH_URL: http://filehoster:3011/health
+      LINKSHORTENER_HEALTH_URL: http://linkshortener:3010/health
+      STATUSPAGE_HEALTH_URL: http://statuspage:3012/health
+      TEAM_HEALTH_URL: http://team:3014/health
+      ZITATBOARD_HEALTH_URL: http://zitatboard:3013/health
     ports:
       - "127.0.0.1:3102:3002"
     command: ["node", "index.js"]
@@ -339,6 +344,7 @@ services:
       - ./logs:/app/logs
       - ./globalStats.json:/app/globalStats.json
       - ./userPrefs.json:/app/userPrefs.json
+      - /home/marvin/backups:/home/marvin/backups:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

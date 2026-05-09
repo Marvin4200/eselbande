@@ -71,3 +71,17 @@ coverage/
 .selected_editor
 .npm/
 .pm2/
+
+# Server-only runtime dirs (at monorepo root = /home/marvin on server)
+backups/
+*.zip
+*.tar.gz
+*-bare.git/
+*.git/
+
+# Deploy runtime data
+fahrstuhl/data/deploy-audit.log
+fahrstuhl/data/deploy-deliveries.json
+fahrstuhl/data/eseltokens-deliveries.json
+fahrstuhl/data/deploy.lock
+fahrstuhl/data/eseltokens-deploy.lock

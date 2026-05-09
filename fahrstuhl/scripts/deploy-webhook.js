@@ -124,7 +124,7 @@ function run(command, args, options = {}) {
 }
 
 function assertCleanGitState() {
-    const dirty = run('git', ['-C', DEPLOY_REPO_DIR, 'status', '--porcelain']);
+    const dirty = run('git', ['-C', DEPLOY_REPO_DIR, 'status', '--porcelain', '-uno']);
     if (dirty) throw new Error('Repository has uncommitted local changes. Aborting deploy for safety.');
 }
 
