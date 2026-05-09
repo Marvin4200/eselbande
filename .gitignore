@@ -58,3 +58,16 @@ Thumbs.db
 
 # Misc
 coverage/
+
+# Linux home directory files (server-only, never commit)
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.lesshst
+.mysql_history
+.gitconfig
+.sudo_as_admin_successful
+.selected_editor
+.npm/
+.pm2/
