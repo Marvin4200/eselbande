@@ -231,7 +231,10 @@ function scheduleAutomixRetry(guildId) {
         const state = players.get(guildId);
         if (!state || !state.is247) return;
         if (state.current || state.queue.length > 0) return;
-        playNext(guildId, { silent: true }).catch(() => { });
+        console.log(`[247] Automix retry firing for guild ${guildId}...`);
+        playNext(guildId, { silent: true }).catch(err => {
+            console.warn(`[247] Automix retry error for guild ${guildId}: ${err.message}`);
+        });
     }, AUTOPLAY_RETRY_MS);
     automixRetryTimeouts.set(guildId, timeout);
 }
@@ -376,7 +379,10 @@ async function getFallbackDeutschrapTrackFor247() {
     for (const query of fallbackQueries) {
         try {
             const resolved = await node.rest.resolve(query);
-            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) continue;
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) {
+                console.warn(`[247] Fallback query "${query}" → loadType: ${resolved?.loadType ?? 'null'}, results: ${resolved?.data?.length ?? 0}`);
+                continue;
+            }
 
             const candidates = resolved.data.slice(0, 15);
             const matchedCandidates = candidates.filter((t) => {
@@ -384,18 +390,38 @@ async function getFallbackDeutschrapTrackFor247() {
                 return DEUTSCHRAP_KEYWORDS.some(k => text.includes(k));
             });
             // Strict: skip this query if nothing matches Deutschrap.
-            if (matchedCandidates.length === 0) continue;
+            if (matchedCandidates.length === 0) {
+                console.warn(`[247] Fallback query "${query}" returned ${candidates.length} results but 0 matched Deutschrap filter. Top: ${candidates[0]?.info?.title} by ${candidates[0]?.info?.author}`);
+                continue;
+            }
             // Pick randomly to avoid always returning the same fallback track
             const track = matchedCandidates[Math.floor(Math.random() * matchedCandidates.length)];
             if (track.info) {
                 track.info.author = track.info.author || 'Deutschrap AutoMix';
             }
+            console.log(`[247] Fallback found: "${track.info?.title}" by "${track.info?.author}" via query "${query}"`);
             return track;
-        } catch {
-            // Try next fallback query.
+        } catch (err) {
+            console.warn(`[247] Fallback query "${query}" threw: ${err.message}`);
         }
     }
 
+    // Absolute last resort: return ANY result without Deutschrap keyword filter
+    // This ensures music plays even if YouTube returns unexpected results.
+    console.warn('[247] All strict-filter fallback queries failed. Trying last-resort (no filter)...');
+    for (const query of fallbackQueries) {
+        try {
+            const resolved = await node.rest.resolve(query);
+            if (!resolved || resolved.loadType !== 'search' || !Array.isArray(resolved.data) || resolved.data.length === 0) continue;
+            const track = resolved.data[0];
+            if (track?.encoded) {
+                console.warn(`[247] Last-resort (no filter): "${track.info?.title}" by "${track.info?.author}"`);
+                return track;
+            }
+        } catch { }
+    }
+
+    console.error('[247] getFallbackDeutschrapTrackFor247: ALL queries failed — Lavalink may be unable to reach YouTube!');
     return null;
 }
 
@@ -540,6 +566,7 @@ async function playNext(guildId, { silent = false } = {}) {
                 return playNext(guildId, { silent: true });
             }
 
+            console.warn(`[247] All search paths exhausted for guild ${guildId} — scheduling retry in ${AUTOPLAY_RETRY_MS}ms`);
             sendTemp(state.textChannel, {
                 embeds: [{ color: 0xFEE75C, description: '⚠️ 24/7 Deutschrap aktiv, Quelle gerade nicht erreichbar. Neuer Versuch in 5s...' }],
             });
