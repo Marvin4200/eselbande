@@ -2177,7 +2177,7 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
             { name: "Before", value: oldMessage.content?.slice(0, 1024) || "*No text content*" },
             { name: "After", value: newMessage.content?.slice(0, 1024) || "*No text content*" },
             { name: "Channel", value: `${oldMessage.channel}`, inline: true },
-            { name: "Author", value: `${oldmessage.author.username} (\`${oldMessage.author.id}\`)`, inline: true },
+            { name: "Author", value: `${oldMessage.author.username} (\`${oldMessage.author.id}\`)`, inline: true },
         ],
         footer: { text: `Message ID: ${oldMessage.id}` },
         timestamp: new Date()
