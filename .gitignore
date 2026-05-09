@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+.env-dashboard
+dashboard/.env
+*.pem
+
+# Next.js (eseltokens)
+eseltokens/.next/
+eseltokens/out/
+eseltokens/build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+fahrstuhl/logs/
+
+# Runtime data (generated, not tracked)
+fahrstuhl/globalStats.json
+fahrstuhl/userStats.json
+fahrstuhl/guildConfigs.json
+fahrstuhl/userPrefs.json
+fahrstuhl/cloudflared
+fahrstuhl/data/premium.db
+fahrstuhl/data/analytics.db
+fahrstuhl/data/monetization.json
+fahrstuhl/data/ops-alert-state.json
+fahrstuhl/data/command-registration.json
+fahrstuhl/data/dashboard-audit.jsonl
+fahrstuhl/data/deploy-status.json
+fahrstuhl/data/globalStop.json
+fahrstuhl/dashboard/data/
+fahrstuhl/dashboard/public/uploads/
+fahrstuhl/backups/
+
+# SQLite
+eseltokens/eseltokens.db
+eseltokens/eseltokens.db-wal
+eseltokens/eseltokens.db-shm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+coverage/

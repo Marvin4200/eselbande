@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 – Nicht gefunden</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #080810;
+      --surface:      rgba(255,255,255,0.04);
+      --surface2:     rgba(255,255,255,0.07);
+      --border:       rgba(255,255,255,0.08);
+      --text:         #e2e8f0;
+      --muted:        #64748b;
+      --accent:       #818cf8;
+      --accent2:      #667eea;
+      --pink:         #f093fb;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse at 30% 30%, rgba(102,126,234,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 70% 70%, rgba(240,147,251,0.08) 0%, transparent 55%);
+    }
+
+    .container { position: relative; z-index: 1; max-width: 480px; }
+
+    .esel {
+      font-size: 5rem;
+      display: block; margin-bottom: 1rem;
+      animation: shake 2.5s ease-in-out infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      15%       { transform: rotate(-8deg); }
+      30%       { transform: rotate(8deg); }
+      45%       { transform: rotate(-5deg); }
+      60%       { transform: rotate(5deg); }
+      75%       { transform: rotate(0deg); }
+    }
+
+    .code {
+      font-size: 6rem; font-weight: 800; line-height: 1;
+      background: linear-gradient(135deg, #818cf8, #f093fb);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.4rem; font-weight: 700; margin-bottom: 0.75rem;
+      color: #e2e8f0;
+    }
+
+    p {
+      font-size: 0.92rem; color: var(--muted); line-height: 1.7; margin-bottom: 2rem;
+    }
+
+    .links {
+      display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.6rem 1.4rem;
+      border-radius: 10px; font-size: 0.88rem; font-weight: 600;
+      text-decoration: none; transition: transform 0.15s, filter 0.15s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+    .footer {
+      position: fixed; bottom: 1.5rem; left: 0; right: 0;
+      text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.12);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="esel">🫏</span>
+    <div class="code">404</div>
+    <h1>Hier ist nix.</h1>
+    <p>
+      Der Esel hat die Seite gefressen.<br>
+      Oder sie hat nie existiert. Wer weiß das schon.
+    </p>
+    <div class="links">
+      <a class="btn btn-primary" href="https://eselbande.com">🏠 Zur Startseite</a>
+      <a class="btn btn-secondary" href="javascript:history.back()">← Zurück</a>
+    </div>
+  </div>
+
+  <div class="footer">eselbande.com · irgendwo hat jemand einen Tippfehler gemacht</div>
+</body>
+</html>

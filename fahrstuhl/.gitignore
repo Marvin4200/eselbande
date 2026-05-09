@@ -1,0 +1,40 @@
+node_modules/
+.env
+.env-dashboard
+dashboard/.env
+backups/*.sql
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data files (generated at runtime, don't track)
+globalStats.json
+userStats.json
+guildConfigs.json
+data/premium.db
+data/analytics.db
+data/monetization.json
+data/ops-alert-state.json
+data/command-registration.json
+userPrefs.json
+cloudflared
+dashboard/data/
+logs/
+
+# Additional runtime-generated paths
+backups/
+dashboard/public/uploads/
+data/dashboard-audit.jsonl
+data/deploy-status.json
+data/globalStop.json
+
+# Secret and key material
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub

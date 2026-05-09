@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zitat-Board – eselbande.com</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:           #080810;
+            --surface:      rgba(255,255,255,0.04);
+            --surface2:     rgba(255,255,255,0.07);
+            --border:       rgba(255,255,255,0.08);
+            --border2:      rgba(255,255,255,0.14);
+            --text:         #e2e8f0;
+            --muted:        #64748b;
+            --accent:       #818cf8;
+            --up:           #10b981;
+            --down:         #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 15% 10%, rgba(102,126,234,0.07) 0%, transparent 50%),
+                        radial-gradient(ellipse at 85% 90%, rgba(240,147,251,0.07) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Nav */
+        .topnav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            background: rgba(8,8,16,0.7);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand { font-weight: 700; font-size: 1rem; text-decoration: none; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+        .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+        .nav-link {
+            padding: 0.35rem 0.9rem;
+            border-radius: 7px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .nav-link:hover { color: var(--text); border-color: var(--border2); }
+
+        /* User chip */
+        .user-chip { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted); }
+        .user-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+        .btn-sm {
+            padding: 0.3rem 0.8rem;
+            border-radius: 7px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        .btn-sm:hover { opacity: 0.85; }
+        .btn-login  { background: #5865F2; color: #fff; }
+        .btn-logout { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+        /* Container */
+        .container { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 0; }
+
+        /* Hero */
+        .hero { text-align: center; margin-bottom: 2.5rem; }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f093fb, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.4rem;
+        }
+        .hero p { color: var(--muted); font-size: 0.9rem; }
+
+        /* Submit form */
+        .submit-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            margin-bottom: 2rem;
+        }
+        .submit-box.hidden { display: none; }
+        .submit-box h2 { font-size: 0.85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 1rem; }
+
+        .field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.9rem; }
+        .field label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .field textarea, .field input {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            padding: 0.65rem 0.9rem;
+            resize: vertical;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .field textarea:focus, .field input:focus { border-color: rgba(129,140,248,0.5); }
+        .field textarea { min-height: 90px; }
+        .char-count { font-size: 0.72rem; color: var(--muted); text-align: right; }
+
+        .submit-row { display: flex; justify-content: flex-end; }
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.55rem 1.4rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Login prompt */
+        .login-prompt {
+            text-align: center;
+            padding: 1.2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+        .login-prompt.hidden { display: none; }
+        .login-prompt a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+        /* Sort tabs */
+        .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .tabs { display: flex; gap: 0.3rem; }
+        .tab {
+            padding: 0.35rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+        .tab.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+        .quote-count { font-size: 0.78rem; color: var(--muted); }
+
+        /* Quote cards */
+        .quotes { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        .quote-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1rem;
+            transition: border-color 0.2s;
+        }
+        .quote-card:hover { border-color: var(--border2); }
+
+        /* Vote column */
+        .vote-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            min-width: 36px;
+        }
+        .vote-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .vote-btn:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+        .vote-btn.active-up   { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: var(--up); }
+        .vote-btn.active-down { background: rgba(239,68,68,0.15);  border-color: rgba(239,68,68,0.4);  color: var(--down); }
+        .vote-btn:disabled { opacity: 0.4; cursor: default; }
+        .vote-score { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+
+        /* Quote content */
+        .quote-body { min-width: 0; }
+        .quote-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            word-break: break-word;
+        }
+        .quote-text::before { content: '"'; color: var(--muted); }
+        .quote-text::after  { content: '"'; color: var(--muted); }
+
+        .quote-meta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .quote-attr { font-size: 0.82rem; color: var(--accent); font-weight: 600; }
+        .quote-info { display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: var(--muted); }
+        .quote-author-img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 5px;
+            transition: color 0.2s;
+        }
+        .btn-delete:hover { color: var(--down); }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.9rem; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            padding: 0.65rem 1.4rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 480px) {
+            .topnav {
+                max-width: 100%;
+                min-width: 0;
+                overflow: hidden;
+                padding: 0.6rem 0.75rem;
+            }
+            .nav-brand { font-size: 0.85rem; white-space: nowrap; }
+            .nav-links {
+                min-width: 0;
+                max-width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-links::-webkit-scrollbar { display: none; }
+            .nav-links > * { flex: 0 0 auto; }
+            .nav-link { white-space: nowrap; padding: 0.28rem 0.55rem; font-size: 0.72rem; }
+            .container { padding: 1.5rem 1rem 0; }
+            html, body { max-width: 100%; overflow-x: hidden; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="topnav">
+    <a class="nav-brand" href="https://eselbande.com">🫏 eselbande.com</a>
+    <div class="nav-links">
+        <a class="nav-link" href="https://go.eselbande.com">🔗 Links</a>
+        <a class="nav-link" href="https://files.eselbande.com">📁 Files</a>
+        <a class="nav-link" href="https://esel.eselbande.com">🫏 Esel</a>
+        <a class="nav-link" href="https://status.eselbande.com">📡 Status</a>
+        <div id="userArea">
+            <button class="btn-sm btn-login" onclick="login()">Mit Discord anmelden</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="hero">
+        <h1>💬 Zitat-Board</h1>
+        <p>Die besten (und dümmsten) Zitate der eselbande</p>
+    </div>
+
+    <div class="submit-box hidden" id="submitBox">
+        <h2>Zitat einreichen</h2>
+        <div class="field">
+            <label>Zitat *</label>
+            <textarea id="quoteText" placeholder='"Das hab ich nie gesagt." – jemand der es gesagt hat' maxlength="500"></textarea>
+            <div class="char-count"><span id="charCount">0</span>/500</div>
+        </div>
+        <div class="field">
+            <label>Von wem? (optional)</label>
+            <input type="text" id="quoteAttrib" placeholder="z.B. @Txxle oder Marvin" maxlength="100">
+        </div>
+        <div class="submit-row">
+            <button class="btn-submit" id="submitBtn" onclick="submitQuote()">Einreichen</button>
+        </div>
+    </div>
+
+    <div class="login-prompt" id="loginPrompt">
+        <a href="/auth/login">Mit Discord anmelden</a>, um Zitate einzureichen und abzustimmen.
+    </div>
+
+    <div class="toolbar">
+        <div class="tabs">
+            <button class="tab active" onclick="setSort('top', this)">🔥 Top</button>
+            <button class="tab" onclick="setSort('new', this)">🆕 Neu</button>
+        </div>
+        <span class="quote-count" id="quoteCount"></span>
+    </div>
+
+    <div class="quotes" id="quoteList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let me = null;
+let sort = 'top';
+
+function login() { window.location.href = '/auth/login'; }
+
+function toast(msg, duration = 2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+async function loadMe() {
+    try {
+        const res = await fetch('/api/me');
+        me = res.ok ? await res.json() : null;
+    } catch {
+        me = null;
+    }
+    const area = document.getElementById('userArea');
+    if (me) {
+        const avatarUrl = me.avatar
+            ? `https://cdn.discordapp.com/avatars/${me.discordId}/${me.avatar}.png?size=64`
+            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        area.innerHTML = `
+            <div class="user-chip">
+                <img class="user-avatar" src="${avatarUrl}" alt="">
+                <span>${escHtml(me.username)}</span>
+                <form method="GET" action="/auth/logout" style="display:inline">
+                    <button type="submit" class="btn-sm btn-logout">Abmelden</button>
+                </form>
+            </div>`;
+        document.getElementById('submitBox').classList.remove('hidden');
+        document.getElementById('loginPrompt').classList.add('hidden');
+    } else {
+        document.getElementById('submitBox').classList.add('hidden');
+        document.getElementById('loginPrompt').classList.remove('hidden');
+    }
+}
+
+function setSort(s, el) {
+    sort = s;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    loadQuotes();
+}
+
+async function loadQuotes() {
+    const quotes = await fetch(`/api/quotes?sort=${sort}`).then(r => r.json()).catch(() => []);
+    const list = document.getElementById('quoteList');
+    document.getElementById('quoteCount').textContent = `${quotes.length} Zitate`;
+
+    if (!quotes.length) {
+        list.innerHTML = '<div class="empty">Noch keine Zitate. Sei der Erste! 🎤</div>';
+        return;
+    }
+
+    list.innerHTML = quotes.map(q => {
+        const avatarUrl = q.author_avatar
+            ? `https://cdn.discordapp.com/avatars/${q.author_discord_id || '0'}/${q.author_avatar}.png?size=32`
+            : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        const canDelete = me && me.id === q.submitted_by;
+        const myVote = q.my_vote;
+        const loggedIn = !!me;
+
+        return `
+        <div class="quote-card" id="quote-${q.id}">
+            <div class="vote-col">
+                <button class="vote-btn ${myVote === 1 ? 'active-up' : ''}" ${!loggedIn ? 'disabled' : ''} onclick="vote(${q.id}, 1)" title="Upvote">▲</button>
+                <span class="vote-score" id="score-${q.id}">${q.score}</span>
+                <button class="vote-btn ${myVote === -1 ? 'active-down' : ''}" ${!loggedIn ? 'disabled' : ''} onclick="vote(${q.id}, -1)" title="Downvote">▼</button>
+            </div>
+            <div class="quote-body">
+                <div class="quote-text">${escHtml(q.text)}</div>
+                <div class="quote-meta">
+                    <span class="quote-attr">${q.attributed_to ? '— ' + escHtml(q.attributed_to) : ''}</span>
+                    <div class="quote-info">
+                        <span>eingereicht von <b>${escHtml(q.author)}</b></span>
+                        <span>${timeAgo(q.created_at)}</span>
+                        ${canDelete ? `<button class="btn-delete" onclick="deleteQuote(${q.id})">🗑</button>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function vote(id, value) {
+    if (!me) return;
+    const res = await fetch(`/api/quotes/${id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+    }).then(r => r.json());
+
+    document.getElementById(`score-${id}`).textContent = res.score;
+    const card = document.getElementById(`quote-${id}`);
+    const [upBtn, downBtn] = card.querySelectorAll('.vote-btn');
+    upBtn.className   = 'vote-btn' + (res.my_vote === 1  ? ' active-up'   : '');
+    downBtn.className = 'vote-btn' + (res.my_vote === -1 ? ' active-down' : '');
+}
+
+async function submitQuote() {
+    const text = document.getElementById('quoteText').value.trim();
+    const attributed_to = document.getElementById('quoteAttrib').value.trim();
+    const btn = document.getElementById('submitBtn');
+    if (!text) return toast('Bitte ein Zitat eingeben!');
+    btn.disabled = true;
+    const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, attributed_to: attributed_to || null }),
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    if (!res.ok) return toast('Fehler: ' + data.error);
+    document.getElementById('quoteText').value = '';
+    document.getElementById('quoteAttrib').value = '';
+    document.getElementById('charCount').textContent = '0';
+    toast('Zitat eingereicht! 🎉');
+    loadQuotes();
+}
+
+async function deleteQuote(id) {
+    if (!confirm('Zitat wirklich löschen?')) return;
+    const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+    if (!res.ok) return toast('Fehler beim Löschen');
+    document.getElementById(`quote-${id}`)?.remove();
+    toast('Zitat gelöscht');
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(unixSec) {
+    const diff = Math.floor(Date.now() / 1000) - unixSec;
+    if (diff < 60)    return 'gerade eben';
+    if (diff < 3600)  return `vor ${Math.floor(diff/60)}m`;
+    if (diff < 86400) return `vor ${Math.floor(diff/3600)}h`;
+    return `vor ${Math.floor(diff/86400)}d`;
+}
+
+document.getElementById('quoteText').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+(async () => { await loadMe(); loadQuotes(); })();
+</script>
+</body>
+</html>

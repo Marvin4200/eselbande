@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esel – eselbande.com</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #080810;
+      --surface:      rgba(255,255,255,0.04);
+      --surface2:     rgba(255,255,255,0.07);
+      --border:       rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.14);
+      --text:         #e2e8f0;
+      --muted:        #64748b;
+      --accent:       #818cf8;
+      --accent2:      #667eea;
+      --pink:         #f093fb;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(102,126,234,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(240,147,251,0.07) 0%, transparent 55%);
+    }
+
+    /* Nav */
+    .topnav {
+      position: sticky; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.8rem 2rem;
+      width: 100%;
+      min-width: 0;
+      background: rgba(8,8,16,0.75);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand { font-weight: 700; font-size: 1rem; text-decoration: none; color: var(--text); }
+    .nav-links { display: flex; gap: 0.5rem; }
+    .nav-link {
+      padding: 0.35rem 0.9rem; border-radius: 7px; font-size: 0.8rem;
+      font-weight: 600; text-decoration: none; color: var(--muted);
+      border: 1px solid var(--border); transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-link:hover { color: var(--text); border-color: var(--border-hover); }
+
+    /* Main */
+    .container {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1.5rem; max-width: 600px; width: 100%; text-align: center;
+    }
+
+    .title {
+      font-size: 2rem; font-weight: 800;
+      background: linear-gradient(135deg, #818cf8, #f093fb);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+    /* Image box */
+    .esel-box {
+      width: 100%; max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      min-height: 300px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .esel-img {
+      width: 100%; max-height: 420px;
+      object-fit: contain;
+      display: block;
+    }
+    .esel-loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; background: var(--surface);
+    }
+
+    /* Caption */
+    .caption {
+      font-size: 1rem; font-weight: 600; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.6rem 1.2rem;
+      font-style: italic;
+    }
+
+    /* Counter */
+    .counter { font-size: 0.8rem; color: var(--muted); }
+
+    /* Button */
+    .btn {
+      padding: 0.75rem 2rem;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none; border-radius: 8px;
+      color: white; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .btn:active { transform: scale(0.97); }
+
+    @media (max-width: 480px) {
+      .topnav {
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0.6rem 0.75rem;
+      }
+      .nav-brand { font-size: 0.85rem; white-space: nowrap; }
+      .nav-links {
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .nav-links::-webkit-scrollbar { display: none; }
+      .nav-links > * { flex: 0 0 auto; }
+      .nav-link { white-space: nowrap; padding: 0.28rem 0.55rem; font-size: 0.72rem; }
+      .title { font-size: 1.5rem; }
+      html, body { max-width: 100%; overflow-x: hidden; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="nav-brand" href="https://eselbande.com">🫏 eselbande.com</a>
+  <div class="nav-links">
+    <a class="nav-link" href="https://go.eselbande.com">🔗 Links</a>
+    <a class="nav-link" href="https://files.eselbande.com">📁 Files</a>
+    <a class="nav-link" href="https://quotes.eselbande.com">💬 Zitate</a>
+    <a class="nav-link" href="https://team.eselbande.com">👥 Team</a>
+    <a class="nav-link" href="https://status.eselbande.com">📡 Status</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div>
+    <div class="title">🫏 Esel des Tages</div>
+    <div class="subtitle">Täglich frisch. Täglich dümmer.</div>
+  </div>
+
+  <div class="esel-box" id="esel-box">
+    <div class="esel-loading" id="loading">🫏</div>
+    <img class="esel-img" id="esel-img" alt="Esel" style="display:none"
+      onload="imgLoaded()" onerror="imgError()">
+  </div>
+
+  <div class="caption" id="caption">Lädt...</div>
+
+  <button class="btn" onclick="nextEsel()">🫏 Neuer Esel</button>
+
+  <div class="counter" id="counter"></div>
+</div>
+
+<script>
+const CAPTIONS = [
+  '"Ich bin hier der Chef."',
+  '"Was guckst du?"',
+  '"Ich höre alles. Alles."',
+  '"Wir sind ein Team. Meistens."',
+  '"Ich muss da kurz drüber nachdenken."',
+  '"Ich bin auf Dienstreise."',
+  '"Fotogen? Ich? Na klar."',
+  '"Ich weiß dass ich süß bin."',
+  '"Griechenland? Ja, war okay."',
+  '"Ich bin neu hier."',
+];
+
+let views = parseInt(localStorage.getItem('esel_views') || '0');
+
+function nextEsel() {
+  const img = document.getElementById('esel-img');
+  const loading = document.getElementById('loading');
+  img.style.display = 'none';
+  loading.style.display = 'flex';
+  loading.textContent = '🫏';
+  document.getElementById('caption').textContent = 'Lädt...';
+
+  img.src = '/api/esel?t=' + Date.now();
+  views++;
+  localStorage.setItem('esel_views', views);
+  document.getElementById('counter').textContent = `Du hast schon ${views} Esel gesehen.`;
+}
+
+function imgLoaded() {
+  errorCount = 0;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('esel-img').style.display = 'block';
+  const caption = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)];
+  document.getElementById('caption').textContent = caption;
+}
+
+function imgError() {
+  document.getElementById('loading').textContent = '🫏';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('esel-img').style.display = 'none';
+  document.getElementById('caption').textContent = 'Der Esel ist kurz weg. Nochmal versuchen?';
+}
+
+nextEsel();
+document.getElementById('counter').textContent = `Du hast schon ${views} Esel gesehen.`;
+</script>
+
+</body>
+</html>

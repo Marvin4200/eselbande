@@ -1,0 +1,10 @@
+FROM php:8.3-cli-bookworm
+
+WORKDIR /app
+
+COPY dashboard/public /app/dashboard/public
+COPY dashboard/data /app/dashboard/data
+
+EXPOSE 8081
+
+CMD ["php", "-S", "0.0.0.0:8081", "-t", "/app/dashboard/public", "/app/dashboard/public/router.php"]

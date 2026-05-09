@@ -1,0 +1,406 @@
+name: marvin-phase1
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-phase1
+    restart: unless-stopped
+    networks:
+      - marvin_internal
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  statuspage:
+    build:
+      context: ../statuspage
+      dockerfile: Dockerfile
+    container_name: statuspage-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ../statuspage/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3012
+      FAHRSTUHL_HEALTH_URL: ${FAHRSTUHL_HEALTH_URL:-http://host.docker.internal:3102/health}
+      ESELTOKENS_HEALTH_URL: ${ESELTOKENS_HEALTH_URL:-http://host.docker.internal:3100/}
+      ESELMUSIC_HEALTH_URL: ${ESELMUSIC_HEALTH_URL:-http://host.docker.internal:3181/health}
+      ESEL_HEALTH_URL: ${ESEL_HEALTH_URL:-http://esel:3015/health}
+      LINKSHORTENER_HEALTH_URL: ${LINKSHORTENER_HEALTH_URL:-http://linkshortener:3010/health}
+      FILEHOSTER_HEALTH_URL: ${FILEHOSTER_HEALTH_URL:-http://filehoster:3011/health}
+      ZITATBOARD_HEALTH_URL: ${ZITATBOARD_HEALTH_URL:-http://zitatboard:3013/health}
+      TEAM_HEALTH_URL: ${TEAM_HEALTH_URL:-http://team:3014/health}
+      STATUSPAGE_HEALTH_URL: ${STATUSPAGE_HEALTH_URL:-http://statuspage:3012/health}
+    ports:
+      - "127.0.0.1:3112:3012"
+    volumes:
+      - statuspage_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  team:
+    build:
+      context: ../team
+      dockerfile: Dockerfile
+    container_name: team-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ../team/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3014
+      FAHRSTUHL_API_URL: ${TEAM_FAHRSTUHL_API_URL:-http://fahrstuhl-docker:3002}
+    ports:
+      - "127.0.0.1:3114:3014"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3014/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  linkshortener:
+    build:
+      context: ../linkshortener
+      dockerfile: Dockerfile
+    container_name: linkshortener-phase1
+    restart: unless-stopped
+    depends_on:
+      - redis
+    env_file:
+      - path: ../linkshortener/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:3110:3010"
+    volumes:
+      - linkshortener_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  esel:
+    build:
+      context: ../esel
+      dockerfile: Dockerfile
+    container_name: esel-phase1
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3015
+    ports:
+      - "127.0.0.1:3115:3015"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3015/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  filehoster:
+    build:
+      context: ../filehoster
+      dockerfile: Dockerfile
+    container_name: filehoster-phase1
+    restart: unless-stopped
+    depends_on:
+      - redis
+    env_file:
+      - path: ../filehoster/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3011
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:3111:3011"
+    volumes:
+      - filehoster_data:/app/data
+      - filehoster_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3011/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  zitatboard:
+    build:
+      context: ../zitatboard
+      dockerfile: Dockerfile
+    container_name: zitatboard-phase1
+    restart: unless-stopped
+    depends_on:
+      - redis
+    env_file:
+      - path: ../zitatboard/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3013
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:3113:3013"
+    volumes:
+      - zitatboard_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3013/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - marvin_internal
+
+  autodeploy:
+    build:
+      context: ../webhooks
+      dockerfile: Dockerfile
+    container_name: autodeploy-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ../webhooks/.env
+        required: false
+    ports:
+      - "127.0.0.1:9111:9011"
+    networks:
+      - marvin_internal
+
+  deploy-webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deploy-webhook-phase1
+    user: root
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 9000
+      COMPOSE_FILE: /home/marvin/fahrstuhl/docker-compose.yml
+      DEPLOY_SERVICES: fahrstuhl-docker dashboard-php
+      DEPLOY_REPO_DIR: /home/marvin
+    ports:
+      - "127.0.0.1:9100:9000"
+    command: ["node", "scripts/deploy-webhook.js"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/marvin:/home/marvin
+    networks:
+      - marvin_internal
+
+  lavalink-docker:
+    image: fredboat/lavalink:4
+    container_name: lavalink-docker-phase1
+    restart: unless-stopped
+    volumes:
+      - ../musikbot/application.yml:/opt/Lavalink/application.yml:ro
+      - ../musikbot/plugins:/opt/Lavalink/plugins
+    ports:
+      - "127.0.0.1:3233:2333"
+    networks:
+      - marvin_internal
+
+  musikbot-docker:
+    build:
+      context: ../musikbot
+      dockerfile: Dockerfile
+    container_name: musikbot-docker-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ../musikbot/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      LAVALINK_HOST: lavalink-docker:2333
+      LAVALINK_PORT: "2333"
+    volumes:
+      - ../musikbot/data:/app/data
+    networks:
+      - marvin_internal
+
+
+  backup-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backup-worker-phase1
+    user: root
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: production
+      BACKUP_RUN_ON_START: "false"
+      BACKUP_INTERVAL_MINUTES: "60"
+      MARVIN_HOME: /home/marvin
+      BACKUP_ROOT: /home/marvin/backups
+    command: ["node", "scripts/backup-worker.js"]
+    volumes:
+      - /home/marvin/backups:/home/marvin/backups
+      - /home/marvin/fahrstuhl:/home/marvin/fahrstuhl:ro
+      - /home/marvin/eseltokens:/home/marvin/eseltokens:ro
+      - /home/marvin/filehoster:/home/marvin/filehoster:ro
+      - /home/marvin/linkshortener:/home/marvin/linkshortener:ro
+      - /home/marvin/zitat-board:/home/marvin/zitat-board:ro
+      - /home/marvin/statuspage:/home/marvin/statuspage:ro
+      - /home/marvin/musikbot:/home/marvin/musikbot:ro
+    networks:
+      - marvin_internal
+
+
+  eseltokens-webhook-docker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eseltokens-webhook-phase1
+    user: root
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./.env-dashboard
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 9001
+      COMPOSE_FILE: /home/marvin/fahrstuhl/docker-compose.yml
+      ESELTOKENS_SERVICE: eseltokens-docker
+      ESELTOKENS_REPO_DIR: /home/marvin
+    ports:
+      - "127.0.0.1:9101:9001"
+    command: ["node", "scripts/eseltokens-webhook.js"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/marvin:/home/marvin
+    networks:
+      - marvin_internal
+
+
+  fahrstuhl-docker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fahrstuhl-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./.env-dashboard
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      REDIS_URL: redis://redis:6379
+      # Override 127.0.0.1 defaults — use container names inside Docker network
+      ESELTOKENS_VOICE_REWARD_URL: http://eseltokens-docker:3000/eseltokens/api/integrations/fahrstuhl/voice-reward/
+      LAVALINK_HOST: lavalink-docker:2333
+      DASHBOARD_PHP_HEALTH_URL: http://dashboard-php:8081/health
+      DASHBOARD_HEALTH_URL: http://dashboard-php:8081/
+      DEPLOY_WEBHOOK_HEALTH_URL: http://deploy-webhook:9000/health
+      ESELTOKENS_HEALTH_URL: http://eseltokens-docker:3000/
+      ESELTOKENS_WEBHOOK_HEALTH_URL: http://eseltokens-webhook-docker:9001/health
+      ESEL_HEALTH_URL: http://esel:3015/health
+      MUSIKBOT_HEALTH_URL: http://musikbot-docker:3020/health
+    ports:
+      - "127.0.0.1:3102:3002"
+    command: ["node", "index.js"]
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./globalStats.json:/app/globalStats.json
+      - ./userPrefs.json:/app/userPrefs.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - marvin_internal
+
+
+  eseltokens-docker:
+    build:
+      context: ../eseltokens
+      dockerfile: Dockerfile
+    container_name: eseltokens-phase1
+    restart: unless-stopped
+    env_file:
+      - path: ../eseltokens/.env.local
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      - ../eseltokens/eseltokens.db:/app/eseltokens.db
+      - ../eseltokens/eseltokens.db-wal:/app/eseltokens.db-wal
+      - ../eseltokens/eseltokens.db-shm:/app/eseltokens.db-shm
+    networks:
+      - marvin_internal
+
+
+  dashboard-php:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard-php
+    container_name: dashboard-php-phase1
+    restart: unless-stopped
+    depends_on:
+      fahrstuhl-docker:
+        condition: service_healthy
+    environment:
+      FAHRSTUHL_API_BASE: ${FAHRSTUHL_API_BASE:-http://fahrstuhl-docker:3002}
+    ports:
+      - "127.0.0.1:3181:8081"
+    volumes:
+      - ./dashboard/public/uploads:/app/dashboard/public/uploads
+      - ./dashboard/data:/app/dashboard/data
+    networks:
+      - marvin_internal
+
+volumes:
+  redis_data:
+  statuspage_data:
+  linkshortener_data:
+  filehoster_data:
+  filehoster_uploads:
+  zitatboard_data:
+
+networks:
+  marvin_internal:
+    name: marvin_internal
+    driver: bridge
