@@ -22,6 +22,7 @@ function normalizeFreeGamesConfig(config = {}) {
         firstRunDone: Boolean(fg.firstRunDone),
         // "all" = everything, "serious" = Epic/GOG/Steam only
         filter: fg.filter === "serious" ? "serious" : "all",
+        statusMessageId: fg.statusMessageId || null,
     };
 }
 
@@ -101,11 +102,33 @@ function buildGameEmbed(game) {
     return { embed, row };
 }
 
+function buildStatusEmbed(gamesCount = 0, nextPollAt = null) {
+    const nextCheck = nextPollAt ? new Date(nextPollAt) : new Date(Date.now() + POLL_INTERVAL_MS);
+    return new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle("🔍 Sucht nach kostenlosen Spielen...")
+        .setDescription(
+            "Der Bot überwacht automatisch Epic Games, GOG, Steam und weitere Stores.\n" +
+            "Sobald ein Spiel kostenlos verfügbar ist, erscheint es direkt hier."
+        )
+        .addFields(
+            { name: "🎮 Aktuell im Cache", value: `**${gamesCount}** kostenlose Spiele`, inline: true },
+            { name: "🕐 Nächste Prüfung", value: `<t:${Math.floor(nextCheck.getTime() / 1000)}:R>`, inline: true },
+        )
+        .setFooter({ text: "Fahrstuhl Bot • Suche läuft automatisch" })
+        .setTimestamp();
+}
+
+const STATUS_REFRESH_MS = 60 * 1000; // update status embed every minute
+
 class FreeGamesNotifier {
     constructor() {
         this.client = null;
         this.timer = null;
+        this.statusTimer = null;
         this.running = false;
+        this.lastPollAt = null;
+        this.cachedGamesCount = 0;
     }
 
     start(client) {
@@ -116,6 +139,10 @@ class FreeGamesNotifier {
                 console.error("[FreeGames] Poll failed:", err.message)
             );
         }, POLL_INTERVAL_MS);
+        // Refresh status embeds every minute
+        this.statusTimer = setInterval(() => {
+            this._refreshAllStatusEmbeds().catch(() => {});
+        }, STATUS_REFRESH_MS);
         // Initial run after 30s to let the bot settle
         setTimeout(() => {
             this.runOnce().catch(err =>
@@ -127,15 +154,35 @@ class FreeGamesNotifier {
 
     stop() {
         if (this.timer) clearInterval(this.timer);
+        if (this.statusTimer) clearInterval(this.statusTimer);
         this.timer = null;
+        this.statusTimer = null;
         this.client = null;
+    }
+
+    async _refreshAllStatusEmbeds() {
+        if (!this.client) return;
+        for (const guild of this.client.guilds.cache.values()) {
+            const config = getGuildConfig(guild.id);
+            const settings = normalizeFreeGamesConfig(config);
+            if (!settings.enabled || !settings.channelId || !settings.statusMessageId) continue;
+            const channel = guild.channels.cache.get(settings.channelId);
+            if (!channel?.isTextBased?.()) continue;
+            const nextPollAt = this.lastPollAt ? this.lastPollAt + POLL_INTERVAL_MS : null;
+            const embed = buildStatusEmbed(this.cachedGamesCount, nextPollAt);
+            channel.messages.fetch(settings.statusMessageId)
+                .then(msg => msg.edit({ embeds: [embed] }))
+                .catch(() => {});
+        }
     }
 
     async runOnce({ force = false } = {}) {
         if (!this.client || this.running) return;
         this.running = true;
+        this.lastPollAt = Date.now();
         try {
             const games = await fetchAllFreeGames();
+            this.cachedGamesCount = games.length;
             if (!games.length) return;
 
             for (const guild of this.client.guilds.cache.values()) {
@@ -165,9 +212,10 @@ class FreeGamesNotifier {
         // On first run after setup, mark existing games as seen without posting (anti-spam)
         if (!settings.firstRunDone && !force) {
             const seenIds = games.map(g => g.id).filter(Boolean);
-            setGuildConfig(guild.id, {
-                freeGames: { ...settings, postedIds: seenIds, firstRunDone: true },
-            });
+            const newSettings = { ...settings, postedIds: seenIds, firstRunDone: true };
+            setGuildConfig(guild.id, { freeGames: newSettings });
+            // Post status embed so the channel looks active right away
+            await this._refreshStatusEmbed(channel, guild.id, newSettings, games.length, true).catch(() => {});
             return;
         }
 
@@ -177,10 +225,21 @@ class FreeGamesNotifier {
             : games;
 
         const newGames = filteredGames.filter(g => g.id && !settings.postedIds.includes(g.id));
-        if (!newGames.length && !force) return;
+        if (!newGames.length && !force) {
+            // No new games – silently update the status embed in place
+            await this._refreshStatusEmbed(channel, guild.id, settings, games.length, false).catch(() => {});
+            return;
+        }
 
         const gamesToPost = force ? filteredGames : newGames;
         const mention = settings.mentionRoleId ? `<@&${settings.mentionRoleId}> ` : "";
+
+        // Remove old status embed so the new one appears below the game posts
+        if (settings.statusMessageId) {
+            await channel.messages.fetch(settings.statusMessageId)
+                .then(m => m.delete())
+                .catch(() => {});
+        }
 
         for (const game of gamesToPost) {
             try {
@@ -195,13 +254,34 @@ class FreeGamesNotifier {
             }
         }
 
+        let updatedSettings = settings;
         if (!force) {
             const updatedIds = [...settings.postedIds, ...newGames.map(g => g.id).filter(Boolean)];
             const trimmed = updatedIds.slice(-MAX_POSTED_IDS);
-            setGuildConfig(guild.id, {
-                freeGames: { ...settings, postedIds: trimmed, firstRunDone: true },
-            });
+            updatedSettings = { ...settings, postedIds: trimmed, firstRunDone: true };
+            setGuildConfig(guild.id, { freeGames: updatedSettings });
         }
+
+        // Post new status embed at the bottom (after the game posts)
+        await this._refreshStatusEmbed(channel, guild.id, updatedSettings, games.length, true).catch(() => {});
+    }
+
+    async _refreshStatusEmbed(channel, guildId, settings, gamesCount, forceNew = false) {
+        const nextPollAt = this.lastPollAt ? this.lastPollAt + POLL_INTERVAL_MS : null;
+        const embed = buildStatusEmbed(gamesCount, nextPollAt);
+        if (!forceNew && settings.statusMessageId) {
+            try {
+                const msg = await channel.messages.fetch(settings.statusMessageId);
+                await msg.edit({ embeds: [embed] });
+                return;
+            } catch {
+                // Message deleted or not found – fall through to post a new one
+            }
+        }
+        const msg = await channel.send({ embeds: [embed] });
+        setGuildConfig(guildId, {
+            freeGames: { ...settings, statusMessageId: msg.id },
+        });
     }
 }
 
@@ -215,6 +295,13 @@ freeGamesNotifier.postToChannel = async function (channel) {
         await channel.send({ embeds: [embed], components: [row] });
     }
     return games.length;
+};
+
+freeGamesNotifier.postStatusEmbed = async function (channel, guildId) {
+    const config = getGuildConfig(guildId);
+    const settings = normalizeFreeGamesConfig(config);
+    const games = await fetchAllFreeGames().catch(() => []);
+    await freeGamesNotifier._refreshStatusEmbed(channel, guildId, settings, games.length, true);
 };
 
 module.exports = freeGamesNotifier;

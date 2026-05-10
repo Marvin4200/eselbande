@@ -3093,7 +3093,10 @@ async function handleInteraction(interaction, dependencies) {
                         { name: "Filter", value: filterLabel, inline: true },
                     )
                     .setFooter({ text: "Fahrstuhl Bot • Free Games" });
-                return safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+                await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+                // Post the live status embed in the target channel right away
+                await freeGamesNotifier.postStatusEmbed(channel, interaction.guildId).catch(() => {});
+                return;
             }
 
             if (sub === "filter") {
