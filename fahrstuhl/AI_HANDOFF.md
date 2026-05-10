@@ -335,7 +335,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 
 ## Design-Qualitäts-Audit — Dashboard
 
-**Stand: 2026-05-10 | Gesamtbewertung: 14 / 20**
+**Stand: 2026-05-10 | Gesamtbewertung: 15 / 20**
 
 ### Kategorien
 
@@ -344,11 +344,11 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
 | Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
 | Spacing-System | 2/3 | Spacing-Scale in `:root`, aber inline Hex-Farben in guilds/security/moderation/rewards-hub |
-| Komponenten-Konsistenz | 2/3 | Gute Konsistenz, Buttons mit Gradient noch leicht KI-typisch |
+| Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
 
-**Gesamt: 14 / 20 — Gut. Impeccable-clean, keine bekannten AI-UI Anti-Patterns.**
+**Gesamt: 15 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert.**
 
 ---
 
@@ -403,7 +403,8 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 |---|---|---|
 | `23fa20d` | CSS/JS Anti-Pattern-Fixes (side-tabs → inset shadow, transition:width → scaleX, :root Duplikat) | Impeccable: 7 → **0** Findings |
 | `cd873c4` | Audit-Dokumentation + Smoke-Test in AI_HANDOFF.md | Score: **14 / 20** |
+| `2b940bf` | Component consistency pass — alle border-radius auf Tokens, doppelter CSS-Block entfernt | Score: **15 / 20**, Impeccable: **0** |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3.**
 
-Nächster Schritt: Komponenten-Konsistenz 2/3 → 3/3 (Card-Abstände, Button-/Input-Radien harmonisieren).
+Nächster Schritt: Typografie 2/3 → 3/3 (System-Font-Stack ersetzen) oder Inline-Hex-Farben in PHP-Dateien bereinigen.
