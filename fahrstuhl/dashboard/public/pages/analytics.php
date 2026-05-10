@@ -14,6 +14,8 @@ $chartRaw = getAPI("/analytics/chart?timeframe=$tf");
 $hourly   = $chartRaw['data']['hourly']   ?? [];
 $commands = $chartRaw['data']['commands'] ?? [];
 
+$botOffline = !isset($summaryRaw['data']);
+
 $hourlyLabels = json_encode(array_column($hourly, 'hour'));
 $hourlyCounts = json_encode(array_column($hourly, 'count'));
 $cmdLabels    = json_encode(array_map(fn($c) => '/' . $c['command'], $commands));
@@ -21,6 +23,10 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Analytics-Daten können nicht geladen werden.</div>
+<?php endif; ?>
 
 <style>
 .analytics-chart-row {

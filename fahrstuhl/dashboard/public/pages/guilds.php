@@ -7,9 +7,15 @@ $response     = getAPI('/guilds');
 $guilds       = $response['data']['guilds']       ?? [];
 $total        = $response['data']['total']        ?? 0;
 $totalMembers = $response['data']['totalMembers'] ?? 0;
+
+$botOffline = !isset($response['data']);
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Guild-Daten können nicht geladen werden.</div>
+<?php endif; ?>
 
 <div class="page-header">
     <h1>🏰 Guilds</h1>

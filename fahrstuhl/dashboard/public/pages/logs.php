@@ -12,9 +12,16 @@ if (isset($_GET['ajax'])) {
     echo json_encode($data);
     exit;
 }
+
+$healthRaw  = getAPI('/health');
+$botOffline = !isset($healthRaw['data']);
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Log-Ausgabe kann nicht geladen werden.</div>
+<?php endif; ?>
 
 <div class="page-header">
     <h1>📋 Logs</h1>
