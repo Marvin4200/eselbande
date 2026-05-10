@@ -56,9 +56,9 @@ function avatarHtml($u) {
 </div>
 
 <!-- Filters + Search -->
-<div class="section" style="padding:14px 18px; margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+<div class="section" style="padding:14px 18px; margin-bottom:var(--sp-4); display:flex; gap:var(--sp-3); flex-wrap:wrap; align-items:center;">
     <input type="text" id="search" placeholder="🔍 Username / User-ID suchen..." oninput="filterTable()"
-        style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:240px;">
+        style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:240px;">
     <select id="filterStatus" onchange="filterTable()"
         style="padding:8px 10px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
         <option value="">Alle</option>
@@ -70,7 +70,7 @@ function avatarHtml($u) {
     <span id="rowCount" style="color:#aaa; font-size:0.9em;"></span>
 
     <!-- Pagination -->
-    <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+        <div style="margin-left:auto; display:flex; gap:var(--sp-2); align-items:center;">
         <?php if ($offset > 0): ?>
         <a href="?limit=<?php echo $limit; ?>&offset=<?php echo max(0,$offset-$limit); ?>" class="btn-primary" style="padding:6px 14px;">← Zurück</a>
         <?php endif; ?>

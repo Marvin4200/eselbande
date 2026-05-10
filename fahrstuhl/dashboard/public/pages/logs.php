@@ -22,21 +22,21 @@ if (isset($_GET['ajax'])) {
 </div>
 
 <!-- Controls -->
-<div class="section" style="padding:14px 18px; margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+<div class="section" style="padding:14px 18px; margin-bottom:var(--sp-4); display:flex; gap:var(--sp-3); flex-wrap:wrap; align-items:center;">
     <select id="levelFilter" onchange="loadLogs()"
-        style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
+        style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
         <option value="all">All levels</option>
         <option value="error">❌ Errors only</option>
         <option value="info">ℹ️ Info only</option>
     </select>
     <select id="limitFilter" onchange="loadLogs()"
-        style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
+        style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
         <option value="100">Last 100 lines</option>
         <option value="200" selected>Last 200 lines</option>
         <option value="500">Last 500 lines</option>
     </select>
     <input type="text" id="search" placeholder="🔍 Filter..." oninput="applyFilter()"
-        style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:220px;">
+        style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:220px;">
     <button onclick="loadLogs()" style="padding:8px 14px; border-radius:6px; background:#4f46e5; border:none; color:#fff; cursor:pointer;">↻ Refresh</button>
     <label style="color:#aaa; font-size:0.88em; display:flex; align-items:center; gap:6px; cursor:pointer;">
         <input type="checkbox" id="autoRefresh" checked onchange="toggleAutoRefresh()"> Auto-refresh (10s)
@@ -46,7 +46,7 @@ if (isset($_GET['ajax'])) {
 
 <!-- Log Output -->
 <div class="section" style="padding:0; overflow:hidden;">
-    <div id="logBox" style="font-family:monospace; font-size:0.82em; background:#0d0d1a; padding:16px;
+    <div id="logBox" style="font-family:monospace; font-size:0.82em; background:#0d0d1a; padding:var(--sp-4);
          max-height:65vh; overflow-y:auto; border-radius:8px; white-space:pre-wrap; word-break:break-all;">
         <span style="color:#555;">Loading logs...</span>
     </div>

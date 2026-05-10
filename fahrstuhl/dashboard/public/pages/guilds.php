@@ -17,7 +17,7 @@ $totalMembers = $response['data']['totalMembers'] ?? 0;
 </div>
 
 <!-- Stats -->
-<div style="display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;">
+<div style="display:flex; gap:var(--sp-4); margin-bottom:var(--sp-6); flex-wrap:wrap;">
     <div class="stat-card" style="flex:1; min-width:140px;">
         <div class="stat-value"><?php echo $total; ?></div>
         <div class="stat-label">Servers</div>
@@ -35,12 +35,12 @@ $totalMembers = $response['data']['totalMembers'] ?? 0;
 <!-- Search -->
 <div class="section" style="padding:14px 18px; margin-bottom:16px;">
     <input type="text" id="search" placeholder="🔍 Search server..." oninput="filterGuilds()"
-        style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:280px;">
-    <span id="rowCount" style="color:#aaa; font-size:0.9em; margin-left:16px;"></span>
+        style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; width:280px;">
+    <span id="rowCount" style="color:#aaa; font-size:0.9em; margin-left:var(--sp-4);"></span>
 </div>
 
 <!-- Grid -->
-<div id="guildGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;">
+<div id="guildGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:var(--sp-4);">
 <?php foreach ($guilds as $g): ?>
     <a class="section guild-card" href="<?= BASE_URL ?>/pages/guild-detail.php?id=<?php echo urlencode($g['id']); ?>"
          data-name="<?php echo esc(strtolower($g['name'])); ?>"

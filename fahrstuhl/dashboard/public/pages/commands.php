@@ -22,7 +22,7 @@ sort($categories);
 </div>
 
 <!-- Stats Bar -->
-<div style="display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;">
+<div style="display:flex; gap:var(--sp-4); margin-bottom:var(--sp-6); flex-wrap:wrap;">
     <div class="stat-card" style="flex:1; min-width:140px;">
         <div class="stat-value"><?php echo $total; ?></div>
         <div class="stat-label">Total Commands</div>
@@ -47,8 +47,8 @@ $chartCmds = array_filter($commands, fn($c) => $c['uses'] > 0);
 $chartCmds = array_slice(array_values($chartCmds), 0, 12);
 ?>
 <?php if (!empty($chartCmds)): ?>
-<div class="section" style="margin-bottom:24px; padding:20px;">
-    <h2 style="margin-bottom:16px;">📊 Top Commands by Usage</h2>
+<div class="section" style="margin-bottom:var(--sp-6); padding:var(--sp-5);">
+    <h2 style="margin-bottom:var(--sp-4);">📊 Top Commands by Usage</h2>
     <div style="position:relative; height:260px;">
         <canvas id="cmdChart"></canvas>
     </div>
@@ -96,19 +96,19 @@ $chartCmds = array_slice(array_values($chartCmds), 0, 12);
 <?php endif; ?>
 
 <!-- Filters -->
-<div class="section" style="padding:14px 18px; margin-bottom:16px;">
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+<div class="section" style="padding:14px 18px; margin-bottom:var(--sp-4);">
+    <div style="display:flex; gap:var(--sp-3); flex-wrap:wrap; align-items:center;">
         <input type="text" id="search" placeholder="🔍 Search command..." oninput="filterTable()"
-            style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; min-width:200px;">
+            style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; min-width:200px;">
         <select id="catFilter" onchange="filterTable()"
-            style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
+            style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
             <option value="">All Categories</option>
             <?php foreach ($categories as $cat): ?>
                 <option value="<?php echo esc($cat); ?>"><?php echo esc($cat); ?></option>
             <?php endforeach; ?>
         </select>
         <select id="premFilter" onchange="filterTable()"
-            style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
+            style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
             <option value="">All</option>
             <option value="1">💎 Premium only</option>
             <option value="0">Free only</option>
@@ -120,7 +120,7 @@ $chartCmds = array_slice(array_values($chartCmds), 0, 12);
 <!-- Table -->
 <div class="section" style="overflow-x:auto;">
     <?php if (empty($commands)): ?>
-        <p style="color:#999; padding:20px;">No command data available yet – use some commands first!</p>
+        <p style="color:#999; padding:var(--sp-5);">No command data available yet – use some commands first!</p>
     <?php else: ?>
     <table class="table" id="cmdTable">
         <thead>

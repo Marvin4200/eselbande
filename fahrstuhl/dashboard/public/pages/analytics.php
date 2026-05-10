@@ -60,7 +60,7 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 </div>
 
 <!-- Summary cards -->
-<div class="stats-grid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px;">
+<div class="stats-grid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:var(--sp-6);">
     <div class="stat-card">
         <div class="stat-icon">⚡</div>
         <div class="stat-content">
@@ -110,7 +110,7 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 <div class="analytics-chart-row">
     <!-- Activity Timeline -->
     <div class="section" style="padding:18px 20px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:var(--sp-2);">
             <h2 style="margin:0;">📈 Command Activity</h2>
             <div style="display:flex; gap:6px;">
                 <?php foreach (['24h'=>'24h','7d'=>'7d','30d'=>'30d','all'=>'All'] as $key=>$label): ?>
@@ -122,7 +122,7 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
         </div>
         <canvas id="activityChart" height="100"></canvas>
         <?php if (empty($hourly)): ?>
-        <p style="text-align:center; color:#555; margin-top:20px;">No data yet for this timeframe</p>
+        <p style="text-align:center; color:#555; margin-top:var(--sp-5);">No data yet for this timeframe</p>
         <?php endif; ?>
     </div>
 
@@ -131,7 +131,7 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
         <h2 style="margin:0 0 14px;">🎮 Commands Breakdown</h2>
         <canvas id="cmdChart" height="200"></canvas>
         <?php if (empty($commands)): ?>
-        <p style="text-align:center; color:#555; margin-top:20px;">No command data yet</p>
+        <p style="text-align:center; color:#555; margin-top:var(--sp-5);">No command data yet</p>
         <?php endif; ?>
     </div>
 </div>

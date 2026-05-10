@@ -87,7 +87,7 @@ function trollBadge($count, $label, $emoji) {
         <option value="joined">Sortieren: Beitritt</option>
     </select>
     <span id="countLabel" style="color:#aaa; font-size:0.9em;"></span>
-    <button onclick="refreshData()" style="margin-left:auto; padding:8px 16px; background:#5865F2; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Aktualisieren</button>
+    <button onclick="refreshData()" style="margin-left:auto; padding:var(--sp-2) var(--sp-4); background:#5865F2; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Aktualisieren</button>
 </div>
 
 <!-- Server Cards -->
@@ -120,7 +120,7 @@ function trollBadge($count, $label, $emoji) {
      style="margin-bottom:18px; padding:0; overflow:hidden;">
 
     <!-- Card Header -->
-    <div style="display:flex; align-items:center; gap:14px; padding:16px 20px;
+    <div style="display:flex; align-items:center; gap:14px; padding:var(--sp-4) var(--sp-5);
          background:<?php echo $trollTotal > 0 ? 'rgba(237,66,69,0.08)' : 'rgba(88,101,242,0.06)'; ?>;
          border-bottom:1px solid #2a2a3e;">
         <?php if ($g['icon']): ?>
@@ -171,7 +171,7 @@ function trollBadge($count, $label, $emoji) {
         $uniqueTrolled = array_unique($allTrolled);
         if (!empty($uniqueTrolled)):
         ?>
-        <span style="color:#aaa; font-size:0.75em; margin-left:8px;">Ziele: <?php echo implode(', ', array_map(fn($u) => '<code>'.esc($u).'</code>', $uniqueTrolled)); ?></span>
+        <span style="color:#aaa; font-size:0.75em; margin-left:var(--sp-2);">Ziele: <?php echo implode(', ', array_map(fn($u) => '<code>'.esc($u).'</code>', $uniqueTrolled)); ?></span>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -181,7 +181,7 @@ function trollBadge($count, $label, $emoji) {
         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0; border-bottom:1px solid #2a2a3e;">
 
             <!-- Overview -->
-            <div style="padding:16px 20px; border-right:1px solid #2a2a3e;">
+            <div style="padding:var(--sp-4) var(--sp-5); border-right:1px solid #2a2a3e;">
                 <div style="color:#aaa; font-size:0.75em; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">📋 Übersicht</div>
                 <table style="width:100%; font-size:0.82em; border-collapse:collapse;">
                     <tr><td style="color:#888; padding:3px 0; width:50%;">Erstellt</td><td><?php echo $createdAt ? date('d.m.Y', strtotime($createdAt)) : 'N/A'; ?></td></tr>
@@ -194,7 +194,7 @@ function trollBadge($count, $label, $emoji) {
             </div>
 
             <!-- Channels & Roles -->
-            <div style="padding:16px 20px; border-right:1px solid #2a2a3e;">
+            <div style="padding:var(--sp-4) var(--sp-5); border-right:1px solid #2a2a3e;">
                 <div style="color:#aaa; font-size:0.75em; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">📡 Kanäle & Rollen</div>
                 <table style="width:100%; font-size:0.82em; border-collapse:collapse;">
                     <tr><td style="color:#888; padding:3px 0; width:50%;">Text</td><td><?php echo $ch['text'] ?? 0; ?></td></tr>
@@ -209,7 +209,7 @@ function trollBadge($count, $label, $emoji) {
                     <tr><td style="color:#888; padding:3px 0;">Rollen</td><td><?php echo $roles['count'] ?? 0; ?></td></tr>
                 </table>
                 <?php if (!empty($roles['topRoles'])): ?>
-                <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:4px;">
+                <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:var(--sp-1);">
                 <?php foreach (array_slice($roles['topRoles'], 0, 6) as $role): ?>
                     <?php $hex = $role['color'] !== '#000000' ? $role['color'] : '#555'; ?>
                     <span style="background:<?php echo esc($hex); ?>22; color:<?php echo esc($hex); ?>; border:1px solid <?php echo esc($hex); ?>55;
@@ -220,7 +220,7 @@ function trollBadge($count, $label, $emoji) {
             </div>
 
             <!-- Config -->
-            <div style="padding:16px 20px; border-right:1px solid #2a2a3e;">
+            <div style="padding:var(--sp-4) var(--sp-5); border-right:1px solid #2a2a3e;">
                 <div style="color:#aaa; font-size:0.75em; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">⚙️ Bot-Konfiguration</div>
                 <table style="width:100%; font-size:0.82em; border-collapse:collapse;">
                     <tr>
@@ -243,7 +243,7 @@ function trollBadge($count, $label, $emoji) {
             </div>
 
             <!-- Permissions -->
-            <div style="padding:16px 20px;">
+            <div style="padding:var(--sp-4) var(--sp-5);">
                 <div style="color:#aaa; font-size:0.75em; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">🔑 Bot-Berechtigungen</div>
                 <div style="display:flex; flex-direction:column; gap:3px;">
                     <?php echo permBadge($perms['administrator'] ?? false, 'Administrator'); ?>
@@ -262,7 +262,7 @@ function trollBadge($count, $label, $emoji) {
         <!-- Discord Features -->
         <?php if (!empty($g['features'])): ?>
         <div style="padding:10px 20px; border-top:1px solid #2a2a3e; background:#111;">
-            <span style="color:#666; font-size:0.72em; text-transform:uppercase; margin-right:8px;">Features:</span>
+            <span style="color:#666; font-size:0.72em; text-transform:uppercase; margin-right:var(--sp-2);">Features:</span>
             <?php foreach ($g['features'] as $feat): ?>
             <span style="display:inline-block; background:#1a1a2e; color:#7289da; border:1px solid #2a2a4e; border-radius:4px;
                   padding:2px 7px; font-size:0.72em; margin:2px;"><?php echo esc(str_replace('_', ' ', $feat)); ?></span>

@@ -24,9 +24,9 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
 </div>
 
 <!-- Quick Links -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:24px;">
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:var(--sp-6);">
     <a href="<?php echo esc($inviteUrl); ?>" target="_blank"
-       style="display:flex; align-items:center; gap:12px; background:#5865F222; border:1px solid #5865F244;
+       style="display:flex; align-items:center; gap:var(--sp-3); background:#5865F222; border:1px solid #5865F244;
               border-radius:8px; padding:16px 18px; text-decoration:none; color:#7289da; transition:background .15s;"
        onmouseover="this.style.background='#5865F233'" onmouseout="this.style.background='#5865F222'">
         <span style="font-size:1.6em;">➕</span>
@@ -37,7 +37,7 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
     </a>
 
     <a href="<?php echo esc($supportUrl); ?>" target="_blank"
-       style="display:flex; align-items:center; gap:12px; background:#57F28722; border:1px solid #57F28744;
+       style="display:flex; align-items:center; gap:var(--sp-3); background:#57F28722; border:1px solid #57F28744;
               border-radius:8px; padding:16px 18px; text-decoration:none; color:#57F287; transition:background .15s;"
        onmouseover="this.style.background='#57F28733'" onmouseout="this.style.background='#57F28722'">
         <span style="font-size:1.6em;">💬</span>
@@ -48,7 +48,7 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
     </a>
 
     <a href="<?php echo esc($topggUrl); ?>" target="_blank"
-       style="display:flex; align-items:center; gap:12px; background:#FF373722; border:1px solid #FF373744;
+       style="display:flex; align-items:center; gap:var(--sp-3); background:#FF373722; border:1px solid #FF373744;
               border-radius:8px; padding:16px 18px; text-decoration:none; color:#FF6B6B; transition:background .15s;"
        onmouseover="this.style.background='#FF373733'" onmouseout="this.style.background='#FF373722'">
         <span style="font-size:1.6em;">🔝</span>
@@ -59,7 +59,7 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
     </a>
 
     <a href="<?php echo esc($githubUrl); ?>" target="_blank"
-       style="display:flex; align-items:center; gap:12px; background:#ffffff11; border:1px solid #ffffff22;
+       style="display:flex; align-items:center; gap:var(--sp-3); background:#ffffff11; border:1px solid #ffffff22;
               border-radius:8px; padding:16px 18px; text-decoration:none; color:#ccc; transition:background .15s;"
        onmouseover="this.style.background='#ffffff1a'" onmouseout="this.style.background='#ffffff11'">
         <span style="font-size:1.6em;">🐙</span>
@@ -71,7 +71,7 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
 </div>
 
 <!-- Live Stats -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-4); margin-bottom:var(--sp-6);">
     <div class="section" style="padding:18px 20px;">
         <h2 style="margin-top:0;">📈 Live Stats</h2>
         <table style="width:100%; border-collapse:collapse;">
@@ -102,22 +102,22 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
         <h2 style="margin-top:0;">🔗 Useful Links</h2>
         <div style="display:flex; flex-direction:column; gap:10px;">
             <div>
-                <div style="color:#aaa; font-size:0.8em; margin-bottom:4px;">🔒 Privacy Policy</div>
+                <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">🔒 Privacy Policy</div>
                 <a href="<?= BASE_URL ?>/pages/privacy.php" style="color:#5865F2; font-size:0.9em;"><?php echo $_SERVER['HTTP_HOST'] ?? 'your-domain.com'; ?>/pages/privacy.php</a>
             </div>
             <div>
-                <div style="color:#aaa; font-size:0.8em; margin-bottom:4px;">📜 Terms of Service</div>
+                <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">📜 Terms of Service</div>
                 <a href="<?= BASE_URL ?>/pages/terms.php" style="color:#5865F2; font-size:0.9em;"><?php echo $_SERVER['HTTP_HOST'] ?? 'your-domain.com'; ?>/pages/terms.php</a>
             </div>
             <div>
-                <div style="color:#aaa; font-size:0.8em; margin-bottom:4px;">➕ Invite Link</div>
+                <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">➕ Invite Link</div>
                 <input type="text" value="<?php echo esc($inviteUrl); ?>" readonly onclick="this.select()"
                        style="width:100%; background:#1a1a2e; border:1px solid #333; border-radius:5px; color:#ccc;
                               padding:6px 10px; font-size:0.75em; cursor:pointer;">
             </div>
             <div>
-                <div style="color:#aaa; font-size:0.8em; margin-bottom:4px;">🤖 Bot ID</div>
-                <code style="background:#1a1a2e; padding:4px 8px; border-radius:4px; font-size:0.85em; color:#aaa;"><?php echo esc($botId); ?></code>
+                <div style="color:#aaa; font-size:0.8em; margin-bottom:var(--sp-1);">🤖 Bot ID</div>
+                <code style="background:#1a1a2e; padding:var(--sp-1) var(--sp-2); border-radius:4px; font-size:0.85em; color:#aaa;"><?php echo esc($botId); ?></code>
             </div>
         </div>
     </div>
@@ -151,7 +151,7 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
             $col = $catColors[$cat] ?? '#aaa';
         ?>
         <div style="background:#1a1a2e; border:1px solid #2a2a3e; border-radius:6px; padding:10px 12px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp-1);">
                 <code style="color:#7289da; font-size:0.9em;">/<?php echo $name; ?><?php echo $args ? ' <i style="color:#555;">'.$args.'</i>' : ''; ?></code>
                 <span style="color:<?php echo $col; ?>; font-size:0.72em; white-space:nowrap;"><?php echo $cat; ?></span>
             </div>

@@ -17,9 +17,9 @@ $entries = $raw['data']['entries'] ?? [];
 </div>
 
 <div class="section" style="padding:14px 18px;">
-    <form method="GET" style="display:flex; gap:12px; flex-wrap:wrap;">
-        <input name="q" value="<?php echo esc($q); ?>" placeholder="Search actor, path, user id..." style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; min-width:260px;">
-        <select name="limit" style="padding:8px 12px; border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
+    <form method="GET" style="display:flex; gap:var(--sp-3); flex-wrap:wrap;">
+        <input name="q" value="<?php echo esc($q); ?>" placeholder="Search actor, path, user id..." style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0; min-width:260px;">
+        <select name="limit" style="padding:var(--sp-2) var(--sp-3); border-radius:6px; border:1px solid #333; background:#1a1a2e; color:#e0e0e0;">
             <?php foreach ([50,100,250,500,1000] as $n): ?>
                 <option value="<?php echo $n; ?>" <?php echo $limit === $n ? 'selected' : ''; ?>>Last <?php echo $n; ?></option>
             <?php endforeach; ?>

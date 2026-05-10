@@ -37,7 +37,7 @@ $flags = $flagsRaw['data']['flags'] ?? [];
 </div>
 
 <?php if ($message): ?>
-    <div class="alert alert-<?php echo $messageType; ?>" style="margin-bottom:20px; padding:12px 15px; border-radius:5px; border-left:4px solid; background:<?php echo $messageType==='success'?'#d4edda':'#f8d7da'; ?>; color:<?php echo $messageType==='success'?'#155724':'#721c24'; ?>;">
+    <div class="alert alert-<?php echo $messageType; ?>" style="margin-bottom:var(--sp-5); padding:12px 15px; border-radius:5px; border-left:4px solid; background:<?php echo $messageType==='success'?'#d4edda':'#f8d7da'; ?>; color:<?php echo $messageType==='success'?'#155724':'#721c24'; ?>;">
         <?php echo esc($message); ?>
     </div>
 <?php endif; ?>
