@@ -70,6 +70,55 @@ window.startLiveUptime = function (elId, startMs) {
     setInterval(render, 1000);
 };
 
+// ── AJAX form submit helper ───────────────────────────────────────────────────
+// Usage: submitFormAjax(formEl, { onSuccess, onError })
+window.submitFormAjax = function (formEl, options = {}) {
+    if (!formEl) return;
+    const data = new FormData(formEl);
+    const url  = formEl.action || location.href;
+
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: data,
+    })
+    .then(r => r.json())
+    .then(json => {
+        if (typeof options.onSuccess === 'function' && json.success) {
+            options.onSuccess(json);
+        } else if (typeof options.onError === 'function' && !json.success) {
+            options.onError(json);
+        }
+        if (options.toast !== false) {
+            const msg  = json.message || (json.success ? 'Gespeichert.' : 'Fehler.');
+            const type = json.success ? (json.messageType || 'success') : 'error';
+            showToast(msg, type);
+        }
+        return json;
+    })
+    .catch(err => {
+        if (typeof options.onError === 'function') options.onError({ success: false, message: err.message });
+        if (options.toast !== false) showToast('Netzwerkfehler.', 'error');
+        throw err;
+    });
+};
+
+// ── Button loading state helper ────────────────────────────────────────────────
+// Usage: const restore = setButtonLoading(btn, 'Speichern…');
+//        ... async work ...
+//        restore();
+window.setButtonLoading = function (btn, loadingText = '…') {
+    if (!btn) return () => {};
+    const orig = btn.textContent;
+    const wasDisabled = btn.disabled;
+    btn.disabled = true;
+    btn.textContent = loadingText;
+    return function restore() {
+        btn.disabled = wasDisabled;
+        btn.textContent = orig;
+    };
+};
+
 // ── Auto-refresh countdown ────────────────────────────────────────────────────
 window.startAutoRefresh = function (seconds, badgeId) {
     const badge = document.getElementById(badgeId);

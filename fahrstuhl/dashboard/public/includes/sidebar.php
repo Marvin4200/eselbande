@@ -13,7 +13,7 @@ if (!function_exists('sidebar_item_active')) {
         $label = $item['label'];
         $description = $item['description'] ?? '';
         $serverScopedPages = [
-          'portal', 'guilds', 'guild-detail', 'serverconfig', 'modules', 'command-center',
+          'portal', 'guilds', 'guild-detail', 'serverconfig', 'modules', 'command-center', 'setup',
             'welcome', 'reaction-roles', 'tickets', 'logging', 'temp-voice', 'social', 'leveling',
             'moderation', 'moderation-hub', 'automod', 'voice-time', 'server-backup', 'freegames',
         ];
@@ -140,7 +140,8 @@ $userGroups = [
       'description' => 'Entry points and setup',
       'items' => [
         ['page' => 'portal', 'icon' => '🏠', 'label' => 'Portal', 'description' => 'Server start page', 'aliases' => ['guild-detail']],
-        ['page' => 'command-center', 'icon' => '🚀', 'label' => 'Command Center', 'description' => 'Live feed and quick actions'],
+        ['page' => 'setup', 'icon' => '🚀', 'label' => 'Setup Assistant', 'description' => 'Guided first-time setup wizard'],
+        ['page' => 'command-center', 'icon' => '⌨️', 'label' => 'Command Center', 'description' => 'Live feed and quick actions'],
         ['page' => 'serverconfig', 'icon' => '⚙️', 'label' => 'Server Config', 'description' => 'Roles, access and health'],
         ['page' => 'modules', 'icon' => '🧩', 'label' => 'Modules', 'description' => 'Enable and open features'],
       ],

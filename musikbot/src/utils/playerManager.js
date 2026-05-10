@@ -742,12 +742,19 @@ function destroyPlayer(guildId, shoukaku) {
     players.delete(guildId);
 }
 
+function triggerPanelUpdate(guildId) {
+    if (!_client) return;
+    const state = players.get(guildId);
+    updateMusicPanel(_client, guildId, state || null).catch(() => {});
+}
+
 module.exports = {
     players,
     createGuildPlayer,
     playNext,
     destroyPlayer,
     scheduleRejoin,
+    triggerPanelUpdate,
     buildNowPlayingEmbed,
     buildPlayerControlsRow,
     applyPlayerVolume,

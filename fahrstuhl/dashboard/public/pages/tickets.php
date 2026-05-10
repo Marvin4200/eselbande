@@ -92,18 +92,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             'panelDescription' => $_POST['panelDescription'] ?? '',
             'panelButtonLabel' => $_POST['panelButtonLabel'] ?? '',
         ], 20);
-        if (($result['data']['success'] ?? false) === true) {
-            $message = 'Ticket panel sent to channel.';
+        $panelSuccess = ($result['data']['success'] ?? false) === true;
+        if ($panelSuccess) {
+            $panelMessage = 'Panel gesendet!';
+            $panelMessageType = 'success';
+            $panelUrl = $result['data']['data']['url'] ?? null;
         } else {
-            $messageType = 'error';
+            $panelMessageType = 'error';
             if (($result['data']['code'] ?? '') === 'LIMIT_REACHED') {
                 $limit = $result['data']['limit'] ?? '?';
                 $current = $result['data']['current'] ?? '?';
-                $message = 'Limit erreicht: ' . $current . ' / ' . $limit . '. Upgrade fuer mehr Ticket-Panels.';
+                $panelMessage = 'Limit erreicht: ' . $current . ' / ' . $limit . '. Upgrade fuer mehr Ticket-Panels.';
             } else {
-                $message = $result['data']['message'] ?? 'Failed to send ticket panel.';
+                $panelMessage = $result['data']['message'] ?? 'Failed to send ticket panel.';
             }
         }
+        if ($isAjaxRequest) {
+            $sendJson([
+                'success' => $panelSuccess,
+                'message' => $panelMessage,
+                'messageType' => $panelMessageType,
+                'url' => $panelUrl ?? null,
+                'data' => $result['data']['data'] ?? null,
+            ], $panelSuccess ? 200 : 400);
+        }
+        // Non-AJAX fallback: set regular $message
+        $message = $panelMessage;
+        $messageType = $panelMessageType;
     } elseif ($action === 'test_ticket') {
         $result = api('/guilds/' . urlencode($guildId) . '/tickets/test', 'POST', [
             'reason' => $_POST['testTicketReason'] ?? '',
@@ -536,7 +551,8 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <a href="server-plans.php<?php echo $guildId ? '?guildId=' . urlencode($guildId) : ''; ?>" class="ulc-cta">Jetzt upgraden</a>
             </div>
             <?php else: ?>
-            <button type="submit" name="action" value="send_panel" class="btn-icon" style="justify-content:center; background:#5865f2; color:#fff; border:none; padding:0.7rem;"><span class="i">🚀</span> Send Panel to Discord</button>
+            <button type="button" id="tkSendPanelBtn" class="btn-icon" style="justify-content:center; background:#5865f2; color:#fff; border:none; padding:0.7rem;"><span class="i">🚀</span> Send Panel to Discord</button>
+            <div id="tkPanelResult" class="tk-test-result" style="margin-top:0.5rem;"></div>
             <?php endif; ?>
         </div>
 
@@ -719,6 +735,8 @@ document.addEventListener('DOMContentLoaded', updatePreview);
     const testBtn = document.getElementById('tkTestBtn');
     const testReason = document.getElementById('tkTestReason');
     const testResult = document.getElementById('tkTestResult');
+    const sendPanelBtn = document.getElementById('tkSendPanelBtn');
+    const panelResult = document.getElementById('tkPanelResult');
     if (!form) return;
 
     let initialState = new URLSearchParams(new FormData(form)).toString();
@@ -776,11 +794,8 @@ document.addEventListener('DOMContentLoaded', updatePreview);
         const action = submitter?.value || form.querySelector('input[name="action"]')?.value || 'save';
 
         if (action !== 'save') {
+            // Non-save submit actions (e.g. guild selector change) — allow normal navigation
             allowUnload = true;
-            if (submitter && submitter.tagName === 'BUTTON' && submitter.type === 'submit') {
-                submitter.disabled = true;
-                submitter.textContent = 'Speichert...';
-            }
             return;
         }
 
@@ -851,6 +866,50 @@ document.addEventListener('DOMContentLoaded', updatePreview);
         } finally {
             testBtn.disabled = false;
             testBtn.innerHTML = '<span class="i">🧪</span> Test-Ticket erstellen';
+        }
+    });
+
+    sendPanelBtn?.addEventListener('click', async () => {
+        if (!panelResult) return;
+        const channelId = form.querySelector('[name="panelChannelId"]')?.value || '';
+        if (!channelId) {
+            panelResult.className = 'tk-test-result error';
+            panelResult.textContent = '⚠️ Bitte erst einen Ziel-Kanal auswählen.';
+            return;
+        }
+        sendPanelBtn.disabled = true;
+        sendPanelBtn.innerHTML = '<span class="i">⏳</span> Sendet...';
+        panelResult.className = 'tk-test-result info';
+        panelResult.textContent = 'Panel wird gesendet...';
+
+        try {
+            const data = new FormData(form);
+            data.set('action', 'send_panel');
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: data,
+                credentials: 'same-origin'
+            });
+            const json = await response.json().catch(() => {
+                console.error('[Dashboard] Non-JSON response (send_panel):', response.status, response.url);
+                return { success: false, message: 'Ungültige Serverantwort.' };
+            });
+            if (!json.success) {
+                throw new Error(json.message || 'Panel konnte nicht gesendet werden.');
+            }
+            panelResult.className = 'tk-test-result success';
+            const link = json.url ? ` <a href="${json.url}" target="_blank" style="color:inherit;">→ Zur Nachricht</a>` : '';
+            panelResult.innerHTML = `✅ Panel erfolgreich gesendet!${link}`;
+        } catch (error) {
+            panelResult.className = 'tk-test-result error';
+            panelResult.textContent = '❌ ' + (error.message || 'Panel konnte nicht gesendet werden.');
+        } finally {
+            sendPanelBtn.disabled = false;
+            sendPanelBtn.innerHTML = '<span class="i">🚀</span> Send Panel to Discord';
         }
     });
 })();

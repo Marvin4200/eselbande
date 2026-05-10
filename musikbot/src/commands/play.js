@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const https = require('https');
-const { createGuildPlayer, playNext, players } = require('../utils/playerManager');
+const { createGuildPlayer, playNext, players, triggerPanelUpdate } = require('../utils/playerManager');
 const { formatDuration } = require('../utils/formatDuration');
 const { buildBrandPayload } = require('../utils/brandAssets');
 
@@ -145,7 +145,8 @@ module.exports = {
 
         if (resolved.loadType === 'playlist') {
             const tracks = resolved.data.tracks;
-            state.queue.push(...tracks);
+            // User-added playlists go to the front — before any auto-buffered tracks
+            state.queue.unshift(...tracks);
 
             const totalDuration = tracks.reduce((acc, t) => acc + (t.info.length || 0), 0);
             embed = {
@@ -155,18 +156,20 @@ module.exports = {
                 fields: [
                     { name: 'Tracks', value: `${tracks.length}`, inline: true },
                     { name: 'Total Duration', value: formatDuration(totalDuration), inline: true },
-                    { name: 'Queue Position', value: `#${state.queue.length - tracks.length + 1}`, inline: true },
+                    { name: 'Queue Position', value: state.current ? '#1 (Nächste)' : '#1', inline: true },
                 ],
                 footer: { text: `Requested by ${interaction.user.username}` },
             };
+            // Update the panel immediately so the queue shows the new tracks
+            if (state.current) triggerPanelUpdate(interaction.guildId);
         } else {
             const track = resolved.loadType === 'search' ? resolved.data[0] : resolved.data;
             if (!track) {
                 return interaction.editReply({ embeds: [{ color: 0xFEE75C, description: '⚠️ No results found.' }] });
             }
 
-            state.queue.push(track);
-            const position = state.current ? state.queue.length : 1;
+            // User-added tracks always go to position 1 — before any auto-buffered tracks
+            state.queue.unshift(track);
             const thumbnail = track.info.artworkUrl
                 || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/mqdefault.jpg` : null);
 
@@ -177,11 +180,13 @@ module.exports = {
                 fields: [
                     { name: 'Artist', value: track.info.author || 'Unknown', inline: true },
                     { name: 'Duration', value: track.info.isStream ? 'LIVE 🔴' : formatDuration(track.info.length), inline: true },
-                    ...(state.current ? [{ name: 'Position', value: `#${position} in queue`, inline: true }] : []),
+                    ...(state.current ? [{ name: 'Position', value: '#1 (Nächster Track)', inline: true }] : []),
                 ],
                 ...(thumbnail ? { thumbnail: { url: thumbnail } } : {}),
                 footer: { text: `Requested by ${interaction.user.username}` },
             };
+            // Update the panel immediately so the queue shows the new track
+            if (state.current) triggerPanelUpdate(interaction.guildId);
         }
 
         await interaction.editReply(buildBrandPayload(embed, { includeBanner: true }));

@@ -3844,8 +3844,20 @@ class BotAPIServer {
                 const channelId = String(req.body?.channelId || '').trim();
                 const channel = guild.channels.cache.get(channelId)
                     || await guild.channels.fetch(channelId).catch(() => null);
-                if (!channel || channel.type !== 0 || !channel.isTextBased?.()) {
-                    return res.status(400).json(APIResponse.badRequest('Panel channel not found'));
+                if (!channel || !channel.isTextBased?.()) {
+                    return res.status(400).json(APIResponse.badRequest('Kanal nicht gefunden oder kein Text-Kanal'));
+                }
+
+                // Verify bot has required permissions in that channel
+                const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+                if (botMember) {
+                    const perms = channel.permissionsFor(botMember);
+                    if (!perms?.has('SendMessages')) {
+                        return res.status(400).json(APIResponse.badRequest('Fahrstuhl hat keine Schreibberechtigung in diesem Kanal'));
+                    }
+                    if (!perms?.has('EmbedLinks')) {
+                        return res.status(400).json(APIResponse.badRequest('Fahrstuhl benötigt die Berechtigung "Links einbetten" in diesem Kanal'));
+                    }
                 }
 
                 const title = String(req.body?.panelTitle || 'Need help?').trim().slice(0, 120);

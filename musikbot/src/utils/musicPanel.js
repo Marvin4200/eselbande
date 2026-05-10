@@ -50,6 +50,32 @@ function buildIdleEmbed() {
     };
 }
 
+function buildQueueEmbed(queue) {
+    const count = queue?.length || 0;
+
+    if (count === 0) {
+        return {
+            color: 0x2B2D31,
+            title: '📋 Queue',
+            description: '*— Leer —*',
+        };
+    }
+
+    const MAX = 15;
+    const lines = (queue || []).slice(0, MAX).map((t, i) => {
+        const title = String(t?.info?.title || 'Unknown').slice(0, 50);
+        const author = String(t?.info?.author || '').slice(0, 28);
+        return `\`${String(i + 1).padStart(2, ' ')}.\` **${title}**${author ? ` — ${author}` : ''}`;
+    });
+    if (count > MAX) lines.push(`*…+${count - MAX} weitere Tracks*`);
+
+    return {
+        color: 0x2B2D31,
+        title: `📋 Queue — ${count} Track${count !== 1 ? 's' : ''}`,
+        description: lines.join('\n'),
+    };
+}
+
 function buildTrackEmbed(track, state) {
     const files = [];
     const len = track.info.length || 0;
@@ -73,7 +99,6 @@ function buildTrackEmbed(track, state) {
             { name: '⏱ Dauer', value: duration, inline: true },
             { name: '🔁 Loop', value: state.loop || 'none', inline: true },
             { name: '🔊 Volume', value: `${state.volume}%`, inline: true },
-            { name: '📋 Queue', value: `${state.queue?.length || 0} Track(s)`, inline: true },
             { name: '🌙 24/7', value: state.is247 ? '✅ An' : '❌ Aus', inline: true },
         ],
         ...(thumbnail ? { thumbnail: { url: thumbnail } } : {}),
@@ -91,7 +116,7 @@ function buildTrackEmbed(track, state) {
     }
 
     return {
-        embeds: [embed],
+        embeds: [embed, buildQueueEmbed(state.queue)],
         components: [buildPanelControlsRow()],
         files,
     };

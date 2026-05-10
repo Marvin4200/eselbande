@@ -186,8 +186,14 @@ foreach ($setupSteps as $step) {
 $setupProgress = count($setupSteps) > 0 ? (int)round(($completedSteps / count($setupSteps)) * 100) : 0;
 $isStarterMode = $completedSteps < 3;
 
-$starterActions = [
+$coreModulesDone = !empty($moduleEnabledLookup['welcome'])
+    && !empty($moduleEnabledLookup['tickets'])
+    && !empty($moduleEnabledLookup['logging']);
+$welcomeSetupDone = !empty($moduleEnabledLookup['welcome']) && $portalHealthState === 'ok';
+
+$starterActions = array_values(array_filter([
     [
+        'done' => $selectedGuildId !== '',
         'step' => '1',
         'title' => 'Server auswaehlen',
         'copy' => $selectedGuild
@@ -197,6 +203,7 @@ $starterActions = [
         'label' => $selectedGuild ? 'Server wechseln' : 'Server waehlen',
     ],
     [
+        'done' => $coreModulesDone,
         'step' => '2',
         'title' => 'Nur 3 Module starten',
         'copy' => 'Aktiviere zuerst Welcome, Tickets und Logging. Der Rest kann spaeter kommen.',
@@ -204,13 +211,14 @@ $starterActions = [
         'label' => 'Core Module',
     ],
     [
+        'done' => $welcomeSetupDone,
         'step' => '3',
         'title' => 'Welcome testen',
         'copy' => 'Setze Join-Message + AutoRole und pruefe einmal per Test-Message.',
         'href' => dashboardPageUrl('welcome'),
         'label' => 'Welcome Setup',
     ],
-];
+], fn($s) => !$s['done']));
 
 $portalQuickActions = [
     ['icon' => '🚀', 'title' => 'Command Center', 'text' => 'Live Feed + Schnellaktionen in einem Screen.', 'href' => dashboardPageUrl('command-center')],
@@ -657,6 +665,7 @@ $portalRecentStats = [
         </div>
     </section>
 
+    <?php if (!empty($starterActions)): ?>
     <section class="dashboard-panel">
         <div class="dashboard-panel-header">
             <div>
@@ -665,15 +674,16 @@ $portalRecentStats = [
             <span class="status-badge warning">Onboarding</span>
         </div>
         <div class="pt-next-grid">
-            <?php foreach ($starterActions as $starter): ?>
+            <?php foreach ($starterActions as $i => $starter): ?>
                 <article class="pt-next-card">
-                    <strong>Schritt <?= esc($starter['step']) ?>: <?= esc($starter['title']) ?></strong>
+                    <strong>Schritt <?= esc($i + 1) ?>: <?= esc($starter['title']) ?></strong>
                     <p><?= esc($starter['copy']) ?></p>
                     <a href="<?= esc($starter['href']) ?>" class="btn-icon btn-secondary-ui"><?= esc($starter['label']) ?></a>
                 </article>
             <?php endforeach; ?>
         </div>
     </section>
+    <?php endif; ?>
 
     <div class="pt-warning-bar" id="health-check">
         <?php if ($selectedGuildId === ''): ?>

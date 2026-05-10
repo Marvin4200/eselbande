@@ -4,40 +4,39 @@ Stand: 2026-05-10
 
 ## Projektziel
 
-Fahrstuhl ist ein Discord-Bot mit Dashboard und wird aktuell von einem Troll-Bot zu einer vollständigen Allround-Plattform weiterentwickelt.
+Fahrstuhl ist ein Discord-Bot mit Dashboard und wird von einem Troll-Bot zu einer vollständigen Allround-Plattform weiterentwickelt.
 
-Ziel ist eine MEE6-ähnliche Funktionalität, aber mit eigener Eselbande-Identität.
+Ziel: MEE6-ähnliche Funktionen mit eigener Eselbande-Identität.
 
 Neue Features müssen:
 - über das Dashboard steuerbar sein
 - anfängerfreundlich sein
 - stabil und production-ready sein
-- bestehende Systeme erweitern, nicht neu erfinden
+- bestehende Systeme erweitern, nicht neu bauen
 - modular aufgebaut sein
+- mit Bot API + Dashboard zusammenarbeiten
+- sauber validieren und strukturierte Fehler zurückgeben
 
 Kein Fokus mehr auf Troll-Features.
 
-## MEE6-Zielstruktur
+---
 
-Diese Bereiche sind die Zielstruktur des Bots:
+## Grundregeln für AI/Codex
 
-- Welcome / Verification
-- Moderation
-- Logging
-- AutoMod
-- Tickets
-- Leveling
-- Reaction Roles
-- Social Alerts
-- Temp Voice
-- Setup / Onboarding
-- Dashboard UX
+- Keine kompletten Systeme neu erfinden, wenn Tabellen/Manager/Utils existieren.
+- Erst vorhandene Dateien prüfen, dann gezielt erweitern.
+- Kein blindes `git add .`
+- Keine Secrets committen.
+- Bei Codeänderungen immer Syntax prüfen:
+  - `node --check commands/index.js`
+  - `node --check index.js`
+  - `node --check services/botAPI.js`
+  - `git diff --check`
+- Dashboard-Änderungen müssen mobil funktionieren.
+- API-Endpunkte müssen JSON mit `success`, `error`, `details` zurückgeben.
+- Fehler pro Guild/Feature isolieren, damit ein Fehler nicht den Bot stoppt.
 
-## EselTokens
-
-EselTokens ist ein separates Projekt.
-
-Fahrstuhl darf damit interagieren, aber keine Änderungen daran machen, außer explizit gewünscht.
+---
 
 ## Nicht committen
 
@@ -49,238 +48,278 @@ Diese Dateien dürfen nicht committed werden:
 - cloudflared
 - dashboard/public/callback.php
 - userPrefs.json
+- .env
+- node_modules/
+- vendor/
 
-Kein blindes git add .
+---
 
-## Security / Stabilität
+## Zielstruktur
 
-- BOT_API_TOKEN ist Pflicht
-- CSRF Schutz im Dashboard aktiv
-- API gibt strukturierte Fehler zurück
-- Social Alerts isolieren Fehler pro Feed
-- Twitch darf beim ersten Check nicht direkt posten
+- Welcome / Verification
+- Moderation
+- Logging
+- AutoMod
+- Tickets
+- Leveling
+- Reaction Roles
+- Social Alerts
+- Temp Voice
+- Free Games
+- Setup / Onboarding
+- Dashboard UX
+- Analytics / Server Insights
+- Backup / Health System
+- Premium / Feature Gates
 
-## Behobene Bugs
+---
 
-### Backup Warning (gefixt in cae98dd)
+## Nächste sinnvolle Features
 
-buildHealthSummary() prüft jetzt: discord_backups, discord_backup_schedules, discord_backup_jobs.
-Warnung kommt nur, wenn kein aktuelles Backup, kein aktiver Schedule und kein laufender Job vorhanden.
+### Priorität 1 — Dashboard UX
 
-## Module
+#### Setup Assistant für neue Server
 
-### Welcome
+Ziel:
+Ein Schritt-für-Schritt-Assistent im Dashboard.
+
+Schritte:
+1. Server auswählen
+2. Welcome aktivieren
+3. Verification optional aktivieren
+4. Moderation-Grundsetup
+5. AutoMod Preset wählen
+6. Logging Channel setzen
+7. Ticket-System optional einrichten
+8. Zusammenfassung + Test
 
 Dateien:
-- dashboard/public/pages/welcome.php
+- dashboard/public/pages/setup.php
 - services/botAPI.js
-- index.js
-
-Features:
-- Embed Editor
-- Live Preview
-- Autorole
-- Verification Button
-- Count Button
-
-Custom ID:
-welcome:verify:<guildId>
-
-### Moderation
-
-Dateien:
-- commands/index.js
-- services/botAPI.js
-- dashboard/public/pages/moderation.php
-
-Vorhanden:
-- /mod warn
-- /mod timeout
-- /mod kick ✅
-- /mod ban ✅
-- /mod unban ✅
-- /mod history
-- /mod cases mit Pagination + Filter ✅
-- Dashboard Case Filter (userId, moderatorId, type, status, reason) ✅
-- Reason bearbeiten ✅
+- evtl. dashboard/public/assets/js/setup-wizard.js
 
 Wichtig:
-- moderation_cases Tabelle nutzen
-- kein neues System bauen
+- Kein harter Reload nach jedem Schritt
+- AJAX/Fetch nutzen
+- Anfängerfreundliche Texte
+- Test-Buttons pro Modul
 
-### Logging
+---
+
+### Priorität 2 — Logging Dashboard
+
+#### Letzte Log-Events anzeigen
+
+Aktuell kann logging.php nur konfigurieren.
+
+Neu:
+- letzte Events im Dashboard anzeigen
+- Filter nach Event-Type
+- Filter nach User/Moderator
+- Suche nach Channel/User-ID
+- Pagination
+- Live-Refresh Button
 
 Dateien:
-- utils/serverLogger.js
-- services/botAPI.js
-- index.js
 - dashboard/public/pages/logging.php
+- services/botAPI.js
+- utils/serverLogger.js
 
-Features:
-- zentrale Logs
-- viele Events
-- Per-Event Channel Override ✅ (resolveLogChannelId: event → group → global)
-- Audit Logs ✅
+Wichtig:
+- vorhandenes Logging-System nutzen
+- keine zweite Log-Struktur bauen
 
-### Tickets
+---
 
-Dateien:
-- dashboard/public/pages/tickets.php
+### Priorität 3 — Dashboard AJAX Modernisierung
+
+Ziel:
+Weniger Reloads im Dashboard.
+
+Umsetzen bei:
+- Welcome speichern
+- AutoMod Presets
+- Logging Channel speichern
+- Ticket Settings speichern
+- Leveling Settings speichern
+- Free Games Testpost
+- Social Alerts Test
+
+Vorgaben:
+- Buttons zeigen Loading-State
+- Erfolg/Fehler als Toast anzeigen
+- CSRF Token mitsenden
+- API-Fehler sichtbar anzeigen
+
+---
+
+### Priorität 4 — Server Health Center
+
+Neue Dashboard-Seite:
+
+`dashboard/public/pages/health.php`
+
+Anzeigen:
+- Bot online/offline
+- Bot API erreichbar
+- Discord Ping
+- Datenbankstatus
+- letzte Backups
+- aktive Schedules
+- Social Alerts Status
+- Free Games API Status
+- Temp Voice DB Cleanup Status
+
+Optional:
+- Warnungen mit Fix-Hinweisen
+- „System prüfen“-Button
+
+---
+
+### Priorität 5 — Moderation Erweiterungen
+
+Bestehendes System nutzen:
+- moderation_cases Tabelle
+
+Neue Features:
+- Case Notes
+- Case Status: open / reviewed / appealed / closed
+- User-Profilseite mit kompletter Mod-History
+- Dashboard Quick Actions:
+  - Timeout
+  - Warn
+  - Kick
+  - Ban
+  - Unban
+- AutoMod Cases automatisch mit Moderation History verknüpfen
+
+Keine neue Tabelle bauen, außer nötig.
+
+---
+
+### Priorität 6 — Ticket Erweiterungen
+
+Bestehendes System nutzen:
 - utils/ticketManager.js
-- commands/index.js
+- tickets.php
 - services/botAPI.js
 
-Features:
-- Ticket Panel
-- private Channels
-- Dashboard Steuerung
-- Transcript ✅ (buildTranscript, HTML + TXT Export)
-- Claim System ✅ (/ticket claim, /ticket unclaim)
-- Transcript Channel konfigurierbar ✅
+Neue Features:
+- Ticket Priorität: low / normal / high
+- Ticket Tags
+- Interne Notizen
+- Ticket Reminder bei Inaktivität
+- SLA/Antwortzeit Anzeige
+- Ticket Statistiken:
+  - offene Tickets
+  - durchschnittliche Antwortzeit
+  - Tickets pro Teammitglied
+- Transcript Preview im Dashboard
 
-### AutoMod
+---
 
-Dateien:
-- dashboard/public/pages/automod.php
-- services/botAPI.js
-- index.js
+### Priorität 7 — Leveling Erweiterungen
 
-Features:
-- Spam Detection
-- Link Filter
-- Caps Filter
-- Punishments
-- Quick Presets ✅ (Relaxed / Balanced / Strict)
-- Regex Mode ✅ (blockedTermsRegex Toggle)
-
-### Leveling
-
-Dateien:
+Bestehendes System nutzen:
 - utils/levelingManager.js
-- commands/index.js
-- index.js
-- dashboard/public/pages/leveling.php
+
+Neue Features:
+- XP Booster Events
+- Wochen-Leaderboard
+- Monats-Leaderboard
+- Level-Up Embed Editor
+- Level-Up Channel Override
+- Admin: XP hinzufügen/entfernen
+- Anti-Farm-Details im Dashboard anzeigen
+
+---
+
+### Priorität 8 — AutoMod Erweiterungen
+
+Neue Features:
+- Whitelist Rollen
+- Whitelist Channels
+- Invite Filter
+- Mention Spam Filter
+- Emoji Spam Filter
+- Bad Words Kategorien
+- AutoMod Logs im Dashboard
+- AutoMod Testfeld:
+  - Admin gibt Text ein
+  - Dashboard zeigt, welche Regel greifen würde
+
+Wichtig:
+- Fehler dürfen Message-Handling nicht crashen
+- Regex sicher behandeln
+
+---
+
+### Priorität 9 — Premium / Feature Gates
+
+Ziel:
+Premium-System sauber im Dashboard anzeigen.
 
 Features:
-- XP pro Message
-- Rank
-- Leaderboard
-- Level Rollen (roleRewards) ✅
-- removeLowerLevelRoles Toggle ✅
-- Reset per User und per Guild ✅ (resetUserXp, resetGuildXp)
-- XP Multiplikatoren pro Rolle ✅ (roleMultipliers, max 5x, Stack-Logik)
-- XP Multiplikatoren pro Channel ✅ (channelMultipliers, max 5x)
-- No-XP Channels ✅
-- Voice XP ✅ (voiceXpEnabled, voiceXpPerMinute)
-- Block Duplicate Messages ✅
-- Min Message Length ✅
+- Feature-Limits pro Guild anzeigen
+- Premium Badge
+- Locked Features visuell markieren
+- Upgrade-Hinweise
+- API Helper:
+  - `hasPremium(guildId)`
+  - `canUseFeature(guildId, featureName)`
 
-### Free Games
+Wichtig:
+- EselTokens ist separates Projekt
+- Fahrstuhl darf nur interagieren
+- Keine Änderungen an EselTokens ohne explizite Anweisung
 
-Dateien:
-- utils/freeGamesNotifier.js
-- commands/index.js (/freegames)
-- dashboard/public/pages/freegames.php
-- services/botAPI.js
-- ../../freegamesapi/index.js (separater Microservice, Port 3016)
+---
 
-Features:
-- Microservice fetcht: Epic, GOG, Steam, GamerPower (ex-Humble)
-- itch.io gibt 403 → expected, wird ignoriert
-- Ca. 21 Games gecacht beim Start
-- Discord-Benachrichtigung bei neuen Free Games
-- Live Status Embed (aktualisiert sich jede Minute)
-- Filter: "all stores" vs "serious stores" (Epic/GOG/Steam only)
-- Dashboard: Channel pro Guild konfigurierbar, Test-Post-Button
-- /freegames setup, /freegames status, /freegames test
+### Priorität 10 — Analytics / Server Insights
 
-### Reaction Roles
+Neue Dashboard-Seite:
 
-Dateien:
-- dashboard/public/pages/reaction-roles.php
-- services/botAPI.js
-- index.js
+`dashboard/public/pages/analytics.php`
 
-Custom ID:
-rr:<roleId>
+Anzeigen:
+- Mitgliederentwicklung
+- Nachrichten pro Tag
+- aktive User
+- Top Channels
+- Moderation-Fälle pro Woche
+- Tickets pro Woche
+- Leveling Aktivität
+- Free Games Klicks/Testposts optional
 
-### Social Alerts
+Wichtig:
+- Datenschutz beachten
+- keine unnötigen Message-Inhalte speichern
+- aggregierte Daten bevorzugen
 
-Dateien:
-- dashboard/public/pages/social.php
-- utils/socialNotifier.js
-- services/botAPI.js
-- index.js
+---
 
-Features:
-- YouTube
-- Twitch
-- RSS
+## Sicherheitsvorgaben
 
-### Temp Voice
+- BOT_API_TOKEN ist Pflicht
+- Dashboard API nie ohne Auth verwenden
+- CSRF aktiv lassen
+- Inputs validieren
+- Guild-Zugriff prüfen
+- User muss Admin/ManageGuild-Rechte haben
+- Keine Tokens in Logs
+- Keine Stacktraces im Frontend anzeigen
+- Regex mit try/catch validieren
+- Externe Feeds isoliert behandeln
 
-Dateien:
-- dashboard/public/pages/temp-voice.php
-- services/botAPI.js
-- index.js
-- utils/voiceChannelCleanup.js (dead code — nicht importiert, kann ignoriert werden)
-
-Features:
-- Channels in DB persistiert ✅ (temp_voice_channels Tabelle)
-- Restart-Cleanup ✅: beim Bot-Start werden alle DB-Rows geprüft; existierende Channels werden in den in-memory Map restored, gelöschte Channels werden aus der DB entfernt
-- Eigentliche Verwaltung läuft über tempVoiceChannels Map in index.js + DB-Queries
+---
 
 ## Deployment
 
-Lokal (Windows, Repo unter C:\Users\Txxle\Desktop\DebianServer\marvin):
+Lokal:
 
-git add <files>
-git commit -m "..."
-git push origin main
-
-Server (192.168.2.177, Repo unter /home/marvin):
-
-ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compose -f fahrstuhl/docker-compose.yml up -d --build fahrstuhl-docker && echo DONE"
-
-Nur dashboard-php neu bauen:
-
-ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compose -f fahrstuhl/docker-compose.yml up -d --build dashboard-php && echo DONE"
-
-Logs prüfen:
-
-ssh root@192.168.2.177 "docker logs --tail 20 fahrstuhl-phase1 2>&1"
-ssh root@192.168.2.177 "docker logs --tail 20 dashboard-php-phase1 2>&1"
-
-Container-Übersicht:
-
-- fahrstuhl-phase1     → Bot + Bot API (Port 3002 intern)
-- dashboard-php-phase1 → PHP Dashboard (Port 3181 → 8081)
-- freegamesapi-phase1  → Free Games Microservice (Port 3016 intern)
-
-## Workflow
-
+```bash
 git status --short
-
 node --check commands/index.js
 node --check index.js
 node --check services/botAPI.js
 git diff --check
-
-## Nächste Aufgaben
-
-Priorität 1 — Dashboard UX:
-
-- weniger Reloads (mehr AJAX/partial updates)
-- Setup Assistent für neue Server (Schritt für Schritt: Welcome → Mod → AutoMod)
-
-Priorität 2 — Logging Dashboard:
-
-- logging.php: Anzeige der letzten Log-Events im Dashboard (aktuell nur Konfiguration)
-
-## Ziel
-
-Fahrstuhl soll:
-
-- wie MEE6 funktionieren
-- vollständig über Dashboard steuerbar sein
-- stabil und production-ready sein
