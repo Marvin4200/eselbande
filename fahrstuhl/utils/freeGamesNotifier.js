@@ -166,7 +166,9 @@ class FreeGamesNotifier {
             const config = getGuildConfig(guild.id);
             const settings = normalizeFreeGamesConfig(config);
             if (!settings.enabled || !settings.channelId || !settings.statusMessageId) continue;
-            const channel = guild.channels.cache.get(settings.channelId);
+            const channel =
+                guild.channels.cache.get(settings.channelId) ||
+                await guild.channels.fetch(settings.channelId).catch(() => null);
             if (!channel?.isTextBased?.()) continue;
             const nextPollAt = this.lastPollAt ? this.lastPollAt + POLL_INTERVAL_MS : null;
             const embed = buildStatusEmbed(this.cachedGamesCount, nextPollAt);

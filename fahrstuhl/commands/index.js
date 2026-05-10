@@ -3094,8 +3094,15 @@ async function handleInteraction(interaction, dependencies) {
                     )
                     .setFooter({ text: "Fahrstuhl Bot • Free Games" });
                 await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
-                // Post the live status embed in the target channel right away
-                await freeGamesNotifier.postStatusEmbed(channel, interaction.guildId).catch(() => {});
+                // Resolve full channel object (options may return partial API channel without send())
+                const resolvedChannel =
+                    interaction.guild.channels.cache.get(channel.id) ||
+                    await interaction.guild.channels.fetch(channel.id).catch(() => null);
+                if (resolvedChannel?.isTextBased()) {
+                    await freeGamesNotifier.postStatusEmbed(resolvedChannel, interaction.guildId).catch(e =>
+                        console.error("[FreeGames] postStatusEmbed failed:", e.message)
+                    );
+                }
                 return;
             }
 
