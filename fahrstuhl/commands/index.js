@@ -587,10 +587,33 @@ const commands = [
                         .setDescription("Channel to post free game announcements in")
                         .setRequired(true)
                 )
+                .addStringOption(option =>
+                    option.setName("filter")
+                        .setDescription("Which games to show (default: all)")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: "Alle Spiele (Epic, GOG, Steam, GamerPower, itch.io)", value: "all" },
+                            { name: "Nur seriöse Stores (Epic, GOG, Steam)", value: "serious" },
+                        )
+                )
                 .addRoleOption(option =>
                     option.setName("mention-role")
                         .setDescription("Role to mention with each announcement (optional)")
                         .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("filter")
+                .setDescription("Change which games get posted (serious stores only or all)")
+                .addStringOption(option =>
+                    option.setName("mode")
+                        .setDescription("Filter mode")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Alle Spiele (Epic, GOG, Steam, GamerPower, itch.io)", value: "all" },
+                            { name: "Nur seriöse Stores (Epic, GOG, Steam)", value: "serious" },
+                        )
                 )
         )
         .addSubcommand(subcommand =>
@@ -3047,26 +3070,46 @@ async function handleInteraction(interaction, dependencies) {
 
                 const config = getGuildConfig(interaction.guildId);
                 const existing = normalizeFreeGamesConfig(config);
+                const filterOpt = interaction.options.getString("filter") || existing.filter || "all";
                 setGuildConfig(interaction.guildId, {
                     freeGames: {
                         ...existing,
                         enabled: true,
                         channelId: channel.id,
                         mentionRoleId: mentionRole ? mentionRole.id : existing.mentionRoleId,
+                        filter: filterOpt,
                         firstRunDone: false, // reset so first poll just marks existing games as seen
                     },
                 });
 
+                const filterLabel = filterOpt === "serious" ? "Nur seriöse Stores (Epic, GOG, Steam)" : "Alle Spiele";
                 const embed = new EmbedBuilder()
                     .setColor(0x00d26a)
                     .setTitle("✅ Free Games Notifications aktiviert")
-                    .setDescription(`Neue kostenlose Epic Games Spiele werden in ${channel} angekündigt.`)
+                    .setDescription(`Neue kostenlose Spiele werden in ${channel} angekündigt.`)
                     .addFields(
                         { name: "Channel", value: `${channel}`, inline: true },
                         { name: "Mention", value: mentionRole ? `${mentionRole}` : "Keine", inline: true },
+                        { name: "Filter", value: filterLabel, inline: true },
                     )
                     .setFooter({ text: "Fahrstuhl Bot • Free Games" });
                 return safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+            }
+
+            if (sub === "filter") {
+                const mode = interaction.options.getString("mode");
+                const config = getGuildConfig(interaction.guildId);
+                const existing = normalizeFreeGamesConfig(config);
+                setGuildConfig(interaction.guildId, {
+                    freeGames: { ...existing, filter: mode },
+                });
+                const label = mode === "serious"
+                    ? "🏪 Nur seriöse Stores (Epic, GOG, Steam)"
+                    : "🌐 Alle Spiele (Epic, GOG, Steam, GamerPower, itch.io)";
+                return safeReply(interaction, {
+                    content: `✅ Filter aktualisiert: **${label}**`,
+                    flags: [MessageFlags.Ephemeral],
+                });
             }
 
             if (sub === "disable") {
@@ -3091,6 +3134,7 @@ async function handleInteraction(interaction, dependencies) {
                         { name: "Status", value: settings.enabled ? "✅ Aktiv" : "❌ Deaktiviert", inline: true },
                         { name: "Channel", value: settings.channelId ? `<#${settings.channelId}>` : "Nicht gesetzt", inline: true },
                         { name: "Mention", value: settings.mentionRoleId ? `<@&${settings.mentionRoleId}>` : "Keine", inline: true },
+                        { name: "Filter", value: settings.filter === "serious" ? "🏪 Nur seriöse Stores" : "🌐 Alle Spiele", inline: true },
                         { name: "Bekannte Spiele", value: String(settings.postedIds.length), inline: true },
                     )
                     .setFooter({ text: "Fahrstuhl Bot • Free Games" });

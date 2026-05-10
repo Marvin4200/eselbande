@@ -9,6 +9,9 @@ const MAX_POSTED_IDS = 500;
 // Internal Free Games API URL (same Docker network)
 const FREE_GAMES_API_URL = process.env.FREE_GAMES_API_URL || "http://freegamesapi:3016";
 
+// Platforms considered "serious" (major stores only)
+const SERIOUS_PLATFORMS = ["epic", "gog", "steam"];
+
 function normalizeFreeGamesConfig(config = {}) {
     const fg = config.freeGames && typeof config.freeGames === "object" ? config.freeGames : {};
     return {
@@ -17,6 +20,8 @@ function normalizeFreeGamesConfig(config = {}) {
         mentionRoleId: fg.mentionRoleId || null,
         postedIds: Array.isArray(fg.postedIds) ? fg.postedIds : [],
         firstRunDone: Boolean(fg.firstRunDone),
+        // "all" = everything, "serious" = Epic/GOG/Steam only
+        filter: fg.filter === "serious" ? "serious" : "all",
     };
 }
 
@@ -166,10 +171,15 @@ class FreeGamesNotifier {
             return;
         }
 
-        const newGames = games.filter(g => g.id && !settings.postedIds.includes(g.id));
+        // Apply platform filter if configured
+        const filteredGames = settings.filter === "serious"
+            ? games.filter(g => SERIOUS_PLATFORMS.includes(g.platform))
+            : games;
+
+        const newGames = filteredGames.filter(g => g.id && !settings.postedIds.includes(g.id));
         if (!newGames.length && !force) return;
 
-        const gamesToPost = force ? games : newGames;
+        const gamesToPost = force ? filteredGames : newGames;
         const mention = settings.mentionRoleId ? `<@&${settings.mentionRoleId}> ` : "";
 
         for (const game of gamesToPost) {
@@ -189,11 +199,7 @@ class FreeGamesNotifier {
             const updatedIds = [...settings.postedIds, ...newGames.map(g => g.id).filter(Boolean)];
             const trimmed = updatedIds.slice(-MAX_POSTED_IDS);
             setGuildConfig(guild.id, {
-                freeGames: {
-                    ...settings,
-                    postedIds: trimmed,
-                    firstRunDone: true,
-                },
+                freeGames: { ...settings, postedIds: trimmed, firstRunDone: true },
             });
         }
     }
