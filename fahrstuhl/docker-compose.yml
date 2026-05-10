@@ -390,6 +390,10 @@ services:
         condition: service_healthy
     environment:
       FAHRSTUHL_API_BASE: ${FAHRSTUHL_API_BASE:-http://fahrstuhl-docker:3002}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-https://eselbande.com/fahrstuhl/callback.php}
+      DASHBOARD_BASE_URL: ${DASHBOARD_BASE_URL:-/fahrstuhl}
     ports:
       - "127.0.0.1:3181:8081"
     volumes:
