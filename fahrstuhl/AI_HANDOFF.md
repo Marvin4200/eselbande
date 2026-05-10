@@ -394,3 +394,16 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | Mobile Sidebar | ✅ Kein farbiger Side-Tab — `border-left: 0` Reset vorhanden |
 | Progress Bar Technik | ✅ `transform: scaleX()` + `transform-origin: left` + `overflow: hidden` |
 | Toast / Notification Accent | ✅ `inset box-shadow` statt `border-left` |
+
+---
+
+### Commit-Log — Design-Qualität
+
+| Commit | Beschreibung | Ergebnis |
+|---|---|---|
+| `23fa20d` | CSS/JS Anti-Pattern-Fixes (side-tabs → inset shadow, transition:width → scaleX, :root Duplikat) | Impeccable: 7 → **0** Findings |
+| `cd873c4` | Audit-Dokumentation + Smoke-Test in AI_HANDOFF.md | Score: **14 / 20** |
+
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns.**
+
+Nächster Schritt: Komponenten-Konsistenz 2/3 → 3/3 (Card-Abstände, Button-/Input-Radien harmonisieren).

@@ -1222,7 +1222,7 @@ body {
     align-items: center;
     gap: 0.42rem;
     padding: 0.44rem 0.52rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: 0.82rem;
 }
@@ -2030,7 +2030,7 @@ code {
 .dashboard-link-icon {
     width: 32px;
     height: 32px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2299,7 +2299,7 @@ code {
 .module-header-select {
     min-width: 230px;
     padding: 0.55rem 0.68rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-light);
     background: var(--bg-tertiary);
     color: var(--text-primary);
@@ -2418,7 +2418,7 @@ code {
     align-items: center;
     gap: .45rem;
     padding: .7rem 1.3rem;
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     background: linear-gradient(135deg, #c084fc, #a855f7);
     color: #fff;
     font-weight: 900;
@@ -2688,7 +2688,7 @@ textarea:focus-visible {
     width: 38px;
     height: 38px;
     border: 1px solid rgba(64, 72, 84, 0.8);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: rgba(32, 38, 49, 0.88);
     color: var(--text-primary);
     align-items: center;
@@ -3045,7 +3045,7 @@ textarea:focus {
     align-items: center;
     gap: .75rem;
     padding: .75rem 1.1rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: rgba(168,85,247,.08);
     border: 1px solid rgba(168,85,247,.3);
     font-size: .84rem;
@@ -3112,7 +3112,7 @@ body {
 }
 
 .sidebar .nav-group {
-    border-radius: 9px;
+    border-radius: var(--radius-sm);
 }
 
 .sidebar .nav-group summary {
@@ -3153,7 +3153,7 @@ body {
 
 .dashboard-page-header {
     padding: 0.78rem 0.92rem;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background: rgba(20, 24, 33, 0.92);
     box-shadow: none;
 }
@@ -3186,7 +3186,7 @@ body {
 .social-save,
 .btn-save {
     min-height: 36px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     font-size: 0.82rem;
     font-weight: 800;
 }
@@ -3253,7 +3253,7 @@ body {
 
 .empty-state {
     padding: 0.85rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
 }
 
 .table-scroll,
@@ -3266,7 +3266,7 @@ body {
 .ux-savebar {
     bottom: 0.5rem;
     padding: 0.56rem 0.68rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
 }
 
 .social-head,
@@ -3369,44 +3369,6 @@ body {
         font-size: 1.18rem;
     }
 }
-
-/* ================================================================
-   COMPACT SPACING PASS + LANGUAGE TOGGLE
-   ================================================================ */
-
-/* Extra spacing tightening (on top of the cleanup pass) */
-.navbar { min-height: 56px; padding: 0.58rem 1.1rem; }
-.stats-grid { gap: .72rem; margin-bottom: .85rem; }
-.section { padding: .85rem; margin-bottom: .85rem; }
-.stat-card { padding: .78rem .88rem; }
-.hub-grid { gap: .72rem; }
-.cockpit-kpi-grid { gap: .72rem; margin-bottom: .85rem; }
-.dashboard-hero { padding: .72rem .88rem; }
-.dashboard-overview-grid { gap: .72rem; }
-.dashboard-stack { gap: .72rem; }
-.module-page { gap: .75rem; }
-.page-header { margin-bottom: .85rem; }
-.section h2 { margin-bottom: .65rem; font-size: 1rem; }
-
-/* Language toggle button */
-.btn-lang {
-    color: var(--text-secondary);
-    background: rgba(32,38,49,.88);
-    border: 1px solid var(--border-light);
-    padding: 0.3rem 0.55rem;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    transition: background .14s, color .14s, border-color .14s;
-}
-.btn-lang:hover {
-    background: rgba(88,101,242,.12);
-    color: #c7d2fe;
-    border-color: rgba(88,101,242,.35);
-}
-@media (max-width: 480px) { .btn-lang { display: none; } }
 
 /* ================================================================
    COMPACT SPACING PASS + LANGUAGE TOGGLE
