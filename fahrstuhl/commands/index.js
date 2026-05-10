@@ -3108,7 +3108,16 @@ async function handleInteraction(interaction, dependencies) {
                     content: "🔄 Hole aktuelle freie Spiele von Epic...",
                     flags: [MessageFlags.Ephemeral],
                 });
-                await freeGamesNotifier.runOnce({ force: true });
+                try {
+                    const count = await freeGamesNotifier.postToChannel(interaction.channel);
+                    if (count === 0) {
+                        await interaction.editReply({ content: "ℹ️ Aktuell keine kostenlosen Spiele bei Epic gefunden." });
+                    } else {
+                        await interaction.editReply({ content: `✅ ${count} Spiel(e) in diesem Channel gepostet.` });
+                    }
+                } catch (err) {
+                    await interaction.editReply({ content: `❌ Fehler beim Abrufen: ${err.message}` });
+                }
                 return;
             }
         }

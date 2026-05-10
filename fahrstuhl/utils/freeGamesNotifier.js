@@ -227,6 +227,17 @@ class FreeGamesNotifier {
 
 const freeGamesNotifier = new FreeGamesNotifier();
 
+freeGamesNotifier.postToChannel = async function (channel) {
+    const games = await fetchFreeGames();
+    if (!games.length) return 0;
+    for (const game of games) {
+        const { embed, row } = buildGameEmbed(game);
+        await channel.send({ embeds: [embed], components: [row] });
+    }
+    return games.length;
+};
+
 module.exports = freeGamesNotifier;
+module.exports.normalizeFreeGamesConfig = normalizeFreeGamesConfig;
 module.exports.normalizeFreeGamesConfig = normalizeFreeGamesConfig;
 module.exports.fetchFreeGames = fetchFreeGames;
