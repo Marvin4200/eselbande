@@ -3231,7 +3231,7 @@ body {
 .activity-summary,
 .cc-banner,
 .cc-share {
-    border-radius: 12px !important;
+    border-radius: var(--radius-md) !important;
     box-shadow: none !important;
 }
 
