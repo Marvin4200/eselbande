@@ -8,9 +8,15 @@ $data = $raw['data'] ?? [];
 $checks = $data['checks'] ?? [];
 $summary = $data['summary'] ?? [];
 $nginx = $data['nginx'] ?? [];
+
+$botOffline = !isset($raw['data']);
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Security-Checks können nicht geladen werden.</div>
+<?php endif; ?>
 
 <div class="page-header">
     <h1>🔐 Security</h1>

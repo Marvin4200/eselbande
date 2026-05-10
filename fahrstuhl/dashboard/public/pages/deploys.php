@@ -6,6 +6,8 @@ requireAdmin();
 $raw = getAPI('/deploy/status');
 $projects = $raw['data']['projects'] ?? [];
 
+$botOffline = !isset($raw['data']);
+
 function stateColor($state) {
     if ($state === 'success') return '#51cf66';
     if ($state === 'running') return '#ffd43b';
@@ -15,6 +17,10 @@ function stateColor($state) {
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Deploy-Status kann nicht geladen werden.</div>
+<?php endif; ?>
 
 <div class="page-header">
     <h1>🚀 Deploys</h1>
