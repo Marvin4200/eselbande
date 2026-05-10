@@ -15,7 +15,7 @@ if (!function_exists('sidebar_item_active')) {
         $serverScopedPages = [
           'portal', 'guilds', 'guild-detail', 'serverconfig', 'modules', 'command-center',
             'welcome', 'reaction-roles', 'tickets', 'logging', 'temp-voice', 'social', 'leveling',
-            'moderation', 'moderation-hub', 'automod', 'voice-time', 'server-backup',
+            'moderation', 'moderation-hub', 'automod', 'voice-time', 'server-backup', 'freegames',
         ];
         $href = $item['href'] ?? (in_array($page, $serverScopedPages, true)
             ? dashboardPageUrl($page)
@@ -153,6 +153,7 @@ $userGroups = [
         ['page' => 'leveling', 'icon' => '📈', 'label' => 'Leveling', 'description' => 'XP and rewards'],
         ['page' => 'reaction-roles', 'icon' => '🎭', 'label' => 'Reaction Roles', 'description' => 'Self-assign roles'],
         ['page' => 'social', 'icon' => '📣', 'label' => 'Social Alerts', 'description' => 'YouTube, Twitch and RSS'],
+        ['page' => 'freegames', 'icon' => '🎮', 'label' => 'Free Games', 'description' => 'Kostenlose Spiele-Benachrichtigungen'],
         ['page' => 'temp-voice', 'icon' => '🔊', 'label' => 'Temp Voice', 'description' => 'Dynamic voice channels'],
       ],
     ],

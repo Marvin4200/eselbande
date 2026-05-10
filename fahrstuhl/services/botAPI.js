@@ -736,6 +736,57 @@ function verifyActivityStreamSignature({ guildId, userId, dashboardMode, expires
 const dataDir = path.join(__dirname, '../data');
 const deployStatusFile = path.join(dataDir, 'deploy-status.json');
 const systemBackupStatusFile = process.env.BACKUP_STATUS_FILE || '/home/marvin/backups/backup-status.json';
+const runningInDocker = fs.existsSync('/.dockerenv');
+
+const OPS_HTTP_DEFAULTS = {
+    fahrstuhl: 'http://fahrstuhl-docker:3002/health',
+    'dashboard-php': 'http://dashboard-php:8081/health',
+    'deploy-webhook': 'http://deploy-webhook:9000/health',
+    eseltokens: 'http://eseltokens-docker:3000/eseltokens/api/health',
+    'eseltokens-webhook': 'http://eseltokens-webhook-docker:9001/health',
+    filehoster: 'http://filehoster:3011/health',
+    linkshortener: 'http://linkshortener:3010/health',
+    zitatboard: 'http://zitatboard:3013/health',
+    statuspage: 'http://statuspage:3012/health',
+    team: 'http://team:3014/health',
+    esel: 'http://esel:3015/health',
+    musikbot: 'http://musikbot-docker:3020/health',
+};
+
+function isLoopbackHttpTarget(urlValue) {
+    try {
+        const parsed = new URL(String(urlValue || ''));
+        return ['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname);
+    } catch {
+        return false;
+    }
+}
+
+function normalizeOpsHttpTarget(serviceId, urlValue) {
+    const value = String(urlValue || '').trim();
+    const dockerDefault = OPS_HTTP_DEFAULTS[serviceId] || value;
+    if (!value) return dockerDefault;
+
+    if (runningInDocker && isLoopbackHttpTarget(value) && dockerDefault) {
+        return dockerDefault;
+    }
+
+    if (serviceId === 'eseltokens') {
+        try {
+            const parsed = new URL(value);
+            if (parsed.pathname === '/' || parsed.pathname === '') {
+                parsed.pathname = '/eseltokens/api/health';
+                parsed.search = '';
+                parsed.hash = '';
+                return parsed.toString();
+            }
+        } catch {
+            return value;
+        }
+    }
+
+    return value;
+}
 
 function parseHostPort(value, fallbackHost, fallbackPort) {
     const raw = String(value || '').trim();
@@ -7260,24 +7311,27 @@ class BotAPIServer {
     }
 
     getOpsServiceTargets() {
-        const lavalink = parseHostPort(process.env.LAVALINK_HOST || '127.0.0.1:2333', '127.0.0.1', 2333);
-        const redisFromEnv = process.env.REDIS_URL ? parseHostPort(process.env.REDIS_URL, '127.0.0.1', 6379) : null;
-        const redisHost = process.env.OPS_REDIS_HOST || redisFromEnv?.host || '127.0.0.1';
+        const lavalinkDefaultHost = runningInDocker ? 'lavalink-docker' : '127.0.0.1';
+        const redisDefaultHost = runningInDocker ? 'redis' : '127.0.0.1';
+
+        const lavalink = parseHostPort(process.env.LAVALINK_HOST || `${lavalinkDefaultHost}:2333`, lavalinkDefaultHost, 2333);
+        const redisFromEnv = process.env.REDIS_URL ? parseHostPort(process.env.REDIS_URL, redisDefaultHost, 6379) : null;
+        const redisHost = process.env.OPS_REDIS_HOST || redisFromEnv?.host || redisDefaultHost;
         const redisPort = Number(process.env.OPS_REDIS_PORT || redisFromEnv?.port || 6379) || 6379;
 
         return [
-            { id: 'fahrstuhl', name: 'fahrstuhl', type: 'http', url: process.env.FAHRSTUHL_HEALTH_URL || 'http://127.0.0.1:3002/health', pm2Names: ['fahrstuhl'], deployKey: 'fahrstuhl' },
-            { id: 'dashboard-php', name: 'dashboard-php', type: 'http', url: process.env.DASHBOARD_PHP_HEALTH_URL || 'http://127.0.0.1:8081/health', pm2Names: ['dashboard-php'] },
-            { id: 'deploy-webhook', name: 'deploy-webhook', type: 'http', url: process.env.DEPLOY_WEBHOOK_HEALTH_URL || 'http://127.0.0.1:9000/health', pm2Names: ['deploy-webhook'], deployKey: 'fahrstuhl' },
-            { id: 'eseltokens', name: 'eseltokens', type: 'http', url: process.env.ESELTOKENS_HEALTH_URL || 'http://127.0.0.1:3000/', pm2Names: ['eseltokens'], deployKey: 'eseltokens' },
-            { id: 'eseltokens-webhook', name: 'eseltokens-webhook', type: 'http', url: process.env.ESELTOKENS_WEBHOOK_HEALTH_URL || 'http://127.0.0.1:9001/health', pm2Names: ['eseltokens-webhook'], deployKey: 'eseltokens' },
-            { id: 'filehoster', name: 'filehoster', type: 'http', url: process.env.FILEHOSTER_HEALTH_URL || 'http://127.0.0.1:3011/health', pm2Names: ['filehoster'] },
-            { id: 'linkshortener', name: 'linkshortener', type: 'http', url: process.env.LINKSHORTENER_HEALTH_URL || 'http://127.0.0.1:3010/health', pm2Names: ['linkshortener'] },
-            { id: 'zitatboard', name: 'zitatboard', type: 'http', url: process.env.ZITATBOARD_HEALTH_URL || 'http://127.0.0.1:3013/health', pm2Names: ['zitatboard', 'zitat-board'] },
-            { id: 'statuspage', name: 'statuspage', type: 'http', url: process.env.STATUSPAGE_HEALTH_URL || 'http://127.0.0.1:3012/health', pm2Names: ['statuspage'] },
-            { id: 'team', name: 'team', type: 'http', url: process.env.TEAM_HEALTH_URL || 'http://127.0.0.1:3014/health', pm2Names: ['team'] },
-            { id: 'esel', name: 'esel', type: 'http', url: process.env.ESEL_HEALTH_URL || 'http://127.0.0.1:3015/health', pm2Names: ['esel'] },
-            { id: 'musikbot', name: 'musikbot', type: 'http', url: process.env.ESELMUSIC_HEALTH_URL || 'http://127.0.0.1:3020/health', pm2Names: ['musikbot'] },
+            { id: 'fahrstuhl', name: 'fahrstuhl', type: 'http', url: normalizeOpsHttpTarget('fahrstuhl', process.env.FAHRSTUHL_HEALTH_URL || OPS_HTTP_DEFAULTS.fahrstuhl), pm2Names: ['fahrstuhl'], deployKey: 'fahrstuhl' },
+            { id: 'dashboard-php', name: 'dashboard-php', type: 'http', url: normalizeOpsHttpTarget('dashboard-php', process.env.DASHBOARD_PHP_HEALTH_URL || OPS_HTTP_DEFAULTS['dashboard-php']), pm2Names: ['dashboard-php'] },
+            { id: 'deploy-webhook', name: 'deploy-webhook', type: 'http', url: normalizeOpsHttpTarget('deploy-webhook', process.env.DEPLOY_WEBHOOK_HEALTH_URL || OPS_HTTP_DEFAULTS['deploy-webhook']), pm2Names: ['deploy-webhook'], deployKey: 'fahrstuhl' },
+            { id: 'eseltokens', name: 'eseltokens', type: 'http', url: normalizeOpsHttpTarget('eseltokens', process.env.ESELTOKENS_HEALTH_URL || OPS_HTTP_DEFAULTS.eseltokens), pm2Names: ['eseltokens'], deployKey: 'eseltokens' },
+            { id: 'eseltokens-webhook', name: 'eseltokens-webhook', type: 'http', url: normalizeOpsHttpTarget('eseltokens-webhook', process.env.ESELTOKENS_WEBHOOK_HEALTH_URL || OPS_HTTP_DEFAULTS['eseltokens-webhook']), pm2Names: ['eseltokens-webhook'], deployKey: 'eseltokens' },
+            { id: 'filehoster', name: 'filehoster', type: 'http', url: normalizeOpsHttpTarget('filehoster', process.env.FILEHOSTER_HEALTH_URL || OPS_HTTP_DEFAULTS.filehoster), pm2Names: ['filehoster'] },
+            { id: 'linkshortener', name: 'linkshortener', type: 'http', url: normalizeOpsHttpTarget('linkshortener', process.env.LINKSHORTENER_HEALTH_URL || OPS_HTTP_DEFAULTS.linkshortener), pm2Names: ['linkshortener'] },
+            { id: 'zitatboard', name: 'zitatboard', type: 'http', url: normalizeOpsHttpTarget('zitatboard', process.env.ZITATBOARD_HEALTH_URL || OPS_HTTP_DEFAULTS.zitatboard), pm2Names: ['zitatboard', 'zitat-board'] },
+            { id: 'statuspage', name: 'statuspage', type: 'http', url: normalizeOpsHttpTarget('statuspage', process.env.STATUSPAGE_HEALTH_URL || OPS_HTTP_DEFAULTS.statuspage), pm2Names: ['statuspage'] },
+            { id: 'team', name: 'team', type: 'http', url: normalizeOpsHttpTarget('team', process.env.TEAM_HEALTH_URL || OPS_HTTP_DEFAULTS.team), pm2Names: ['team'] },
+            { id: 'esel', name: 'esel', type: 'http', url: normalizeOpsHttpTarget('esel', process.env.ESEL_HEALTH_URL || OPS_HTTP_DEFAULTS.esel), pm2Names: ['esel'] },
+            { id: 'musikbot', name: 'musikbot', type: 'http', url: normalizeOpsHttpTarget('musikbot', process.env.ESELMUSIC_HEALTH_URL || OPS_HTTP_DEFAULTS.musikbot), pm2Names: ['musikbot'] },
             { id: 'lavalink', name: 'lavalink', type: 'tcp', host: lavalink.host, port: lavalink.port, pm2Names: ['lavalink'] },
             { id: 'redis', name: 'redis', type: 'tcp', host: redisHost, port: redisPort, pm2Names: ['redis'] },
         ];
@@ -7953,6 +8007,90 @@ class BotAPIServer {
                 feeds,
             };
         };
+
+        // ── Free Games API endpoints ────────────────────────────────────────
+        this.app.get('/guilds/:guildId/freegames', async (req, res) => {
+            try {
+                const guild = this.client.guilds.cache.get(req.params.guildId);
+                if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
+
+                const { getGuildConfig } = require('../utils/config');
+                const { normalizeFreeGamesConfig } = require('../utils/freeGamesNotifier');
+                const config = getGuildConfig(guild.id);
+                const settings = normalizeFreeGamesConfig(config);
+
+                const channels = guild.channels.cache
+                    .filter(c => c.type === 0 && !c.isThread?.())
+                    .map(c => ({ id: c.id, name: c.name, position: c.rawPosition ?? 0, parentId: c.parentId || null }))
+                    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
+                const roles = guild.roles.cache
+                    .filter(r => !r.managed && r.id !== guild.id)
+                    .map(r => ({ id: r.id, name: r.name, color: r.hexColor }))
+                    .sort((a, b) => b.position - a.position);
+
+                res.json(APIResponse.success({
+                    guildId: guild.id,
+                    guildName: guild.name,
+                    channels,
+                    roles,
+                    settings: {
+                        enabled: settings.enabled,
+                        channelId: settings.channelId,
+                        mentionRoleId: settings.mentionRoleId,
+                        filter: settings.filter,
+                    },
+                }, 'Free games settings fetched', 'FREEGAMES_SETTINGS_OK'));
+            } catch (err) {
+                res.status(500).json(APIResponse.error(err.message, 'FREEGAMES_SETTINGS_FAILED'));
+            }
+        });
+
+        this.app.post('/guilds/:guildId/freegames', async (req, res) => {
+            try {
+                const guild = this.client.guilds.cache.get(req.params.guildId);
+                if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
+
+                const { getGuildConfig, setGuildConfig } = require('../utils/config');
+                const { normalizeFreeGamesConfig } = require('../utils/freeGamesNotifier');
+                const config = getGuildConfig(guild.id);
+                const existing = normalizeFreeGamesConfig(config);
+
+                const enabled = dashboardBoolean(req.body?.enabled ?? existing.enabled);
+                const channelId = String(req.body?.channelId || existing.channelId || '').trim();
+                const mentionRoleId = String(req.body?.mentionRoleId || '').trim() || null;
+                const filter = req.body?.filter === 'serious' ? 'serious' : 'all';
+
+                if (enabled && !channelId) {
+                    return res.status(400).json(APIResponse.badRequest('Channel is required when Free Games notifications are enabled'));
+                }
+                if (channelId) {
+                    const ch = guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null);
+                    if (!ch || ch.type !== 0 || ch.isThread?.()) {
+                        return res.status(400).json(APIResponse.badRequest('Channel must be a text channel'));
+                    }
+                }
+
+                const newSettings = { ...existing, enabled, channelId, mentionRoleId, filter, firstRunDone: false };
+                setGuildConfig(guild.id, { freeGames: newSettings });
+
+                // Post/update status embed in the target channel
+                if (enabled && channelId) {
+                    const ch = guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null);
+                    if (ch?.isTextBased()) {
+                        const freeGamesNotifier = require('../utils/freeGamesNotifier');
+                        await freeGamesNotifier.postStatusEmbed(ch, guild.id).catch(() => {});
+                    }
+                }
+
+                res.json(APIResponse.success({ guildId: guild.id, settings: newSettings }, 'Free games settings updated', 'FREEGAMES_SETTINGS_UPDATED'));
+            } catch (err) {
+                res.status(500).json(APIResponse.error(err.message, 'FREEGAMES_SETTINGS_UPDATE_FAILED'));
+            }
+        });
 
         this.app.get('/guilds/:guildId/social', async (req, res) => {
             try {
