@@ -343,7 +343,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 |---|---|---|
 | Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
 | Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
-| Spacing-System | 2/3 | Spacing-Scale in `:root`, aber inline Hex-Farben in guilds/security/moderation/rewards-hub |
+| Spacing-System | 2/3 | `--sp-*`-Tokens in PHP-Inline-Styles genutzt (exakte px-Matches). Core CSS bleibt rem-basiert — Token-Migration CSS-Architektur steht noch aus. |
 | Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
@@ -406,7 +406,9 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `2b940bf` | Component consistency pass — alle border-radius auf Tokens, doppelter CSS-Block entfernt | Score: **15 / 20**, Impeccable: **0** |
 | `4336eb5` | Audit-Doku: Komponenten-Konsistenz 3/3, Score 15/20 eingetragen | — |
 | `fa47cf5` | Minor token cleanup: raw `12px !important` im Card-Cleanup-Block → `var(--radius-md) !important` | Letzter raw-!important-Wert tokenisiert |
+| `8a1dedd` | Doku: AI_HANDOFF.md nach fa47cf5 aktualisiert | — |
+| `f2b6d4a` | Spacing tokens in PHP-Inline-Styles (exakte px-Matches, 10 Dateien, ~45 Werte) | Spacing-System bleibt 2/3 — Core CSS rem-basiert |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3. Alle `!important`-border-radius vollständig tokenisiert.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3. Alle `!important`-border-radius vollständig tokenisiert. `--sp-*`-Tokens in 10 PHP-Dateien (Inline-Styles, exakte px-Matches). Core CSS bleibt rem-basiert — kein Score-Push auf 16/20 ohne vollständige CSS-Architektur-Migration.**
 
-Nächster Schritt: Spacing-System 2/3 → 3/3 (wiederkehrende Padding-Werte tokenisieren, nur finale gerenderte Werte, keine Layout-Verschiebungen).
+Nächster Schritt: CSS-Architektur — `--sp-*`-Tokens von px auf rem umdefinieren (oder CSS-Werte von rem auf px migrieren), um Konsistenz zwischen CSS und PHP-Inline-Styles herzustellen. Alternativ: nächste Feature-Priorität (Setup Assistant, Logging Dashboard) angehen.
