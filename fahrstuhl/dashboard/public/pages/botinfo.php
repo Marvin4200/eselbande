@@ -9,6 +9,8 @@ $s = $statsRaw['stats'] ?? [];
 $healthRaw = getAPI('/health');
 $health = $healthRaw['data'] ?? [];
 
+$botOffline = !isset($statsRaw['stats']);
+
 $botId     = '1487187616674611321';
 $inviteUrl = "https://discord.com/oauth2/authorize?client_id={$botId}&permissions=1654096264208&scope=bot+applications.commands";
 $supportUrl = 'https://discord.gg/zfzDHKcWDx';
@@ -17,6 +19,10 @@ $githubUrl  = 'https://github.com/Marvin4200/Fahrstuhl';
 ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+
+<?php if ($botOffline): ?>
+<div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — angezeigte Stats sind möglicherweise leer oder veraltet.</div>
+<?php endif; ?>
 
 <div class="page-header">
     <h1>🤖 Bot Info</h1>

@@ -40,6 +40,8 @@ $warnings = $health['warnings'] ?? [];
 $warningsTop = array_slice($warnings, 0, 3);
 $recent = array_slice(($analytics['recent'] ?? []), 0, 10);
 
+$botOffline = empty($d);
+
 // Chart data
 $chartRaw = getAPI('/analytics/chart?timeframe=24h', 5);
 $hourlyData = $chartRaw['data']['hourly'] ?? [];
@@ -95,6 +97,10 @@ function cockpitUptime($ms) {
 
 <?php if ($message): ?>
     <div class="alert alert-<?php echo esc($messageType); ?>"><?php echo esc($message); ?></div>
+<?php endif; ?>
+
+<?php if ($botOffline): ?>
+    <div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Cockpit-Daten werden nicht geladen. Stats und Charts bleiben leer bis die API wieder antwortet.</div>
 <?php endif; ?>
 
 <!-- KPI Cards -->
