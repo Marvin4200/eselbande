@@ -345,7 +345,8 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <textarea name="welcomeMessage" maxlength="2000"><?php echo esc($settings['welcomeMessage'] ?? 'Hey {user}, welcome to **{server}**!'); ?></textarea>
                 </div>
                 <div class="wlc-sep"></div>
-                <div class="wlc-check-row"><input type="checkbox" name="welcomeAsEmbed" value="1" <?php echo checkedAttr($settings['welcomeAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div class="wlc-check-row"><input type="checkbox" id="welcomeAsEmbed" name="welcomeAsEmbed" value="1" <?php echo checkedAttr($settings['welcomeAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div id="welcomeEmbedFields" class="wlc-embed-fields" <?php if (empty($settings['welcomeAsEmbed'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-row2">
                     <div class="wlc-field">
                         <label>Embed Titel</label>
@@ -363,6 +364,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-field">
                     <label>Embed Thumbnail URL <small style="font-weight:400;">(optional)</small></label>
                     <input type="url" name="welcomeEmbedThumbnail" maxlength="500" value="<?php echo esc($settings['welcomeEmbedThumbnail'] ?? ''); ?>" placeholder="https://...">
+                </div>
                 </div>
                 <!-- Preserved advanced embed fields (not shown in UI) -->
                 <input type="hidden" name="welcomeEmbedHeader" value="<?php echo esc($settings['welcomeEmbedHeader'] ?? ''); ?>">
@@ -407,7 +409,8 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <textarea name="dmMessage" maxlength="2000"><?php echo esc($settings['dmMessage'] ?? 'Have a great time here in **{server}**'); ?></textarea>
                 </div>
                 <div class="wlc-sep"></div>
-                <div class="wlc-check-row"><input type="checkbox" name="dmAsEmbed" <?php echo checkedAttr($settings['dmAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div class="wlc-check-row"><input type="checkbox" id="dmAsEmbed" name="dmAsEmbed" <?php echo checkedAttr($settings['dmAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div id="dmEmbedFields" class="wlc-embed-fields" <?php if (empty($settings['dmAsEmbed'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-row2">
                     <div class="wlc-field">
                         <label>Embed Titel</label>
@@ -421,6 +424,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-field">
                     <label>Embed Footer</label>
                     <input type="text" name="dmEmbedFooter" maxlength="2048" value="<?php echo esc($settings['dmEmbedFooter'] ?? ''); ?>">
+                </div>
                 </div>
                 <input type="hidden" name="dmEmbedHeader" value="<?php echo esc($settings['dmEmbedHeader'] ?? ''); ?>">
                 <input type="hidden" name="dmEmbedAvatar" value="<?php echo esc($settings['dmEmbedAvatar'] ?? ''); ?>">
@@ -466,7 +470,8 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <textarea name="goodbyeMessage" maxlength="2000"><?php echo esc($settings['goodbyeMessage'] ?? '**{username}** just left the server'); ?></textarea>
                 </div>
                 <div class="wlc-sep"></div>
-                <div class="wlc-check-row"><input type="checkbox" name="goodbyeAsEmbed" <?php echo checkedAttr($settings['goodbyeAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div class="wlc-check-row"><input type="checkbox" id="goodbyeAsEmbed" name="goodbyeAsEmbed" <?php echo checkedAttr($settings['goodbyeAsEmbed'] ?? false); ?>><span>Als Embed senden</span></div>
+                <div id="goodbyeEmbedFields" class="wlc-embed-fields" <?php if (empty($settings['goodbyeAsEmbed'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-row2">
                     <div class="wlc-field">
                         <label>Embed Titel</label>
@@ -480,6 +485,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-field">
                     <label>Embed Footer</label>
                     <input type="text" name="goodbyeEmbedFooter" maxlength="2048" value="<?php echo esc($settings['goodbyeEmbedFooter'] ?? ''); ?>">
+                </div>
                 </div>
                 <input type="hidden" name="goodbyeEmbedHeader" value="<?php echo esc($settings['goodbyeEmbedHeader'] ?? ''); ?>">
                 <input type="hidden" name="goodbyeEmbedAvatar" value="<?php echo esc($settings['goodbyeEmbedAvatar'] ?? ''); ?>">
@@ -764,6 +770,14 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 
     document.getElementById('wlcPublishVerifyBtn')?.addEventListener('click', () => {
         doAction('publish_verification', {}, 'wlcPublishResult', 'wlcPublishVerifyBtn', 'Veröffentliche');
+    });
+
+    // Embed fields toggle
+    [['welcomeAsEmbed', 'welcomeEmbedFields'], ['dmAsEmbed', 'dmEmbedFields'], ['goodbyeAsEmbed', 'goodbyeEmbedFields']].forEach(([cbId, divId]) => {
+        const cb = document.getElementById(cbId);
+        const div = document.getElementById(divId);
+        if (!cb || !div) return;
+        cb.addEventListener('change', () => { div.style.display = cb.checked ? '' : 'none'; });
     });
 })();
 </script>
