@@ -1,6 +1,6 @@
 # Fahrstuhl Bot - AI Handoff
 
-Stand: 2026-05-04
+Stand: 2026-05-10
 
 ## Projektziel
 
@@ -60,41 +60,12 @@ Kein blindes git add .
 - Social Alerts isolieren Fehler pro Feed
 - Twitch darf beim ersten Check nicht direkt posten
 
-## Kritischer Bug: Backup Warning
+## Behobene Bugs
 
-Fehler:
+### Backup Warning (gefixt in cae98dd)
 
-WARN Backup is stale  
-No recent successful backup was recorded  
-Reason: scheduled  
-
-Fix Commit: cae98dd  
-Datei: services/botAPI.js  
-
-Problem:
-
-Die Health-Logik hat nur den alten backupManager genutzt.
-
-Fix:
-
-buildHealthSummary() muss folgende Tabellen berücksichtigen:
-
-- discord_backups
-- discord_backup_schedules
-- discord_backup_jobs
-
-Warnung darf nur kommen, wenn:
-
-- kein aktuelles Backup existiert
-- kein aktiver Schedule vorhanden ist
-- kein Job läuft
-
-Wenn Problem weiter besteht:
-
-- prüfen ob pm2 neu gestartet wurde
-- prüfen ob DB Daten existieren
-- prüfen ob alter Code noch läuft
-- prüfen ob mehrere Health Checks existieren
+buildHealthSummary() prüft jetzt: discord_backups, discord_backup_schedules, discord_backup_jobs.
+Warnung kommt nur, wenn kein aktuelles Backup, kein aktiver Schedule und kein laufender Job vorhanden.
 
 ## Module
 
@@ -120,20 +91,18 @@ welcome:verify:<guildId>
 Dateien:
 - commands/index.js
 - services/botAPI.js
+- dashboard/public/pages/moderation.php
 
 Vorhanden:
 - /mod warn
 - /mod timeout
+- /mod kick ✅
+- /mod ban ✅
+- /mod unban ✅
 - /mod history
-
-Fehlt:
-- /mod kick
-- /mod ban
-- /mod unban
-- /mod cases mit Pagination
-- Dashboard Case Filter
-- Case Details
-- Reason bearbeiten
+- /mod cases mit Pagination + Filter ✅
+- Dashboard Case Filter (userId, moderatorId, type, status, reason) ✅
+- Reason bearbeiten ✅
 
 Wichtig:
 - moderation_cases Tabelle nutzen
@@ -145,15 +114,13 @@ Dateien:
 - utils/serverLogger.js
 - services/botAPI.js
 - index.js
+- dashboard/public/pages/logging.php
 
 Features:
 - zentrale Logs
 - viele Events
-
-Fehlt:
-- pro Event Channel
-- Audit Logs
-- Dashboard Anzeige
+- Per-Event Channel Override ✅ (resolveLogChannelId: event → group → global)
+- Audit Logs ✅
 
 ### Tickets
 
@@ -167,11 +134,9 @@ Features:
 - Ticket Panel
 - private Channels
 - Dashboard Steuerung
-
-Fehlt:
-- Transcript
-- Claim System
-- mehrere Panels
+- Transcript ✅ (buildTranscript, HTML + TXT Export)
+- Claim System ✅ (/ticket claim, /ticket unclaim)
+- Transcript Channel konfigurierbar ✅
 
 ### AutoMod
 
@@ -185,11 +150,8 @@ Features:
 - Link Filter
 - Caps Filter
 - Punishments
-
-Fehlt:
-- Presets
-- Regex
-- Rule-System
+- Quick Presets ✅ (Relaxed / Balanced / Strict)
+- Regex Mode ✅ (blockedTermsRegex Toggle)
 
 ### Leveling
 
@@ -203,11 +165,31 @@ Features:
 - XP pro Message
 - Rank
 - Leaderboard
+- Level Rollen (roleRewards) ✅
+- removeLowerLevelRoles Toggle ✅
+- Reset per User und per Guild ✅ (resetUserXp, resetGuildXp)
 
 Fehlt:
-- Level Rollen
-- XP Multiplikatoren
-- Reset
+- XP Multiplikatoren (pro Rolle/Channel)
+
+### Free Games
+
+Dateien:
+- utils/freeGamesNotifier.js
+- commands/index.js (/freegames)
+- dashboard/public/pages/freegames.php
+- services/botAPI.js
+- ../../freegamesapi/index.js (separater Microservice, Port 3016)
+
+Features:
+- Microservice fetcht: Epic, GOG, Steam, GamerPower (ex-Humble)
+- itch.io gibt 403 → expected, wird ignoriert
+- Ca. 21 Games gecacht beim Start
+- Discord-Benachrichtigung bei neuen Free Games
+- Live Status Embed (aktualisiert sich jede Minute)
+- Filter: "all stores" vs "serious stores" (Epic/GOG/Steam only)
+- Dashboard: Channel pro Guild konfigurierbar, Test-Post-Button
+- /freegames setup, /freegames status, /freegames test
 
 ### Reaction Roles
 
@@ -238,22 +220,38 @@ Dateien:
 - dashboard/public/pages/temp-voice.php
 - services/botAPI.js
 - index.js
+- utils/voiceChannelCleanup.js
 
-Problem:
-- aktuell nur im RAM gespeichert
+Features:
+- Channels in DB persistiert ✅ (temp_voice_channels Tabelle)
+- Cleanup bei Bot-Neustart via VoiceChannelCleanup ✅
 
 ## Deployment
 
-cd /home/marvin/fahrstuhl
-git pull
+Lokal (Windows, Repo unter C:\Users\Txxle\Desktop\DebianServer\marvin):
 
-node --check commands/index.js
-node --check index.js
-node --check services/botAPI.js
+git add <files>
+git commit -m "..."
+git push origin main
 
-pm2 restart fahrstuhl dashboard-php --update-env
-pm2 save
-pm2 logs fahrstuhl --lines 80
+Server (192.168.2.177, Repo unter /home/marvin):
+
+ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compose -f fahrstuhl/docker-compose.yml up -d --build fahrstuhl-docker && echo DONE"
+
+Nur dashboard-php neu bauen:
+
+ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compose -f fahrstuhl/docker-compose.yml up -d --build dashboard-php && echo DONE"
+
+Logs prüfen:
+
+ssh root@192.168.2.177 "docker logs --tail 20 fahrstuhl-phase1 2>&1"
+ssh root@192.168.2.177 "docker logs --tail 20 dashboard-php-phase1 2>&1"
+
+Container-Übersicht:
+
+- fahrstuhl-phase1     → Bot + Bot API (Port 3002 intern)
+- dashboard-php-phase1 → PHP Dashboard (Port 3181 → 8081)
+- freegamesapi-phase1  → Free Games Microservice (Port 3016 intern)
 
 ## Workflow
 
@@ -264,48 +262,24 @@ node --check index.js
 node --check services/botAPI.js
 git diff --check
 
-## Nächste Aufgaben (sehr wichtig)
+## Nächste Aufgaben
 
-Priorität 1:
+Priorität 1 — Leveling vervollständigen:
 
-Moderation erweitern:
+- XP Multiplikator pro Rolle/Channel (Datenbank-Feld fehlt noch)
 
-- /mod kick
-- /mod ban
-- /mod unban
-- /mod cases mit Pagination
-- Dashboard Case Filter
-- Logging Integration
+Priorität 2 — Temp Voice persistenz:
 
-Priorität 2:
+- Channels aktuell in DB (temp_voice_channels), aber Cleanup nach Neustart prüfen
 
-Leveling erweitern:
+Priorität 3 — Dashboard UX:
 
-- Level Rollen
-- XP Multiplikator
-- Reset
+- weniger Reloads (mehr AJAX/partial updates)
+- Setup Assistent für neue Server
 
-Priorität 3:
+Priorität 4 — Logging Dashboard:
 
-Tickets erweitern:
-
-- Transcript
-- Claim System
-- bessere Panels
-
-Priorität 4:
-
-Logging erweitern:
-
-- bessere Logs
-- Audit Logs
-
-Priorität 5:
-
-Dashboard UX verbessern:
-
-- weniger Reloads
-- Setup Assistent
+- logging.php: Anzeige der letzten Log-Events im Dashboard
 
 ## Ziel
 
