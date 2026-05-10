@@ -77,9 +77,15 @@ window.submitFormAjax = function (formEl, options = {}) {
     const data = new FormData(formEl);
     const url  = formEl.action || location.href;
 
+    // Read CSRF token from FormData (hidden input in form) with DOM fallback
+    const csrfToken = data.get('csrf_token') ||
+        (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+    const reqHeaders = { 'X-Requested-With': 'XMLHttpRequest' };
+    if (csrfToken) reqHeaders['X-CSRF-Token'] = csrfToken;
+
     return fetch(url, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: reqHeaders,
         body: data,
     })
     .then(r => r.json())
