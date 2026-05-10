@@ -30,6 +30,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Security headers — set before any output
+// CSP intentionally omitted (inline scripts in use; separate hardening step).
+if (!headers_sent()) {
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+}
+
 // Language system
 require_once __DIR__ . '/lang.php';
 if (!headers_sent() && isset($_GET['setlang'])) {

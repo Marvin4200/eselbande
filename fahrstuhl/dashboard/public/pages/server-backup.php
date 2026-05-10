@@ -2,7 +2,7 @@
 $page_title = 'Server Backup';
 require_once __DIR__ . '/../includes/config.php';
 requireLogin();
-session_start();
+// session_start() removed — config.php starts the session centrally.
 
 // AJAX: job status proxy
 $ajaxGuildId = preg_replace('/[^0-9]/', '', $_GET['guildId'] ?? '');
