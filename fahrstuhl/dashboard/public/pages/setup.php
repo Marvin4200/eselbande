@@ -882,7 +882,7 @@ function updateProgress() {
     const pct = total > 0 ? Math.round(done / total * 100) : 0;
     const fill = document.getElementById('progressFill');
     const label = document.getElementById('progressLabel');
-    if (fill) fill.style.width = pct + '%';
+    if (fill) fill.style.transform = 'scaleX(' + (pct / 100) + ')';
     if (label) label.textContent = done + '/' + total + ' Schritte';
 }
 </script>

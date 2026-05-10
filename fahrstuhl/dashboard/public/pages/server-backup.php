@@ -595,7 +595,7 @@ function startJobPolling(cfg) {
         const total = Number(job.progressTotal || 0);
         const pct = total > 0 ? Math.max(0, Math.min(100, Math.round((current / total) * 100))) : 0;
         if (cfg.metaEl) cfg.metaEl.textContent = 'Phase: ' + (job.phase || '-') + ' (' + current + '/' + total + ', ' + pct + '%)';
-        if (cfg.progressEl) cfg.progressEl.style.width = pct + '%';
+        if (cfg.progressEl) cfg.progressEl.style.transform = 'scaleX(' + (pct / 100) + ')';
     }
     function poll() {
         fetch('?ajax_job=' + cfg.jobId + '&type=' + cfg.type + '&guildId=' + encodeURIComponent(cfg.guildId))
