@@ -9,6 +9,15 @@ $guildId = dashboardSelectedGuildId($guilds);
 
 $message = '';
 $messageType = 'success';
+$operationSuccess = null;
+$isAjaxRequest = strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'XMLHttpRequest') === 0
+    || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+$sendJson = function ($payload, $statusCode = 200) {
+    http_response_code((int)$statusCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit();
+};
 
 function social_checked($value) { return !empty($value) ? 'checked' : ''; }
 function social_selected($a, $b) { return (string)$a === (string)$b ? 'selected' : ''; }
@@ -45,10 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
 
     if (($result['data']['success'] ?? false) === true) {
         $message = 'Social Alerts gespeichert.';
+        $operationSuccess = true;
     } else {
         $messageType = 'error';
         $message = $result['data']['message'] ?? $result['data']['error'] ?? ('Saving Social Alerts failed. HTTP status: ' . ($result['status'] ?? 'unknown'));
+        $operationSuccess = false;
     }
+    if ($isAjaxRequest) $sendJson(['success' => $operationSuccess, 'message' => $message, 'messageType' => $messageType], $operationSuccess ? 200 : 400);
 }
 
 $raw = $guildId ? getAPI('/guilds/' . urlencode($guildId) . '/social', 12) : null;
@@ -128,7 +140,7 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
 <?php endif; ?>
     <div class="social-panel">Bitte zuerst einen Server auswaehlen.</div>
 <?php else: ?>
-<form method="POST" class="social-shell">
+<form id="socialForm" method="POST" class="social-shell">
     <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
     <section class="social-panel">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;">
@@ -225,5 +237,45 @@ $atFeedLimit    = !$socialBlocked && $maxFeeds >= 0 && $activeFeedCount >= $maxF
     </aside>
 </form>
 <?php endif; ?>
+
+<script>
+(function () {
+    const form = document.getElementById('socialForm');
+    if (!form) return;
+
+    let alertEl = document.querySelector('.alert');
+    const saveBtn = form.querySelector('button[type="submit"]');
+
+    function showAlert(msg, type) {
+        if (!alertEl) {
+            alertEl = document.createElement('div');
+            alertEl.className = 'alert';
+            form.before(alertEl);
+        }
+        alertEl.className = 'alert alert-' + type;
+        alertEl.textContent = msg;
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Speichert...'; }
+
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                body: new FormData(form),
+                credentials: 'same-origin'
+            });
+            const json = await response.json().catch(() => ({ success: false, message: 'Ungueltige Serverantwort.' }));
+            showAlert(json.message || (json.success ? 'Gespeichert.' : 'Fehler.'), json.success ? 'success' : 'error');
+        } catch (err) {
+            showAlert(err.message || 'Netzwerkfehler.', 'error');
+        } finally {
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Speichern'; }
+        }
+    });
+})();
+</script>
 
 <?php include '../includes/footer.php'; ?>

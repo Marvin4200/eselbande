@@ -9,16 +9,28 @@ $guildId = dashboardSelectedGuildId($guilds);
 
 $message = '';
 $messageType = 'success';
+$operationSuccess = null;
+$isAjaxRequest = strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'XMLHttpRequest') === 0
+    || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+$sendJson = function ($payload, $statusCode = 200) {
+    http_response_code((int)$statusCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit();
+};
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     if (($_POST['action'] ?? '') === 'test_log') {
         $result = api('/guilds/' . urlencode($guildId) . '/logging/test', 'POST', [], 15);
         if (($result['data']['success'] ?? false) === true) {
             $message = 'Test log sent.';
+            $operationSuccess = true;
         } else {
             $messageType = 'error';
             $message = $result['data']['message'] ?? $result['data']['error'] ?? 'Failed to send test log.';
+            $operationSuccess = false;
         }
+        if ($isAjaxRequest) $sendJson(['success' => $operationSuccess, 'message' => $message, 'messageType' => $messageType], $operationSuccess ? 200 : 400);
     } elseif (($_POST['action'] ?? '') === 'test_group') {
         $testGroup = trim($_POST['testGroup'] ?? '');
         $result = api('/guilds/' . urlencode($guildId) . '/logging/test', 'POST', [
@@ -28,10 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             $resolvedGroup = $result['data']['group'] ?? $testGroup;
             if ($resolvedGroup === '') $resolvedGroup = 'moderation';
             $message = 'Test log sent for group: ' . $resolvedGroup . '.';
+            $operationSuccess = true;
         } else {
             $messageType = 'error';
             $message = $result['data']['message'] ?? $result['data']['error'] ?? 'Failed to send group test log.';
+            $operationSuccess = false;
         }
+        if ($isAjaxRequest) $sendJson(['success' => $operationSuccess, 'message' => $message, 'messageType' => $messageType], $operationSuccess ? 200 : 400);
     } else {
     $enabled = isset($_POST['enabled']);
     $channelId = $_POST['channelId'] ?? '';
@@ -64,10 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     ], 15);
     if (($result['data']['success'] ?? false) === true) {
         $message = 'Logging settings saved.';
+        $operationSuccess = true;
     } else {
         $messageType = 'error';
         $message = $result['data']['message'] ?? 'Failed to save logging settings.';
+        $operationSuccess = false;
     }
+    if ($isAjaxRequest) $sendJson(['success' => $operationSuccess, 'message' => $message, 'messageType' => $messageType], $operationSuccess ? 200 : 400);
     }
 }
 
@@ -164,7 +182,7 @@ foreach ($channels as $channel) {
         <a class="btn-icon cta btn-primary-ui" href="modules.php?guildId=<?php echo urlencode($guildId); ?>">Modul aktivieren</a>
     </div>
 <?php else: ?>
-    <form method="POST" class="lg-compact">
+    <form id="loggingForm" method="POST" class="lg-compact">
         <input type="hidden" name="guildId" value="<?php echo esc($guildId); ?>">
         
         <!-- COLUMN 1: SETUP -->
@@ -363,5 +381,50 @@ foreach ($channels as $channel) {
     </div>
 
 <?php endif; ?>
+
+<script>
+(function () {
+    const form = document.getElementById('loggingForm');
+    if (!form) return;
+
+    let alertEl = document.querySelector('.alert');
+    function showAlert(msg, type) {
+        if (!alertEl) {
+            alertEl = document.createElement('div');
+            form.before(alertEl);
+        }
+        alertEl.className = 'alert alert-' + type;
+        alertEl.textContent = msg;
+        alertEl.style.display = '';
+    }
+
+    // Action buttons (test_log, test_group, save) all submit the same form
+    // Intercept any submit and use AJAX
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitBtn = event.submitter;
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
+
+        try {
+            const body = new FormData(form);
+            // submitter value is not automatically included in FormData
+            if (submitBtn?.name) body.set(submitBtn.name, submitBtn.value || '');
+
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                body,
+                credentials: 'same-origin'
+            });
+            const json = await response.json().catch(() => ({ success: false, message: 'Ungueltige Serverantwort.' }));
+            showAlert(json.message || (json.success ? 'Gespeichert.' : 'Fehler.'), json.success ? 'success' : 'error');
+        } catch (err) {
+            showAlert(err.message || 'Netzwerkfehler.', 'error');
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+        }
+    });
+})();
+</script>
 
 <?php include '../includes/footer.php'; ?>
