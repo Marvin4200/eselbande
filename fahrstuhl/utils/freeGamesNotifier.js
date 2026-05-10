@@ -24,9 +24,6 @@ function buildGameEmbed(game) {
     const title = game.title || "Unbekanntes Spiel";
     const slug = game.productSlug || game.urlSlug || game.catalogNs?.mappings?.[0]?.pageSlug || "";
     const storeUrl = slug ? `https://store.epicgames.com/de/p/${slug}` : "https://store.epicgames.com/de/free-games";
-    const launcherUrl = slug
-        ? `com.epicgames.launcher://store/p/${slug}`
-        : "com.epicgames.launcher://store/free-games";
 
     // Determine original price
     const originalPrice =
@@ -73,15 +70,10 @@ function buildGameEmbed(game) {
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setLabel("Im Browser öffnen")
+            .setLabel("Im Epic Store öffnen")
             .setStyle(ButtonStyle.Link)
             .setURL(storeUrl)
-            .setEmoji("🌐"),
-        new ButtonBuilder()
-            .setLabel("Mit Launcher öffnen")
-            .setStyle(ButtonStyle.Link)
-            .setURL(launcherUrl)
-            .setEmoji("🚀")
+            .setEmoji("🎮")
     );
 
     return { embed, row };
