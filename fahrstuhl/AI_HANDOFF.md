@@ -223,11 +223,12 @@ Dateien:
 - dashboard/public/pages/temp-voice.php
 - services/botAPI.js
 - index.js
-- utils/voiceChannelCleanup.js
+- utils/voiceChannelCleanup.js (dead code — nicht importiert, kann ignoriert werden)
 
 Features:
 - Channels in DB persistiert ✅ (temp_voice_channels Tabelle)
-- Cleanup bei Bot-Neustart via VoiceChannelCleanup ✅
+- Restart-Cleanup ✅: beim Bot-Start werden alle DB-Rows geprüft; existierende Channels werden in den in-memory Map restored, gelöschte Channels werden aus der DB entfernt
+- Eigentliche Verwaltung läuft über tempVoiceChannels Map in index.js + DB-Queries
 
 ## Deployment
 
@@ -267,16 +268,12 @@ git diff --check
 
 ## Nächste Aufgaben
 
-Priorität 1 — Temp Voice Persistenz prüfen:
-
-- VoiceChannelCleanup nach Bot-Neustart testen: werden verwaiste Channels korrekt gelöscht?
-
-Priorität 2 — Dashboard UX:
+Priorität 1 — Dashboard UX:
 
 - weniger Reloads (mehr AJAX/partial updates)
 - Setup Assistent für neue Server (Schritt für Schritt: Welcome → Mod → AutoMod)
 
-Priorität 3 — Logging Dashboard:
+Priorität 2 — Logging Dashboard:
 
 - logging.php: Anzeige der letzten Log-Events im Dashboard (aktuell nur Konfiguration)
 
