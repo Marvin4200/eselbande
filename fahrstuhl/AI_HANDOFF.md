@@ -414,6 +414,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `e8a585c` | UX Polish Pass: `:active` Press-Feedback, `border-radius: inherit` am Focus-Ring, Card `:focus-visible`-States | UX Polish **3/3**, Score **18/20** |
 | `83df86e` | AI_HANDOFF.md: UX Polish 3/3, Score 18/20 eingetragen | — |
 | `c8f4658` | Security: 4 HTTP-Security-Header in `config.php`; doppeltes `session_start()` in `server-backup.php` entfernt | H1 teilweise behoben, N1 behoben |
+| `d4d70c6` | Security H2: `ajax_preview` GET→POST + `X-CSRF-Token`; `verifyDashboardCsrf()` erzwingt CSRF-Prüfung | H2 behoben |
 
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. UX Polish: 3/3. Score: 18/20.**
 
@@ -440,12 +441,27 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 |---|---|---|
 | Kritisch | — | Keine |
 | Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
-| Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | Offen — read-only, auth via `requireLogin()`, niedrige Priorität |
+| Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | ✅ Behoben (`d4d70c6`) — POST + `X-CSRF-Token` |
 | Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | Offen |
 | Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | Offen |
 | Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
 | Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
 | Niedrig (N2) | `botinfo.php`: `requireLogin` statt `requireAdmin` | By design |
+
+---
+
+### Abschluss-Report — Security-Audit H2 (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `d4d70c6` | Fix H2: `ajax_preview` GET→POST + `X-CSRF-Token`; `verifyDashboardCsrf()` erzwingt CSRF-Prüfung |
+| Befund | `ajax_preview`-Endpoint war über GET erreichbar — `verifyDashboardCsrf()` läuft nur bei POST, daher kein CSRF-Schutz |
+| Fix PHP | `if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_preview']))` — alle `$_GET`-Reads auf `$_POST` umgestellt |
+| Fix JS | `previewRestore()`: `fetch('?', { method: 'POST', headers: { 'X-CSRF-Token': csrf, ... }, body: URLSearchParams })` |
+| CSRF-Validierung | `verifyDashboardCsrf()` in `config.php` — auto-erzwungen für alle POST-Requests; kein separater Aufruf nötig |
+| php -l | `server-backup.php`: **No syntax errors** |
+| Smoke-Test (Port 3181) | `/fahrstuhl/`: **200** · `/pages/server-backup.php` unauth GET: **302** · POST ohne CSRF-Token: **302** (requireLogin greift vor CSRF-Check) |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
 
 ---
 
