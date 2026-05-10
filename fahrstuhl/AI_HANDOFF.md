@@ -335,20 +335,20 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 
 ## Design-Qualitäts-Audit — Dashboard
 
-**Stand: 2026-05-10 | Gesamtbewertung: 15 / 20**
+**Stand: 2026-05-10 | Gesamtbewertung: 17 / 20**
 
 ### Kategorien
 
 | Kategorie | Punkte | Bewertung |
 |---|---|---|
-| Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
+| Typografie | 3/3 | System-Font-Stack + 6 `--fs-*`-Tokens in `:root`, ~65 aktive `font-size`-Werte tokenisiert (Commit `2403b15`) |
 | Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
 | Spacing-System | 3/3 | `--sp-*`-Token-Werte in `:root` auf rem migriert (Option A, Commit `51ba282`). PHP-Inline-Styles `var(--sp-*)` kompatibel. Basis: `html` default 16px — `body { font-size: 15px }` beeinflusst `rem` nicht. |
 | Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
 
-**Gesamt: 16 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert, `--sp-*`-Tokens rem-basiert (Option A).**
+**Gesamt: 17 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert, `--sp-*`-Tokens rem-basiert, `--fs-*`-Typografie-Tokens vollständig eingeführt.**
 
 ---
 
@@ -409,10 +409,26 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `8a1dedd` | Doku: AI_HANDOFF.md nach fa47cf5 aktualisiert | — |
 | `f2b6d4a` | Spacing tokens in PHP-Inline-Styles (exakte px-Matches, 10 Dateien, ~45 Werte) | Spacing-System bleibt 2/3 — Core CSS rem-basiert |
 | `51ba282` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
+| `2403b15` | Typografie-Token-Pass: 6 `--fs-*`-Tokens in `:root`, ~65 aktive `font-size`-Werte tokenisiert | Typografie **3/3**, Score **17/20** |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. `--sp-*`-Tokens rem-basiert (Option A, 7 Zeilen). PHP-Inline-Styles und `:root`-Tokens nutzen dieselbe Einheit. Score: 16/20.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. `--sp-*`- und `--fs-*`-Tokens vollständig eingeführt. Score: 17/20.**
 
-Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Typografie-Upgrade (eigene Font → +1 Punkt).
+Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Score auf 18/20 via eigene Font oder weiterer CSS-Konsolidierung.
+
+---
+
+### Abschluss-Report — Typografie-Token-Pass (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `2403b15` | 6 `--fs-*`-Tokens in `:root` eingeführt, ~65 aktive `font-size`-Werte in `style.css` tokenisiert |
+| Tokens | `--fs-2xs: 0.65rem` `--fs-xs: 0.72rem` `--fs-sm: 0.78rem` `--fs-base: 0.86rem` `--fs-md: 0.9rem` `--fs-lg: 1.1rem` |
+| Unberührt | Dead CSS (überschriebene Regeln), Display-Werte (≥1.25rem), `clamp()`-Ausdrücke, `body { font-size: 15px }`, `font-size: 16px !important` (iOS-Zoom-Fix) |
+| git diff --check | EXIT 0 — keine Whitespace-Fehler |
+| Impeccable | **0 findings** — unverändert clean |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
+| HTTP-Smoke-Test | dashboard: **200**, alle 10 PHP-Seiten: **302** — ALL_OK |
+| Audit-Score | **17/20** — Typografie: **3/3** |
 
 ---
 
