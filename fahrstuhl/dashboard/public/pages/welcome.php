@@ -303,10 +303,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>🤖 KI-Begrüßung <span class="status-badge success" style="font-size:.68rem;">Neu</span></h2>
                     <label class="wlc-toggle" title="KI-Begrüßung aktivieren">
-                        <input type="checkbox" name="aiWelcomeEnabled" <?php echo checkedAttr($settings['aiWelcomeEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="aiWelcomeEnabled" name="aiWelcomeEnabled" <?php echo checkedAttr($settings['aiWelcomeEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="aiWelcomeBody" <?php if (empty($settings['aiWelcomeEnabled'])) echo 'style="display:none"'; ?>>
                 <p style="color:var(--text-secondary); font-size:.84rem; margin:0 0 .9rem;">Der Bot wählt automatisch KI-generierte Begrüßungstexte im gewählten Stil.</p>
                 <div class="wlc-field">
                     <label>Charakter-Stil</label>
@@ -320,6 +321,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <button type="button" class="btn-icon" id="wlcTestJoinBtn"><span class="i">🧪</span> Test Join</button>
                     <div id="wlcTestJoinResult" class="wlc-action-result"></div>
                 </div>
+                </div><!-- /aiWelcomeBody -->
             </div>
 
             <!-- WELCOME NACHRICHT -->
@@ -327,10 +329,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>👋 Willkommensnachricht</h2>
                     <label class="wlc-toggle" title="Willkommensnachricht aktivieren">
-                        <input type="checkbox" name="welcomeEnabled" <?php echo checkedAttr($settings['welcomeEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="welcomeEnabled" name="welcomeEnabled" <?php echo checkedAttr($settings['welcomeEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="welcomeBody" <?php if (empty($settings['welcomeEnabled'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-field">
                     <label>Kanal</label>
                     <select name="welcomeChannelId">
@@ -393,6 +396,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <input type="hidden" name="welcomeCardTextColor" value="<?php echo esc($settings['welcomeCardTextColor'] ?? '#ffffff'); ?>">
                 <input type="hidden" name="welcomeCardBackgroundColor" value="<?php echo esc($settings['welcomeCardBackgroundColor'] ?? '#111827'); ?>">
                 <input type="hidden" name="welcomeCardOverlayOpacity" value="<?php echo esc($settings['welcomeCardOverlayOpacity'] ?? 75); ?>">
+                </div><!-- /welcomeBody -->
             </div>
 
             <!-- DM -->
@@ -400,10 +404,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>💬 Direkt-Nachricht (DM)</h2>
                     <label class="wlc-toggle" title="DM aktivieren">
-                        <input type="checkbox" name="dmEnabled" <?php echo checkedAttr($settings['dmEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="dmEnabled" name="dmEnabled" <?php echo checkedAttr($settings['dmEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="dmBody" <?php if (empty($settings['dmEnabled'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-field">
                     <label>DM Nachrichtentext</label>
                     <textarea name="dmMessage" maxlength="2000"><?php echo esc($settings['dmMessage'] ?? 'Have a great time here in **{server}**'); ?></textarea>
@@ -445,6 +450,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                         <input type="text" name="dmCardSubtitle" maxlength="128" value="<?php echo esc($settings['dmCardSubtitle'] ?? "You're member #{memberCount}"); ?>">
                     </div>
                 </div>
+                </div><!-- /dmBody -->
             </div>
 
             <!-- GOODBYE -->
@@ -452,10 +458,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>👋 Goodbye-Nachricht</h2>
                     <label class="wlc-toggle" title="Goodbye aktivieren">
-                        <input type="checkbox" name="goodbyeEnabled" <?php echo checkedAttr($settings['goodbyeEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="goodbyeEnabled" name="goodbyeEnabled" <?php echo checkedAttr($settings['goodbyeEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="goodbyeBody" <?php if (empty($settings['goodbyeEnabled'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-field">
                     <label>Kanal</label>
                     <select name="goodbyeChannelId">
@@ -498,6 +505,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <button type="button" class="btn-icon" id="wlcTestLeaveBtn"><span class="i">🧪</span> Test Leave</button>
                     <div id="wlcTestLeaveResult" class="wlc-action-result"></div>
                 </div>
+                </div><!-- /goodbyeBody -->
             </div>
 
             <!-- AUTOROLE -->
@@ -505,10 +513,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>🏷️ Auto-Role</h2>
                     <label class="wlc-toggle" title="Auto-Role aktivieren">
-                        <input type="checkbox" name="autoroleEnabled" <?php echo checkedAttr($settings['autoroleEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="autoroleEnabled" name="autoroleEnabled" <?php echo checkedAttr($settings['autoroleEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="autoroleBody" <?php if (empty($settings['autoroleEnabled'])) echo 'style="display:none"'; ?>>
                 <p style="color:var(--text-secondary); font-size:.84rem; margin:0 0 .9rem;">Wenn Verification aktiv ist, wird die Rolle nach dem Verifizieren vergeben — sonst direkt beim Beitritt.</p>
                 <div class="wlc-field">
                     <label>Rolle vergeben</label>
@@ -527,6 +536,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                         <?php echo !empty($permissions['sendMessages']) ? '✅' : '❌'; ?> Send Messages
                     </span>
                 </div>
+                </div><!-- /autoroleBody -->
             </div>
 
             <!-- VERIFICATION -->
@@ -534,10 +544,11 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-card-header">
                     <h2>🔒 Verification <small>— Kanal, Rolle und Embed für neue Mitglieder</small></h2>
                     <label class="wlc-toggle" title="Verification aktivieren">
-                        <input type="checkbox" name="verificationEnabled" <?php echo checkedAttr($settings['verificationEnabled'] ?? false); ?>>
+                        <input type="checkbox" id="verificationEnabled" name="verificationEnabled" <?php echo checkedAttr($settings['verificationEnabled'] ?? false); ?>>
                         <span class="wlc-slider"></span>
                     </label>
                 </div>
+                <div id="verificationBody" <?php if (empty($settings['verificationEnabled'])) echo 'style="display:none"'; ?>>
                 <?php if (!empty($settings['verificationPublishedAt'])): ?>
                 <div class="alert alert-success" style="margin-bottom:.9rem; font-size:.84rem;">✅ Verification wurde bereits veröffentlicht.</div>
                 <?php endif; ?>
@@ -625,6 +636,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <span style="color:var(--text-secondary); font-size:.82rem;">Erstellt Kanal + Rolle falls nötig und postet das Embed mit Button.</span>
                     <div id="wlcPublishResult" class="wlc-action-result"></div>
                 </div>
+                </div><!-- /verificationBody -->
             </div>
 
         </div><!-- .wlc-grid -->
@@ -770,6 +782,14 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 
     document.getElementById('wlcPublishVerifyBtn')?.addEventListener('click', () => {
         doAction('publish_verification', {}, 'wlcPublishResult', 'wlcPublishVerifyBtn', 'Veröffentliche');
+    });
+
+    // Module body toggle (main enable/disable)
+    [['aiWelcomeEnabled', 'aiWelcomeBody'], ['welcomeEnabled', 'welcomeBody'], ['dmEnabled', 'dmBody'], ['goodbyeEnabled', 'goodbyeBody'], ['autoroleEnabled', 'autoroleBody'], ['verificationEnabled', 'verificationBody']].forEach(([cbId, divId]) => {
+        const cb = document.getElementById(cbId);
+        const div = document.getElementById(divId);
+        if (!cb || !div) return;
+        cb.addEventListener('change', () => { div.style.display = cb.checked ? '' : 'none'; });
     });
 
     // Embed fields toggle
