@@ -415,6 +415,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `83df86e` | AI_HANDOFF.md: UX Polish 3/3, Score 18/20 eingetragen | — |
 | `c8f4658` | Security: 4 HTTP-Security-Header in `config.php`; doppeltes `session_start()` in `server-backup.php` entfernt | H1 teilweise behoben, N1 behoben |
 | `d4d70c6` | Security H2: `ajax_preview` GET→POST + `X-CSRF-Token`; `verifyDashboardCsrf()` erzwingt CSRF-Prüfung | H2 behoben |
+| `249ac18` | M1 fix: `$botOffline` + `.alert-warning`-Banner auf `botinfo.php` + `cockpit.php` | M1 teilw. behoben (2/7 Seiten) |
 
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. UX Polish: 3/3. Score: 18/20.**
 
@@ -442,11 +443,28 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Kritisch | — | Keine |
 | Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
 | Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | ✅ Behoben (`d4d70c6`) — POST + `X-CSRF-Token` |
-| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | Offen |
+| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ⚠️ Teilweise behoben (`249ac18`) — `botinfo.php` + `cockpit.php`; 5 weitere Seiten offen |
 | Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | Offen |
 | Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
 | Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
 | Niedrig (N2) | `botinfo.php`: `requireLogin` statt `requireAdmin` | By design |
+
+---
+
+### Abschluss-Report — Security-Audit M1 (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `249ac18` | M1 teilw. behoben: `$botOffline`-Flag + `.alert-warning`-Banner in `botinfo.php` + `cockpit.php` |
+| Befund | Bot-API-Fehler (`getAPI()` → `['success'=>false]`) erzeugte keinen sichtbaren Error-State — leere Stats ohne Hinweis |
+| Fix `botinfo.php` | L12: `$botOffline = !isset($statsRaw['stats']);` · L23–24: `<?php if ($botOffline): ?><div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — angezeigte Stats sind möglicherweise leer oder veraltet.</div>` |
+| Fix `cockpit.php` | L43: `$botOffline = empty($d);` · L102–103: `<?php if ($botOffline): ?><div class="alert alert-warning">⚠️ Bot-API aktuell nicht erreichbar — Cockpit-Daten werden nicht geladen. Stats und Charts bleiben leer bis die API wieder antwortet.</div>` |
+| Kein neues CSS | Reuse von `.alert .alert-warning` aus `style.css` — kein neuer Stil |
+| php -l | `botinfo.php`: **No syntax errors** · `cockpit.php`: **No syntax errors** |
+| Smoke-Test (Port 3181) | `/fahrstuhl/`: **200** · `/pages/botinfo.php`: **302** · `/pages/cockpit.php`: **302** — ALL_OK |
+| Banner-Verifikation (Server) | `grep -n 'botOffline\|alert-warning'` — beide Dateien: Zeilen korrekt vorhanden |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
+| Noch offen (M1) | 5 weitere Seiten: `analytics.php`, `guilds.php`, `logs.php`, `ueberwachung.php`, `setup.php` |
 
 ---
 
