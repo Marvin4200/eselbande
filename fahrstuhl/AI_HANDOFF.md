@@ -412,3 +412,104 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3. Alle `!important`-border-radius vollständig tokenisiert. `--sp-*`-Tokens in 10 PHP-Dateien (Inline-Styles, exakte px-Matches). Core CSS bleibt rem-basiert — kein Score-Push auf 16/20 ohne vollständige CSS-Architektur-Migration.**
 
 Nächster Schritt: CSS-Architektur — `--sp-*`-Tokens von px auf rem umdefinieren (oder CSS-Werte von rem auf px migrieren), um Konsistenz zwischen CSS und PHP-Inline-Styles herzustellen. Alternativ: nächste Feature-Priorität (Setup Assistant, Logging Dashboard) angehen.
+
+---
+
+### Abschluss-Report — Spacing-Token-Pass (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `f2b6d4a` | 51 exakte Inline-Spacing-Werte in 10 PHP-Dateien auf `--sp-*`-Tokens umgestellt |
+| Commit `f0446c6` | Audit-Dokumentation aktualisiert |
+| PHP-Syntax (Server) | **ALL_OK** — 10/10 Dateien fehlerfrei (`php -l` via SSH) |
+| HTTP-Smoke-Test | Alle 10 Seiten **HTTP 302** (Login-Redirect) — kein 500/404 |
+| Audit-Score | **15/20** — keine Änderung, ehrlich behalten |
+| Spacing-System | **2/3** — `style.css` bleibt rem-basiert, `--sp-*` nicht systematisch in CSS genutzt |
+
+Geänderte PHP-Dateien: `analytics.php`, `audit.php`, `blacklist.php`, `botinfo.php`, `commands.php`, `flags.php`, `guilds.php`, `logs.php`, `ueberwachung.php`, `users.php`
+
+---
+
+### Entscheidungsvorlage — Design-Token-Migration CSS
+
+**Kontext:** `--sp-*`-Tokens sind in `:root` in px definiert (`--sp-1:4px` … `--sp-8:32px`). `style.css` verwendet durchgehend `rem` für Spacing (z.B. `padding: 0.75rem`). Die Tokens werden aktuell nur in PHP-Inline-Styles genutzt. Das ist ein Hybrid-System.
+
+---
+
+#### Option A — `--sp-*`-Tokens auf rem umdefinieren
+
+**Ansatz:** Tokenwerte in `:root` von px auf rem ändern.
+
+```css
+/* Vorher */
+--sp-4: 16px;
+/* Nachher */
+--sp-4: 1rem;  /* bei base 16px äquivalent */
+```
+
+PHP-Inline-Styles weiter `var(--sp-*)` nutzen — bleibt kompatibel.
+
+| | |
+|---|---|
+| **Risiko** | Mittel — PHP-Inline-Styles rendern `var(--sp-*)` in rem, was mit `font-size`-Overrides skaliert. Kein Rendering-Bruch erwartet, aber Browser muss Custom Properties in rem auflösen (funktioniert). Inline-Styles können keine CSS Custom Properties in alten Safari < 10 (irrelevant für Discord-Dashboard). |
+| **Aufwand** | Gering — 7 Zeilen in `:root` ändern, kein weiterer Code anpassen. |
+| **Wirkung** | Tokens konsistent rem-basiert. PHP und CSS nutzen dieselbe Einheit. Spacing-System → **3/3**. |
+| **Problem** | `1rem = 16px` nur bei default `font-size: 16px`. Wenn jemand `:root { font-size: 62.5% }` einführt (1rem = 10px), brechen alle Inline-Styles sofort. Derzeit kein solcher Reset im Code — aber Architektur-Risiko für die Zukunft. |
+
+**Empfehlung:** Geeignet, wenn keine `font-size`-Manipulation am Root geplant ist. Niedrigstes Risiko, geringstes Aufwand.
+
+---
+
+#### Option B — CSS von rem auf px-Tokens migrieren
+
+**Ansatz:** Alle rem-Spacing-Werte in `style.css` durch `var(--sp-*)` ersetzen.
+
+```css
+/* Vorher */
+padding: 0.75rem 1rem;
+/* Nachher */
+padding: var(--sp-3) var(--sp-4);
+```
+
+| | |
+|---|---|
+| **Risiko** | Hoch — `style.css` hat ~3.000 Zeilen. Viele rem-Werte haben keine exakten px-Token-Entsprechungen (z.B. `0.55rem`, `0.68rem`, `1.25rem`). Nicht-matchende Werte müssen entweder gerundet oder neue Token eingeführt werden. Visuelle Drifts möglich. |
+| **Aufwand** | Sehr hoch — vollständige manuelle Durchsicht der CSS-Datei. Kein Automatismus möglich ohne Verlustrisiko. Schätzung: 4–8h Arbeit + vollständiges visuellem Regressionstest. |
+| **Wirkung** | CSS vollständig auf Design-Token-System umgestellt. Höchste Konsistenz. Spacing-System → **3/3**. |
+| **Problem** | Hohe Fehlerwahrscheinlichkeit bei rem-Werten ohne exakten px-Match. Jeder gerundete Wert ist eine potenzielle visuelle Abweichung. |
+
+**Empfehlung:** Nur sinnvoll, wenn gleichzeitig ein vollständiges Design-System neu aufgesetzt wird (z.B. mit Storybook o.ä.). Als isolierter Schritt zu riskant für bestehende Produktion.
+
+---
+
+#### Option C — Hybrid-System sauber dokumentieren (kein Umbau)
+
+**Ansatz:** Aktuellen Zustand als bewusstes Hybrid-System definieren und festhalten.
+
+Regel:
+- PHP-Inline-Styles → immer `var(--sp-*)` (bereits umgesetzt)
+- CSS → rem bleibt (kein Umbau)
+- Neue CSS-Regeln → optional px-Tokens nutzen, wenn exakter Match vorhanden
+
+| | |
+|---|---|
+| **Risiko** | Kein technisches Risiko — nichts ändert sich. |
+| **Aufwand** | Null (nur Dokumentation). |
+| **Wirkung** | Score bleibt bei **2/3**. Ehrlicher Zustand. Keine Regressions-Gefahr. |
+| **Problem** | Spacing-System bleibt technisch inkonsistent — CSS und PHP-Inline-Styles nutzen unterschiedliche Einheitensysteme. Nur kosmetisch, kein funktionaler Unterschied. |
+
+**Empfehlung:** Sinnvoll als Übergangslösung, wenn Feature-Arbeit Vorrang hat. Kein Aufwand, kein Risiko.
+
+---
+
+#### Vergleich & Empfehlung
+
+| Option | Aufwand | Risiko | Score-Gewinn | Empfehlung |
+|---|---|---|---|---|
+| **A** — Tokens auf rem | Gering (7 Zeilen) | Mittel | 2/3 → 3/3 | **Bevorzugt**, wenn kein Root-font-size-Override geplant |
+| **B** — CSS auf px migrieren | Sehr hoch | Hoch | 2/3 → 3/3 | Nicht jetzt — zu riskant ohne Regressionstests |
+| **C** — Hybrid dokumentieren | Null | Kein | Bleibt 2/3 | Akzeptabel als bewusste Entscheidung |
+
+**Empfehlung: Option A**, sobald Feature-Arbeit nicht konkurriert. Voraussetzung prüfen: Kein `font-size`-Override auf `:root` oder `html` vorhanden — dann sind 7 Zeilen Änderung sicher und der Score steigt auf 16/20.
+
+Vor Umsetzung: `Select-String -Path style.css -Pattern "html\s*\{|:root\s*\{" -Context 0,3` — prüfen ob `font-size` gesetzt ist.
