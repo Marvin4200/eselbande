@@ -3171,7 +3171,7 @@ class BotAPIServer {
                         welcomeEmbedTitle: welcome.welcomeEmbedTitle || '',
                         welcomeEmbedColor: welcome.welcomeEmbedColor || '#51cf66',
                         welcomeEmbedFooter: welcome.welcomeEmbedFooter || '',
-                        welcomeEmbedHeader: welcome.welcomeEmbedHeader || 'Header',
+                        welcomeEmbedHeader: welcome.welcomeEmbedHeader || '',
                         welcomeEmbedAvatar: dashboardImageValue(welcome.welcomeEmbedAvatar),
                         welcomeEmbedEmoji: welcome.welcomeEmbedEmoji || '',
                         welcomeEmbedThumbnail: dashboardImageValue(welcome.welcomeEmbedThumbnail),
@@ -3181,7 +3181,7 @@ class BotAPIServer {
                         goodbyeEnabled: booleanWithDefault(welcome.goodbyeEnabled, false),
                         goodbyeMessage: welcome.goodbyeMessage ?? '{username} left {server}. We are now {memberCount} members.',
                         goodbyeAsEmbed: booleanWithDefault(welcome.goodbyeAsEmbed, false),
-                        goodbyeEmbedHeader: welcome.goodbyeEmbedHeader || 'Header',
+                        goodbyeEmbedHeader: welcome.goodbyeEmbedHeader || '',
                         goodbyeEmbedAvatar: dashboardImageValue(welcome.goodbyeEmbedAvatar),
                         goodbyeEmbedEmoji: welcome.goodbyeEmbedEmoji || '',
                         goodbyeEmbedTitle: welcome.goodbyeEmbedTitle || '',
@@ -3194,7 +3194,7 @@ class BotAPIServer {
                         dmEnabled: booleanWithDefault(welcome.dmEnabled, false),
                         dmMessage: welcome.dmMessage ?? 'Welcome to {server}, {username}. Please read the rules and have fun.',
                         dmAsEmbed: booleanWithDefault(welcome.dmAsEmbed, false),
-                        dmEmbedHeader: welcome.dmEmbedHeader || 'Header',
+                        dmEmbedHeader: welcome.dmEmbedHeader || '',
                         dmEmbedAvatar: dashboardImageValue(welcome.dmEmbedAvatar),
                         dmEmbedEmoji: welcome.dmEmbedEmoji || '',
                         dmEmbedTitle: welcome.dmEmbedTitle || '',
@@ -3211,14 +3211,14 @@ class BotAPIServer {
                         verificationEnabled: dashboardBoolean(welcome.verificationEnabled),
                         verificationChannelId: welcome.verificationChannelId || null,
                         verificationRoleId: welcome.verificationRoleId || null,
-                        verificationHeader: welcome.verificationHeader || 'Header',
+                        verificationHeader: welcome.verificationHeader || '',
                         verificationAvatar: dashboardImageValue(welcome.verificationAvatar),
                         verificationTitle: welcome.verificationTitle ?? 'Verifizierung',
                         verificationMessage: welcome.verificationMessage ?? 'Um diesen Server zu betreten und alle Kanäle zu sehen, musst du zuerst beweisen, dass du ein Mensch bist.\n\nKlicke auf den Button unten, um zu starten.',
                         verificationEmoji: welcome.verificationEmoji || '',
                         verificationThumbnail: dashboardImageValue(welcome.verificationThumbnail),
                         verificationFooterIcon: dashboardImageValue(welcome.verificationFooterIcon),
-                        verificationFooter: welcome.verificationFooter || 'Footer',
+                        verificationFooter: welcome.verificationFooter || '',
                         verificationFields: JSON.stringify(normalizeEmbedFields(welcome.verificationFields)),
                         verificationButtonLabel: welcome.verificationButtonLabel ?? 'Verifizieren',
                         verificationButtonEmoji: welcome.verificationButtonEmoji || '',
@@ -3308,7 +3308,7 @@ class BotAPIServer {
                     welcomeEmbedTitle: String(req.body?.welcomeEmbedTitle || '').slice(0, 256),
                     welcomeEmbedColor: String(req.body?.welcomeEmbedColor || '#51cf66'),
                     welcomeEmbedFooter: String(req.body?.welcomeEmbedFooter || '').slice(0, 128),
-                    welcomeEmbedHeader: String(req.body?.welcomeEmbedHeader || 'Header').slice(0, 80),
+                    welcomeEmbedHeader: String(req.body?.welcomeEmbedHeader || '').slice(0, 80),
                     welcomeEmbedAvatar: dashboardImageValue(req.body?.welcomeEmbedAvatar),
                     welcomeEmbedEmoji: String(req.body?.welcomeEmbedEmoji || '').slice(0, 32),
                     welcomeEmbedThumbnail: dashboardImageValue(req.body?.welcomeEmbedThumbnail),
@@ -3318,7 +3318,7 @@ class BotAPIServer {
                     goodbyeEnabled: dashboardBoolean(req.body?.goodbyeEnabled),
                     goodbyeMessage: goodbyeMessage || '{username} left {server}. We are now {memberCount} members.',
                     goodbyeAsEmbed: dashboardBoolean(req.body?.goodbyeAsEmbed),
-                    goodbyeEmbedHeader: String(req.body?.goodbyeEmbedHeader || 'Header').slice(0, 80),
+                    goodbyeEmbedHeader: String(req.body?.goodbyeEmbedHeader || '').slice(0, 80),
                     goodbyeEmbedAvatar: dashboardImageValue(req.body?.goodbyeEmbedAvatar),
                     goodbyeEmbedEmoji: String(req.body?.goodbyeEmbedEmoji || '').slice(0, 32),
                     goodbyeEmbedTitle: String(req.body?.goodbyeEmbedTitle || '').slice(0, 256),
@@ -3331,7 +3331,7 @@ class BotAPIServer {
                     dmEnabled: dashboardBoolean(req.body?.dmEnabled),
                     dmMessage: dmMessage || 'Welcome to {server}, {username}. Please read the rules and have fun.',
                     dmAsEmbed: dashboardBoolean(req.body?.dmAsEmbed),
-                    dmEmbedHeader: String(req.body?.dmEmbedHeader || 'Header').slice(0, 80),
+                    dmEmbedHeader: String(req.body?.dmEmbedHeader || '').slice(0, 80),
                     dmEmbedAvatar: dashboardImageValue(req.body?.dmEmbedAvatar),
                     dmEmbedEmoji: String(req.body?.dmEmbedEmoji || '').slice(0, 32),
                     dmEmbedTitle: String(req.body?.dmEmbedTitle || '').slice(0, 256),
@@ -3348,14 +3348,14 @@ class BotAPIServer {
                     verificationEnabled: dashboardBoolean(req.body?.verificationEnabled),
                     verificationChannelId: verificationChannelId || null,
                     verificationRoleId: verificationRoleId || null,
-                    verificationHeader: String(req.body?.verificationHeader || 'Header').slice(0, 80),
+                    verificationHeader: String(req.body?.verificationHeader || '').slice(0, 80),
                     verificationAvatar: dashboardImageValue(req.body?.verificationAvatar),
                     verificationTitle: String(req.body?.verificationTitle || 'Verifizierung').slice(0, 120),
                     verificationMessage: String(req.body?.verificationMessage || 'Um diesen Server zu betreten und alle Kanäle zu sehen, musst du zuerst beweisen, dass du ein Mensch bist.\n\nKlicke auf den Button unten, um zu starten.').slice(0, 1000),
                     verificationEmoji: String(req.body?.verificationEmoji || '').slice(0, 32),
                     verificationThumbnail: dashboardImageValue(req.body?.verificationThumbnail),
                     verificationFooterIcon: dashboardImageValue(req.body?.verificationFooterIcon),
-                    verificationFooter: String(req.body?.verificationFooter || 'Footer').slice(0, 128),
+                    verificationFooter: String(req.body?.verificationFooter || '').slice(0, 128),
                     verificationFields: JSON.stringify(normalizeEmbedFields(req.body?.verificationFields)),
                     verificationButtonLabel: String(req.body?.verificationButtonLabel || 'Verifizieren').slice(0, 80),
                     verificationButtonEmoji: String(req.body?.verificationButtonEmoji || '').slice(0, 32),
@@ -3408,7 +3408,7 @@ class BotAPIServer {
                 const current = config.welcome && typeof config.welcome === 'object' ? config.welcome : {};
                 const title = String(req.body?.verificationTitle || current.verificationTitle || 'Verifizierung').slice(0, 120);
                 const description = String(req.body?.verificationMessage || current.verificationMessage || 'Um diesen Server zu betreten und alle Kanäle zu sehen, musst du zuerst beweisen, dass du ein Mensch bist.\n\nKlicke auf den Button unten, um zu starten.').slice(0, 1000);
-                const header = String(req.body?.verificationHeader || current.verificationHeader || 'Header').slice(0, 80);
+                const header = String(req.body?.verificationHeader || current.verificationHeader || '').slice(0, 80);
                 const rawAvatar = dashboardImageValue(req.body?.verificationAvatar || current.verificationAvatar);
                 const avatar = discordImageUrl(rawAvatar);
                 const emoji = String(req.body?.verificationEmoji || current.verificationEmoji || '').slice(0, 32);
@@ -3416,7 +3416,7 @@ class BotAPIServer {
                 const rawFooterIcon = dashboardImageValue(req.body?.verificationFooterIcon || current.verificationFooterIcon);
                 const thumbnail = discordImageUrl(rawThumbnail);
                 const footerIcon = discordImageUrl(rawFooterIcon);
-                const footer = String(req.body?.verificationFooter || current.verificationFooter || 'Footer').slice(0, 128);
+                const footer = String(req.body?.verificationFooter || current.verificationFooter || '').slice(0, 128);
                 const fields = normalizeEmbedFields(req.body?.verificationFields || current.verificationFields);
                 const buttonLabel = String(req.body?.verificationButtonLabel || current.verificationButtonLabel || 'Verifizieren').slice(0, 80);
                 const buttonEmoji = String(req.body?.verificationButtonEmoji || current.verificationButtonEmoji || '').slice(0, 32);
@@ -3538,6 +3538,52 @@ class BotAPIServer {
                 }, 'Verification setup published', 'WELCOME_VERIFICATION_PUBLISHED'));
             } catch (error) {
                 res.status(500).json(APIResponse.error(error.message, 'WELCOME_VERIFICATION_PUBLISH_FAILED'));
+            }
+        });
+
+        this.app.post('/guilds/:guildId/welcome/verification/lockdown', async (req, res) => {
+            try {
+                const guild = this.client.guilds.cache.get(req.params.guildId);
+                if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access'));
+
+                const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
+                if (!(me?.permissions?.has(PermissionsBitField.Flags.ManageChannels) ?? false)) {
+                    return res.status(400).json(APIResponse.badRequest('Fahrstuhl benötigt Manage Channels für den Lockdown.'));
+                }
+
+                const { getGuildConfig } = require('../utils/config');
+                const config = getGuildConfig(guild.id);
+                const welcome = config.welcome || {};
+                const verificationRoleId = String(req.body?.verificationRoleId || welcome.verificationRoleId || '').trim();
+                const verificationChannelId = String(req.body?.verificationChannelId || welcome.verificationChannelId || '').trim();
+
+                if (!verificationRoleId) {
+                    return res.status(400).json(APIResponse.badRequest('Zuerst Verification veröffentlichen (Rolle wird benötigt).'));
+                }
+                const verificationRole = guild.roles.cache.get(verificationRoleId);
+                if (!verificationRole) {
+                    return res.status(400).json(APIResponse.badRequest('Verification-Rolle nicht gefunden. Bitte Verification neu veröffentlichen.'));
+                }
+
+                const channels = guild.channels.cache.filter(c => [0, 2, 4, 5, 15, 16].includes(c.type));
+                let updated = 0;
+                let failed = 0;
+                for (const [channelId, channel] of channels) {
+                    if (channelId === verificationChannelId) continue;
+                    try {
+                        await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false }, { reason: 'Fahrstuhl verification lockdown' });
+                        await channel.permissionOverwrites.edit(verificationRole, { ViewChannel: true }, { reason: 'Fahrstuhl verification lockdown' });
+                        updated++;
+                    } catch (_) { failed++; }
+                }
+
+                res.json(APIResponse.success({ guildId: guild.id, updated, failed },
+                    `Lockdown eingerichtet: ${updated} Kanal${updated !== 1 ? '\u00e4le' : ''} aktualisiert${failed > 0 ? `, ${failed} fehlgeschlagen` : ''}.`,
+                    'VERIFICATION_LOCKDOWN_OK'));
+            } catch (error) {
+                res.status(500).json(APIResponse.error(error.message, 'VERIFICATION_LOCKDOWN_FAILED'));
             }
         });
 

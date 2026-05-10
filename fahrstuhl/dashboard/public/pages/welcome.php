@@ -42,6 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             $message = $result['data']['message'] ?? 'Sending test message failed.';
             $operationSuccess = false;
         }
+    } elseif ($action === 'lockdown_setup') {
+        $result = api('/guilds/' . urlencode($guildId) . '/welcome/verification/lockdown', 'POST', [
+            'verificationRoleId' => $_POST['verificationRoleId'] ?? '',
+            'verificationChannelId' => $_POST['verificationChannelId'] ?? '',
+        ], 30);
+        if (($result['data']['success'] ?? false) === true) {
+            $message = $result['data']['message'] ?? 'Lockdown eingerichtet.';
+            $operationSuccess = true;
+        } else {
+            $messageType = 'error';
+            $message = $result['data']['message'] ?? 'Lockdown fehlgeschlagen.';
+            $operationSuccess = false;
+        }
     } elseif ($action === 'publish_verification') {
         $result = api('/guilds/' . urlencode($guildId) . '/welcome/verification/publish', 'POST', [
             'verificationTitle' => $_POST['verificationTitle'] ?? '',
@@ -258,6 +271,13 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
 .placeholder-hint { background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:8px; padding:.75rem; font-size:.8rem; color:var(--text-secondary); display:grid; gap:.3rem; }
 .placeholder-hint code { color:var(--primary-light); background:rgba(47,140,255,.12); padding:.1rem .3rem; border-radius:4px; }
 @media (max-width:860px) { .wlc-grid { grid-template-columns:1fr; } .wlc-row2 { grid-template-columns:1fr; } }
+.wlc-embed-preview { display:flex; background:#2b2d31; border-radius:6px; overflow:hidden; margin-top:.75rem; font-size:.85rem; min-height:40px; }
+.ep-bar { width:4px; flex:0 0 4px; }
+.ep-body { padding:.65rem .85rem; flex:1; min-width:0; }
+.ep-author { color:#b5bac1; font-size:.78rem; margin-bottom:.15rem; }
+.ep-title { color:#00b0f4; font-weight:700; font-size:.88rem; margin-bottom:.2rem; }
+.ep-desc { color:#dbdee1; line-height:1.4; white-space:pre-wrap; word-break:break-word; font-size:.84rem; }
+.ep-footer { color:#6d6f78; font-size:.73rem; margin-top:.45rem; }
 </style>
 
 <div class="module-page">
@@ -368,16 +388,21 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <label>Embed Thumbnail URL <small style="font-weight:400;">(optional)</small></label>
                     <input type="url" name="welcomeEmbedThumbnail" maxlength="500" value="<?php echo esc($settings['welcomeEmbedThumbnail'] ?? ''); ?>" placeholder="https://...">
                 </div>
+                <div class="wlc-field">
+                    <label>Author / Header <small style="font-weight:400;">(leer lassen um zu verstecken)</small></label>
+                    <input type="text" name="welcomeEmbedHeader" maxlength="80" value="<?php echo esc($settings['welcomeEmbedHeader'] ?? ''); ?>" placeholder="z.B. Eselbande.com">
+                </div>
+                <div class="wlc-embed-preview" id="welcomeEmbedPreview"><div class="ep-bar"></div><div class="ep-body"><div class="ep-author"></div><div class="ep-title"></div><div class="ep-desc"></div><div class="ep-footer"></div></div></div>
                 </div>
                 <!-- Preserved advanced embed fields (not shown in UI) -->
-                <input type="hidden" name="welcomeEmbedHeader" value="<?php echo esc($settings['welcomeEmbedHeader'] ?? ''); ?>">
                 <input type="hidden" name="welcomeEmbedAvatar" value="<?php echo esc($settings['welcomeEmbedAvatar'] ?? ''); ?>">
                 <input type="hidden" name="welcomeEmbedEmoji" value="<?php echo esc($settings['welcomeEmbedEmoji'] ?? ''); ?>">
                 <input type="hidden" name="welcomeEmbedImage" value="<?php echo esc($settings['welcomeEmbedImage'] ?? ''); ?>">
                 <input type="hidden" name="welcomeEmbedFooterIcon" value="<?php echo esc($settings['welcomeEmbedFooterIcon'] ?? ''); ?>">
                 <input type="hidden" name="welcomeEmbedFields" value="<?php echo esc($settings['welcomeEmbedFields'] ?? '[]'); ?>">
                 <div class="wlc-sep"></div>
-                <div class="wlc-check-row"><input type="checkbox" name="welcomeCardEnabled" <?php echo checkedAttr($settings['welcomeCardEnabled'] ?? false); ?>><span>Willkommenskarte senden</span></div>
+                <div class="wlc-check-row"><input type="checkbox" id="welcomeCardEnabled" name="welcomeCardEnabled" <?php echo checkedAttr($settings['welcomeCardEnabled'] ?? false); ?>><span>Willkommenskarte senden</span></div>
+                <div id="welcomeCardBody" <?php if (empty($settings['welcomeCardEnabled'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-row2">
                     <div class="wlc-field">
                         <label>Card Titel</label>
@@ -391,6 +416,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <div class="wlc-field">
                     <label>Card Hintergrundbild URL</label>
                     <input type="url" name="welcomeCardBackgroundImage" maxlength="500" value="<?php echo esc($settings['welcomeCardBackgroundImage'] ?? ''); ?>" placeholder="https://...">
+                </div>
                 </div>
                 <input type="hidden" name="welcomeCardFont" value="<?php echo esc($settings['welcomeCardFont'] ?? 'Inter'); ?>">
                 <input type="hidden" name="welcomeCardTextColor" value="<?php echo esc($settings['welcomeCardTextColor'] ?? '#ffffff'); ?>">
@@ -430,8 +456,12 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <label>Embed Footer</label>
                     <input type="text" name="dmEmbedFooter" maxlength="2048" value="<?php echo esc($settings['dmEmbedFooter'] ?? ''); ?>">
                 </div>
+                <div class="wlc-field">
+                    <label>Author / Header <small style="font-weight:400;">(leer lassen um zu verstecken)</small></label>
+                    <input type="text" name="dmEmbedHeader" maxlength="80" value="<?php echo esc($settings['dmEmbedHeader'] ?? ''); ?>" placeholder="z.B. Eselbande.com">
                 </div>
-                <input type="hidden" name="dmEmbedHeader" value="<?php echo esc($settings['dmEmbedHeader'] ?? ''); ?>">
+                <div class="wlc-embed-preview" id="dmEmbedPreview"><div class="ep-bar"></div><div class="ep-body"><div class="ep-author"></div><div class="ep-title"></div><div class="ep-desc"></div><div class="ep-footer"></div></div></div>
+                </div>
                 <input type="hidden" name="dmEmbedAvatar" value="<?php echo esc($settings['dmEmbedAvatar'] ?? ''); ?>">
                 <input type="hidden" name="dmEmbedEmoji" value="<?php echo esc($settings['dmEmbedEmoji'] ?? ''); ?>">
                 <input type="hidden" name="dmEmbedThumbnail" value="<?php echo esc($settings['dmEmbedThumbnail'] ?? ''); ?>">
@@ -439,7 +469,8 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                 <input type="hidden" name="dmEmbedFooterIcon" value="<?php echo esc($settings['dmEmbedFooterIcon'] ?? ''); ?>">
                 <input type="hidden" name="dmEmbedFields" value="<?php echo esc($settings['dmEmbedFields'] ?? '[]'); ?>">
                 <div class="wlc-sep"></div>
-                <div class="wlc-check-row"><input type="checkbox" name="dmCardEnabled" <?php echo checkedAttr($settings['dmCardEnabled'] ?? false); ?>><span>DM-Willkommenskarte senden</span></div>
+                <div class="wlc-check-row"><input type="checkbox" id="dmCardEnabled" name="dmCardEnabled" <?php echo checkedAttr($settings['dmCardEnabled'] ?? false); ?>><span>DM-Willkommenskarte senden</span></div>
+                <div id="dmCardBody" <?php if (empty($settings['dmCardEnabled'])) echo 'style="display:none"'; ?>>
                 <div class="wlc-row2">
                     <div class="wlc-field">
                         <label>Card Titel</label>
@@ -449,6 +480,7 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                         <label>Card Untertitel</label>
                         <input type="text" name="dmCardSubtitle" maxlength="128" value="<?php echo esc($settings['dmCardSubtitle'] ?? "You're member #{memberCount}"); ?>">
                     </div>
+                </div>
                 </div>
                 </div><!-- /dmBody -->
             </div>
@@ -493,8 +525,12 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <label>Embed Footer</label>
                     <input type="text" name="goodbyeEmbedFooter" maxlength="2048" value="<?php echo esc($settings['goodbyeEmbedFooter'] ?? ''); ?>">
                 </div>
+                <div class="wlc-field">
+                    <label>Author / Header <small style="font-weight:400;">(leer lassen um zu verstecken)</small></label>
+                    <input type="text" name="goodbyeEmbedHeader" maxlength="80" value="<?php echo esc($settings['goodbyeEmbedHeader'] ?? ''); ?>" placeholder="z.B. Eselbande.com">
                 </div>
-                <input type="hidden" name="goodbyeEmbedHeader" value="<?php echo esc($settings['goodbyeEmbedHeader'] ?? ''); ?>">
+                <div class="wlc-embed-preview" id="goodbyeEmbedPreview"><div class="ep-bar"></div><div class="ep-body"><div class="ep-author"></div><div class="ep-title"></div><div class="ep-desc"></div><div class="ep-footer"></div></div></div>
+                </div>
                 <input type="hidden" name="goodbyeEmbedAvatar" value="<?php echo esc($settings['goodbyeEmbedAvatar'] ?? ''); ?>">
                 <input type="hidden" name="goodbyeEmbedEmoji" value="<?php echo esc($settings['goodbyeEmbedEmoji'] ?? ''); ?>">
                 <input type="hidden" name="goodbyeEmbedThumbnail" value="<?php echo esc($settings['goodbyeEmbedThumbnail'] ?? ''); ?>">
@@ -635,6 +671,12 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
                     <button type="button" class="btn-icon btn-primary-ui" id="wlcPublishVerifyBtn"><span class="i">🚀</span> Veröffentlichen</button>
                     <span style="color:var(--text-secondary); font-size:.82rem;">Erstellt Kanal + Rolle falls nötig und postet das Embed mit Button.</span>
                     <div id="wlcPublishResult" class="wlc-action-result"></div>
+                </div>
+                <div class="wlc-sep" style="margin-top:.75rem;"></div>
+                <div class="wlc-action-row">
+                    <button type="button" class="btn-icon" id="wlcLockdownBtn"><span class="i">🔐</span> Server-Lockdown einrichten</button>
+                    <span style="color:var(--text-secondary); font-size:.82rem;">Setzt @everyone auf &bdquo;Kanal nicht sehen&ldquo; überall &mdash; neue Mitglieder sehen erst Kanäle nach der Verification.</span>
+                    <div id="wlcLockdownResult" class="wlc-action-result"></div>
                 </div>
                 </div><!-- /verificationBody -->
             </div>
@@ -783,6 +825,45 @@ function checkedAttr($value) { return !empty($value) ? 'checked' : ''; }
     document.getElementById('wlcPublishVerifyBtn')?.addEventListener('click', () => {
         doAction('publish_verification', {}, 'wlcPublishResult', 'wlcPublishVerifyBtn', 'Veröffentliche');
     });
+
+    document.getElementById('wlcLockdownBtn')?.addEventListener('click', () => {
+        doAction('lockdown_setup', {}, 'wlcLockdownResult', 'wlcLockdownBtn', 'Richte ein');
+    });
+
+    // Card body toggle
+    [['welcomeCardEnabled', 'welcomeCardBody'], ['dmCardEnabled', 'dmCardBody']].forEach(([cbId, divId]) => {
+        const cb = document.getElementById(cbId);
+        const div = document.getElementById(divId);
+        if (!cb || !div) return;
+        cb.addEventListener('change', () => { div.style.display = cb.checked ? '' : 'none'; });
+    });
+
+    // Live embed preview
+    function setupEmbedPreview(previewId, colorName, titleName, msgName, footerName, headerName) {
+        const q = n => document.querySelector('[name="' + n + '"]');
+        const colorEl = q(colorName);
+        const preview = document.getElementById(previewId);
+        if (!preview || !colorEl) return;
+        function update() {
+            const bar = preview.querySelector('.ep-bar');
+            const titleDiv = preview.querySelector('.ep-title');
+            const descDiv = preview.querySelector('.ep-desc');
+            const footerDiv = preview.querySelector('.ep-footer');
+            const authorDiv = preview.querySelector('.ep-author');
+            if (bar) bar.style.background = colorEl.value || '#51cf66';
+            if (titleDiv) titleDiv.textContent = q(titleName)?.value || '';
+            if (descDiv) descDiv.textContent = q(msgName)?.value || '';
+            const fv = q(footerName)?.value || '';
+            if (footerDiv) { footerDiv.textContent = fv; footerDiv.style.display = fv ? '' : 'none'; }
+            const av = headerName ? (q(headerName)?.value || '') : '';
+            if (authorDiv) { authorDiv.textContent = av; authorDiv.style.display = av ? '' : 'none'; }
+        }
+        [colorName, titleName, msgName, footerName, headerName].filter(Boolean).forEach(n => q(n)?.addEventListener('input', update));
+        update();
+    }
+    setupEmbedPreview('welcomeEmbedPreview', 'welcomeEmbedColor', 'welcomeEmbedTitle', 'welcomeMessage', 'welcomeEmbedFooter', 'welcomeEmbedHeader');
+    setupEmbedPreview('goodbyeEmbedPreview', 'goodbyeEmbedColor', 'goodbyeEmbedTitle', 'goodbyeMessage', 'goodbyeEmbedFooter', 'goodbyeEmbedHeader');
+    setupEmbedPreview('dmEmbedPreview', 'dmEmbedColor', 'dmEmbedTitle', 'dmMessage', 'dmEmbedFooter', 'dmEmbedHeader');
 
     // Module body toggle (main enable/disable)
     [['aiWelcomeEnabled', 'aiWelcomeBody'], ['welcomeEnabled', 'welcomeBody'], ['dmEnabled', 'dmBody'], ['goodbyeEnabled', 'goodbyeBody'], ['autoroleEnabled', 'autoroleBody'], ['verificationEnabled', 'verificationBody']].forEach(([cbId, divId]) => {
