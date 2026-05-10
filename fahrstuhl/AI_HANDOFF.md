@@ -168,9 +168,12 @@ Features:
 - Level Rollen (roleRewards) ✅
 - removeLowerLevelRoles Toggle ✅
 - Reset per User und per Guild ✅ (resetUserXp, resetGuildXp)
-
-Fehlt:
-- XP Multiplikatoren (pro Rolle/Channel)
+- XP Multiplikatoren pro Rolle ✅ (roleMultipliers, max 5x, Stack-Logik)
+- XP Multiplikatoren pro Channel ✅ (channelMultipliers, max 5x)
+- No-XP Channels ✅
+- Voice XP ✅ (voiceXpEnabled, voiceXpPerMinute)
+- Block Duplicate Messages ✅
+- Min Message Length ✅
 
 ### Free Games
 
@@ -264,22 +267,18 @@ git diff --check
 
 ## Nächste Aufgaben
 
-Priorität 1 — Leveling vervollständigen:
+Priorität 1 — Temp Voice Persistenz prüfen:
 
-- XP Multiplikator pro Rolle/Channel (Datenbank-Feld fehlt noch)
+- VoiceChannelCleanup nach Bot-Neustart testen: werden verwaiste Channels korrekt gelöscht?
 
-Priorität 2 — Temp Voice persistenz:
-
-- Channels aktuell in DB (temp_voice_channels), aber Cleanup nach Neustart prüfen
-
-Priorität 3 — Dashboard UX:
+Priorität 2 — Dashboard UX:
 
 - weniger Reloads (mehr AJAX/partial updates)
-- Setup Assistent für neue Server
+- Setup Assistent für neue Server (Schritt für Schritt: Welcome → Mod → AutoMod)
 
-Priorität 4 — Logging Dashboard:
+Priorität 3 — Logging Dashboard:
 
-- logging.php: Anzeige der letzten Log-Events im Dashboard
+- logging.php: Anzeige der letzten Log-Events im Dashboard (aktuell nur Konfiguration)
 
 ## Ziel
 
