@@ -574,6 +574,40 @@ const commands = [
                 .setName("resetserver")
                 .setDescription("Reset ALL leveling data for this server (cannot be undone)")
         ),
+    new SlashCommandBuilder()
+        .setName("freegames")
+        .setDescription("🎮 Free game notifications from Epic Games Store")
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageGuild)
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("setup")
+                .setDescription("Enable free game notifications and set the announcement channel")
+                .addChannelOption(option =>
+                    option.setName("channel")
+                        .setDescription("Channel to post free game announcements in")
+                        .setRequired(true)
+                )
+                .addRoleOption(option =>
+                    option.setName("mention-role")
+                        .setDescription("Role to mention with each announcement (optional)")
+                        .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("disable")
+                .setDescription("Disable free game notifications for this server")
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("status")
+                .setDescription("Show current free game notification settings")
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("test")
+                .setDescription("Post the currently free games right now (owner-only)")
+        ),
 ].map(cmd => cmd.toJSON());
 
 async function handleInteraction(interaction, dependencies) {
@@ -2993,6 +3027,92 @@ async function handleInteraction(interaction, dependencies) {
                 return safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
             }
         }
+
+        // ===== /freegames =====
+        if (interaction.commandName === "freegames") {
+            const sub = interaction.options.getSubcommand();
+            const { normalizeFreeGamesConfig } = require("../utils/freeGamesNotifier");
+            const freeGamesNotifier = require("../utils/freeGamesNotifier");
+
+            if (sub === "setup") {
+                const channel = interaction.options.getChannel("channel");
+                const mentionRole = interaction.options.getRole("mention-role");
+
+                if (!channel.isTextBased()) {
+                    return safeReply(interaction, {
+                        content: "❌ Bitte wähle einen Text-Channel aus.",
+                        flags: [MessageFlags.Ephemeral],
+                    });
+                }
+
+                const config = getGuildConfig(interaction.guildId);
+                const existing = normalizeFreeGamesConfig(config);
+                setGuildConfig(interaction.guildId, {
+                    freeGames: {
+                        ...existing,
+                        enabled: true,
+                        channelId: channel.id,
+                        mentionRoleId: mentionRole ? mentionRole.id : existing.mentionRoleId,
+                        firstRunDone: false, // reset so first poll just marks existing games as seen
+                    },
+                });
+
+                const embed = new EmbedBuilder()
+                    .setColor(0x00d26a)
+                    .setTitle("✅ Free Games Notifications aktiviert")
+                    .setDescription(`Neue kostenlose Epic Games Spiele werden in ${channel} angekündigt.`)
+                    .addFields(
+                        { name: "Channel", value: `${channel}`, inline: true },
+                        { name: "Mention", value: mentionRole ? `${mentionRole}` : "Keine", inline: true },
+                    )
+                    .setFooter({ text: "Fahrstuhl Bot • Free Games" });
+                return safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+            }
+
+            if (sub === "disable") {
+                const config = getGuildConfig(interaction.guildId);
+                const existing = normalizeFreeGamesConfig(config);
+                setGuildConfig(interaction.guildId, {
+                    freeGames: { ...existing, enabled: false },
+                });
+                return safeReply(interaction, {
+                    content: "🔕 Free Game Notifications wurden deaktiviert.",
+                    flags: [MessageFlags.Ephemeral],
+                });
+            }
+
+            if (sub === "status") {
+                const config = getGuildConfig(interaction.guildId);
+                const settings = normalizeFreeGamesConfig(config);
+                const embed = new EmbedBuilder()
+                    .setColor(settings.enabled ? 0x00d26a : 0x747f8d)
+                    .setTitle("🎮 Free Games – Status")
+                    .addFields(
+                        { name: "Status", value: settings.enabled ? "✅ Aktiv" : "❌ Deaktiviert", inline: true },
+                        { name: "Channel", value: settings.channelId ? `<#${settings.channelId}>` : "Nicht gesetzt", inline: true },
+                        { name: "Mention", value: settings.mentionRoleId ? `<@&${settings.mentionRoleId}>` : "Keine", inline: true },
+                        { name: "Bekannte Spiele", value: String(settings.postedIds.length), inline: true },
+                    )
+                    .setFooter({ text: "Fahrstuhl Bot • Free Games" });
+                return safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+            }
+
+            if (sub === "test") {
+                if (interaction.user.id !== OWNER_ID) {
+                    return safeReply(interaction, {
+                        content: "❌ Nur der Bot-Eigentümer kann diesen Befehl nutzen.",
+                        flags: [MessageFlags.Ephemeral],
+                    });
+                }
+                await safeReply(interaction, {
+                    content: "🔄 Hole aktuelle freie Spiele von Epic...",
+                    flags: [MessageFlags.Ephemeral],
+                });
+                await freeGamesNotifier.runOnce({ force: true });
+                return;
+            }
+        }
+
     } catch (err) {
         if (err.code === 10062 || err.code === 40060) {
             return;

@@ -74,6 +74,7 @@ const { createVoiceRewardBridge } = require("./utils/voiceRewardBridge");
 const levelingManager = require("./utils/levelingManager");
 const ticketManager = require("./utils/ticketManager");
 const socialNotifier = require("./utils/socialNotifier");
+const freeGamesNotifier = require("./utils/freeGamesNotifier");
 const { sendServerLog } = require("./utils/serverLogger");
 const { parseBoolean } = require("./utils/valueParsers");
 const { HealthCheckManager, setupDefaultHealthChecks } = require("./utils/healthCheck");
@@ -1384,6 +1385,7 @@ client.once(Events.ClientReady, async () => {
     voiceRewardBridge = createVoiceRewardBridge({ client, logToMaster });
     voiceRewardBridge.start();
     socialNotifier.start(client);
+    freeGamesNotifier.start(client);
 
     await logToMaster({
         title: "🚀 Bot Status",
@@ -3032,6 +3034,7 @@ async function shutdown() {
     await voiceUsageTracker.stop();
     if (voiceRewardBridge) voiceRewardBridge.stop();
     socialNotifier.stop();
+    freeGamesNotifier.stop();
 
     // Cleanup graceful degradation
     // (keep fallback data for next startup)
