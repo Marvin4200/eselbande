@@ -1011,9 +1011,9 @@ a.notif-item:focus-visible {
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
-    /* Spacing scale */
-    --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-    --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+    /* Spacing scale (rem; base: html default 16px — body font-size:15px does not affect rem) */
+    --sp-1: 0.25rem; --sp-2: 0.5rem;  --sp-3: 0.75rem; --sp-4: 1rem;
+    --sp-5: 1.25rem; --sp-6: 1.5rem;  --sp-8: 2rem;
     /* Sidebar */
     --sidebar-width: 264px;
     --sidebar-transition: 0.26s cubic-bezier(0.4, 0, 0.2, 1);

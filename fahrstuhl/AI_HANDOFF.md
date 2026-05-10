@@ -343,12 +343,12 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 |---|---|---|
 | Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
 | Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
-| Spacing-System | 2/3 | `--sp-*`-Tokens in PHP-Inline-Styles genutzt (exakte px-Matches). Core CSS bleibt rem-basiert — Token-Migration CSS-Architektur steht noch aus. |
+| Spacing-System | 3/3 | `--sp-*`-Token-Werte in `:root` auf rem migriert (Option A, Commit `tbd`). PHP-Inline-Styles `var(--sp-*)` kompatibel. Basis: `html` default 16px — `body { font-size: 15px }` beeinflusst `rem` nicht. |
 | Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
 
-**Gesamt: 15 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert.**
+**Gesamt: 16 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert, `--sp-*`-Tokens rem-basiert (Option A).**
 
 ---
 
@@ -408,10 +408,11 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `fa47cf5` | Minor token cleanup: raw `12px !important` im Card-Cleanup-Block → `var(--radius-md) !important` | Letzter raw-!important-Wert tokenisiert |
 | `8a1dedd` | Doku: AI_HANDOFF.md nach fa47cf5 aktualisiert | — |
 | `f2b6d4a` | Spacing tokens in PHP-Inline-Styles (exakte px-Matches, 10 Dateien, ~45 Werte) | Spacing-System bleibt 2/3 — Core CSS rem-basiert |
+| `tbd` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3. Alle `!important`-border-radius vollständig tokenisiert. `--sp-*`-Tokens in 10 PHP-Dateien (Inline-Styles, exakte px-Matches). Core CSS bleibt rem-basiert — kein Score-Push auf 16/20 ohne vollständige CSS-Architektur-Migration.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. `--sp-*`-Tokens rem-basiert (Option A, 7 Zeilen). PHP-Inline-Styles und `:root`-Tokens nutzen dieselbe Einheit. Score: 16/20.**
 
-Nächster Schritt: CSS-Architektur — `--sp-*`-Tokens von px auf rem umdefinieren (oder CSS-Werte von rem auf px migrieren), um Konsistenz zwischen CSS und PHP-Inline-Styles herzustellen. Alternativ: nächste Feature-Priorität (Setup Assistant, Logging Dashboard) angehen.
+Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Typografie-Upgrade (eigene Font → +1 Punkt).
 
 ---
 
@@ -423,8 +424,23 @@ Nächster Schritt: CSS-Architektur — `--sp-*`-Tokens von px auf rem umdefinier
 | Commit `f0446c6` | Audit-Dokumentation aktualisiert |
 | PHP-Syntax (Server) | **ALL_OK** — 10/10 Dateien fehlerfrei (`php -l` via SSH) |
 | HTTP-Smoke-Test | Alle 10 Seiten **HTTP 302** (Login-Redirect) — kein 500/404 |
-| Audit-Score | **15/20** — keine Änderung, ehrlich behalten |
+| Audit-Score | **15/20** — Spacing-Pass (f2b6d4a), ehrlich behalten (Token-Migration CSS noch offen) |
 | Spacing-System | **2/3** — `style.css` bleibt rem-basiert, `--sp-*` nicht systematisch in CSS genutzt |
+
+---
+
+### Abschluss-Report — Option A: `--sp-*`-Token-Migration (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Änderung | 7 Token-Werte in `:root` von px auf rem: `--sp-1: 0.25rem` … `--sp-8: 2rem` |
+| Selektoren | **0 berührt** — nur `:root`-Definitionen |
+| Basis | `html` kein `font-size`-Override — Browser-Default 16px. `body { font-size: 15px }` beeinflusst `rem` **nicht** |
+| git diff --check | EXIT 0 — keine Whitespace-Fehler |
+| Grep-Verifikation | Keine `--sp-*: *px`-Werte mehr in style.css |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
+| HTTP-Smoke-Test | dashboard: **200**, alle 10 PHP-Seiten: **302** — ALL_OK |
+| Audit-Score | **16/20** — Spacing-System: **3/3** |
 
 Geänderte PHP-Dateien: `analytics.php`, `audit.php`, `blacklist.php`, `botinfo.php`, `commands.php`, `flags.php`, `guilds.php`, `logs.php`, `ueberwachung.php`, `users.php`
 
