@@ -412,10 +412,40 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `51ba282` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
 | `2403b15` | Typografie-Token-Pass: 6 `--fs-*`-Tokens in `:root`, ~65 aktive `font-size`-Werte tokenisiert | Typografie **3/3**, Score **17/20** |
 | `e8a585c` | UX Polish Pass: `:active` Press-Feedback, `border-radius: inherit` am Focus-Ring, Card `:focus-visible`-States | UX Polish **3/3**, Score **18/20** |
+| `83df86e` | AI_HANDOFF.md: UX Polish 3/3, Score 18/20 eingetragen | — |
+| `c8f4658` | Security: 4 HTTP-Security-Header in `config.php`; doppeltes `session_start()` in `server-backup.php` entfernt | H1 teilweise behoben, N1 behoben |
 
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. UX Polish: 3/3. Score: 18/20.**
 
 Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Score auf 19/20 via eigene Font oder weitere Konsolidierung.
+
+---
+
+### Abschluss-Report — Funktionaler Security-Audit (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `c8f4658` | Fix H1 (teilw.) + Fix N1 in einem Commit: Security-Header + doppeltes `session_start()` |
+| H1 — HTTP Security Headers | `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(), microphone=(), camera=()` — gesetzt in `config.php` nach `session_start()`, gilt für alle 57 Seiten |
+| H1 — bewusst offen | **CSP**: Inline-Scripts verhindern sinnvollen Header ohne Refaktor. **HSTS**: nginx-Ebene, nicht PHP-Ebene — separater Schritt. |
+| N1 — doppeltes `session_start()` | `server-backup.php` L5: `session_start()` → Kommentar. `config.php` startet Session zentral mit `session_status() === PHP_SESSION_NONE`-Guard. |
+| php -l | `config.php`: **No syntax errors** · `server-backup.php`: **No syntax errors** |
+| Smoke-Test (Port 3181) | `/fahrstuhl/`: **200** · `/pages/server-backup.php`: **302** · `/pages/botinfo.php`: **302** · `/pages/cockpit.php`: **302** — ALL_OK |
+| Header-Verifikation | `X-Frame-Options: SAMEORIGIN` ✅ · `X-Content-Type-Options: nosniff` ✅ · `Referrer-Policy: strict-origin-when-cross-origin` ✅ · `Permissions-Policy: geolocation=(), microphone=(), camera=()` ✅ |
+| session_start grep | `5:// session_start() removed — config.php starts the session centrally.` — kein aktives `session_start()` mehr |
+
+**Audit-Ergebnisse gesamt (Funktionaler Dashboard-Audit):**
+
+| Schweregrad | Befund | Status |
+|---|---|---|
+| Kritisch | — | Keine |
+| Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
+| Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | Offen — read-only, auth via `requireLogin()`, niedrige Priorität |
+| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | Offen |
+| Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | Offen |
+| Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
+| Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
+| Niedrig (N2) | `botinfo.php`: `requireLogin` statt `requireAdmin` | By design |
 
 ---
 
