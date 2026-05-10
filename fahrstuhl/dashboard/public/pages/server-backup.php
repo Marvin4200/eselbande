@@ -22,17 +22,22 @@ if (isset($_GET['ajax_job']) && $ajaxGuildId !== '') {
     exit;
 }
 
-// AJAX: restore preview proxy
-if (isset($_GET['ajax_preview']) && $ajaxGuildId !== '') {
+// AJAX: restore preview proxy — POST only; CSRF validated by verifyDashboardCsrf() in config.php
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_preview'])) {
     header('Content-Type: application/json');
-    $backupId = (int)($_GET['backupId'] ?? 0);
+    $ajaxPreviewGuildId = preg_replace('/[^0-9]/', '', $_POST['guildId'] ?? '');
+    if ($ajaxPreviewGuildId === '') {
+        echo json_encode(['success' => false, 'message' => 'Missing guild ID']);
+        exit;
+    }
+    $backupId = (int)($_POST['backupId'] ?? 0);
     if ($backupId < 1) {
         echo json_encode(['success' => false, 'message' => 'Invalid backup ID']);
         exit;
     }
 
     $opt = static function($key, $default = false) {
-        $v = $_GET[$key] ?? null;
+        $v = $_POST[$key] ?? null;
         if ($v === null) return $default;
         return in_array(strtolower((string)$v), ['1', 'true', 'yes', 'on'], true);
     };
@@ -49,7 +54,7 @@ if (isset($_GET['ajax_preview']) && $ajaxGuildId !== '') {
         ],
     ];
 
-    $raw = api('/guilds/' . $ajaxGuildId . '/discord-backups/restore-preview', 'POST', $payload, 15);
+    $raw = api('/guilds/' . $ajaxPreviewGuildId . '/discord-backups/restore-preview', 'POST', $payload, 15);
     echo json_encode($raw['data'] ?? ['success' => false, 'message' => 'Preview API response missing']);
     exit;
 }
@@ -701,7 +706,8 @@ function previewRestore() {
     if (!backupId) return alert('Ungültige Backup-ID.');
     if (!targetGuildId) return alert('Bitte zuerst Ziel-Server auswählen.');
 
-    const q = new URLSearchParams({
+    const csrf = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const body = new URLSearchParams({
         ajax_preview: '1',
         guildId: targetGuildId,
         backupId: String(backupId),
@@ -713,7 +719,12 @@ function previewRestore() {
         wipe: String(boolParam('[name=opt_wipe_existing]')),
     });
 
-    fetch('?' + q.toString())
+    fetch('?', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
+        credentials: 'same-origin',
+        body: body.toString(),
+    })
         .then(r => r.json())
         .then(res => {
             const payload = res?.data;
