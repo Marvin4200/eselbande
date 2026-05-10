@@ -323,3 +323,74 @@ node --check commands/index.js
 node --check index.js
 node --check services/botAPI.js
 git diff --check
+```
+
+Server (Dashboard only):
+
+```bash
+ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compose -f fahrstuhl/docker-compose.yml up -d --build dashboard-php && echo DONE"
+```
+
+---
+
+## Design-Qualitäts-Audit — Dashboard
+
+**Stand: 2026-05-10 | Gesamtbewertung: 14 / 20**
+
+### Kategorien
+
+| Kategorie | Punkte | Bewertung |
+|---|---|---|
+| Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
+| Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
+| Spacing-System | 2/3 | Spacing-Scale in `:root`, aber inline Hex-Farben in guilds/security/moderation/rewards-hub |
+| Komponenten-Konsistenz | 2/3 | Gute Konsistenz, Buttons mit Gradient noch leicht KI-typisch |
+| Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
+| Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
+
+**Gesamt: 14 / 20 — Gut. Impeccable-clean, keine bekannten AI-UI Anti-Patterns.**
+
+---
+
+### Anti-Pattern-Verlauf
+
+| Datum | Anti-Patterns | Aktion |
+|---|---|---|
+| 2026-05-10 (vor Fix) | **7** | `border-left` side-tabs (6×), `transition: width` (1×), `:root` Duplikat |
+| 2026-05-10 (Commit `23fa20d`) | **0** | Alle 7 behoben — verifiziert per grep + `npx impeccable@2.1.8 detect` |
+
+#### Was wurde geändert (Commit `23fa20d`)
+
+**`fahrstuhl/dashboard/public/assets/css/style.css`**
+- `.toast-success`, `.toast-error`, `.toast-info`: `border-left: 3px solid` → `box-shadow: inset 3px 0 0 rgba(...)`
+- `.alert` (alle 4 Severity-Varianten): `border-left: 4px solid` → `box-shadow: inset 3px 0 0 rgba(...)`
+- `.notif-severity-critical`, `.notif-severity-warning`: `border-left: 3px solid` → `box-shadow: inset 3px 0 0 rgba(...)`
+- `.progress-bar-fill`: `transition: width` → `transform: scaleX(0)` + `transform-origin: left` + `transition: transform 0.8s cubic-bezier(...)`
+- Zweiter `:root`-Block in Haupt-`:root`-Block integriert, Duplikat entfernt
+
+**`fahrstuhl/dashboard/public/pages/server-backup.php`**
+- JS: `style.width = pct + '%'` → `style.transform = 'scaleX(' + (pct / 100) + ')'`
+
+**`fahrstuhl/dashboard/public/pages/setup.php`**
+- JS: `style.width = pct + '%'` → `style.transform = 'scaleX(' + (pct / 100) + ')'`
+
+#### Verbleibende Audit-Punkte (nicht kritisch)
+
+- System-Font-Stack (`-apple-system, BlinkMacSystemFont, ...`) — kein eigener Font geladen
+- Inline Hex-Farben (`style="color:#..."`) in `guilds.php`, `security.php`, `moderation.php`, `rewards-hub.php`
+- Gradient-Buttons (`.btn-primary`, `.btn-logout`) — leicht KI-typisch, aber funktional
+- `mobile-responsive.css` als eigene Datei (extra HTTP-Request)
+
+---
+
+### Smoke-Test — 2026-05-10 (nach Commit `23fa20d`)
+
+| Bereich | Ergebnis |
+|---|---|
+| Landing Page (`/fahrstuhl/`) | ✅ HTTP 200, JS läuft, CSS geladen |
+| Auth-Schutz (setup.php, server-backup.php) | ✅ Redirect zur Landing Page — korrekt |
+| CSS Anti-Patterns (grep) | ✅ 0× `transition: width`, 0× colored `border-left`, 1× `:root` |
+| CLI Re-Scan (Impeccable) | ✅ Exit 0 — **0 anti-patterns found** |
+| Mobile Sidebar | ✅ Kein farbiger Side-Tab — `border-left: 0` Reset vorhanden |
+| Progress Bar Technik | ✅ `transform: scaleX()` + `transform-origin: left` + `overflow: hidden` |
+| Toast / Notification Accent | ✅ `inset box-shadow` statt `border-left` |
