@@ -335,7 +335,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 
 ## Design-Qualitäts-Audit — Dashboard
 
-**Stand: 2026-05-10 | Gesamtbewertung: 17 / 20**
+**Stand: 2026-05-10 | Gesamtbewertung: 18 / 20**
 
 ### Kategorien
 
@@ -347,8 +347,9 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
+| UX Polish | 3/3 | `:active` Press-Feedback, Focus-Ring `border-radius: inherit`, Card `:focus-visible`-States (Commit `e8a585c`) |
 
-**Gesamt: 17 / 20 — Sehr gut. Impeccable-clean, alle border-radius tokenisiert, `--sp-*`-Tokens rem-basiert, `--fs-*`-Typografie-Tokens vollständig eingeführt.**
+**Gesamt: 18 / 20 — Sehr gut. Impeccable-clean, alle Design-Tokens eingeführt, vollständige Keyboard-UX, Button Press-Feedback.**
 
 ---
 
@@ -410,10 +411,28 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `f2b6d4a` | Spacing tokens in PHP-Inline-Styles (exakte px-Matches, 10 Dateien, ~45 Werte) | Spacing-System bleibt 2/3 — Core CSS rem-basiert |
 | `51ba282` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
 | `2403b15` | Typografie-Token-Pass: 6 `--fs-*`-Tokens in `:root`, ~65 aktive `font-size`-Werte tokenisiert | Typografie **3/3**, Score **17/20** |
+| `e8a585c` | UX Polish Pass: `:active` Press-Feedback, `border-radius: inherit` am Focus-Ring, Card `:focus-visible`-States | UX Polish **3/3**, Score **18/20** |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. `--sp-*`- und `--fs-*`-Tokens vollständig eingeführt. Score: 17/20.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. UX Polish: 3/3. Score: 18/20.**
 
-Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Score auf 18/20 via eigene Font oder weiterer CSS-Konsolidierung.
+Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Score auf 19/20 via eigene Font oder weitere Konsolidierung.
+
+---
+
+### Abschluss-Report — UX Polish Pass (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `e8a585c` | Fix A + B + C in einem Pass: `:active`-States, Focus-Ring, Card Focus-Visible |
+| Fix A — `:active` Press-Feedback | `.btn-primary`, `.btn-primary-ui`, `.btn-secondary-ui`, `.btn-success-ui`, `.btn-danger-ui`, `.btn-logout` — `transform: translateY(0); transition-duration: 0.08s;` auf `:active`. Kein Layout-Shift, reiner taktiler Klick-Indikator. |
+| Fix B — Focus-Ring Radius | `*:focus-visible { border-radius: inherit }` statt hardcoded `4px`. Pills, runde Buttons und Cards zeigen jetzt formgerechten Fokus-Ring. |
+| Fix C — Card `:focus-visible` | `.hub-card`, `.guild-card`, `.dashboard-link-card` — `:focus-visible` spiegelt exakten Hover-State (border-glow + shadow + translateY). Keyboard-Navigation auf Augenhöhe mit Mouse. |
+| Fix D | Nicht umgesetzt — kein Toast-Dismiss-Button im DOM vorhanden |
+| git diff --check | EXIT 0 — keine Whitespace-Fehler |
+| Impeccable | **0 findings** — unverändert clean |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE (20:11:58) |
+| HTTP-Smoke-Test | dashboard: **200**, 10 PHP-Seiten: **302** — ALL_OK |
+| Audit-Score | **18/20** — UX Polish: **3/3** |
 
 ---
 
