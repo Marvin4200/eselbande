@@ -94,24 +94,32 @@ async function fetchEpic() {
 }
 
 /**
- * GOG — catalog API, filters for temporarily free games (base > 0, final = 0)
+ * GOG — AJAX filtered endpoint, only real giveaways (100% off paid games)
  */
 async function fetchGOG() {
     const url =
-        "https://catalog.gog.com/v1/catalog?limit=48&filters[price]=free&order=desc:trending&productType=in:game,pack";
+        "https://www.gog.com/games/ajax/filtered?mediaType=game&price=free&sort=popularity&page=1";
 
     const { data } = await axios.get(url, {
         timeout: REQUEST_TIMEOUT,
-        headers: { "User-Agent": "FreeGamesAPI/1.0" },
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
+            "Referer": "https://www.gog.com/en/games",
+            "X-Requested-With": "XMLHttpRequest",
+        },
     });
 
     const products = data?.products || [];
 
     return products
         .filter(g => {
-            const base = parseFloat(g.price?.baseMoney?.amount || "0");
-            const final = parseFloat(g.price?.finalMoney?.amount || "0");
-            return base > 0 && final === 0;
+            const discountPct = parseInt(g.price?.discountPercentage || "0");
+            const base = parseFloat(g.price?.baseAmount || "0");
+            const final = parseFloat(g.price?.finalAmount || g.price?.amount || "0");
+            // Only real giveaways: 100% off a normally paid game
+            return base > 0 && final === 0 && discountPct >= 100;
         })
         .map(g => ({
             id: `gog:${g.id}`,
@@ -119,10 +127,10 @@ async function fetchGOG() {
             platform: "gog",
             platformLabel: "GOG",
             storeUrl: `https://www.gog.com/game/${g.slug}`,
-            originalPrice: g.price?.baseMoney?.amount
-                ? `${parseFloat(g.price.baseMoney.amount).toFixed(2)} ${g.price.baseMoney.currency || "EUR"}`
+            originalPrice: g.price?.baseAmount
+                ? `${parseFloat(g.price.baseAmount).toFixed(2)} €`
                 : null,
-            banner: g.coverHorizontal || null,
+            banner: g.image ? `https:${g.image}` : null,
             endDate: null,
             fetchedAt: new Date().toISOString(),
         }));
@@ -221,58 +229,69 @@ async function fetchSteam() {
 }
 
 /**
- * Humble Bundle — store search for games listed at $0 with a real base price (giveaways).
+ * GamerPower — aggregates free game giveaways from Steam, itch.io, Humble, GOG, Epic, etc.
+ * Covers stores that block direct server-side requests.
+ * API docs: https://www.gamerpower.com/api-read
  */
-async function fetchHumble() {
-    const url =
-        "https://www.humblebundle.com/store/api/search?sort=bestseller&request=1&page_size=30&drm[]=download&price[min]=0&price[max]=0";
+async function fetchGamerPower() {
+    const url = "https://www.gamerpower.com/api/giveaways?platform=pc&type=game&sort-by=value";
 
     const { data } = await axios.get(url, {
         timeout: REQUEST_TIMEOUT,
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Referer": "https://www.humblebundle.com/store",
-        },
+        headers: { "User-Agent": "FreeGamesAPI/1.0" },
     });
 
-    const results = data?.results || [];
+    if (!Array.isArray(data)) return [];
 
-    return results
-        .filter(item => {
-            const currentPrice = parseFloat(item.current_price?.amount || "0");
-            const fullPrice = parseFloat(item.full_price?.amount || "0");
-            // Only real giveaways: item costs money but is currently free
-            return currentPrice === 0 && fullPrice > 0;
+    const PLATFORM_MAP = {
+        "Epic Games Store": "epic",
+        "GOG": "gog",
+        "Steam": "steam",
+        "Itch.io": "itchio",
+        "Humble Store": "humble",
+    };
+
+    return data
+        .filter(g => {
+            if (g.status !== "Active") return false;
+            // Exclude permanently free or unknown-value items
+            const worth = parseFloat((g.worth || "").replace(/[^0-9.]/g, ""));
+            return !isNaN(worth) && worth > 0;
         })
-        .map(item => ({
-            id: `humble:${item.machine_name}`,
-            title: item.human_name || "Unknown",
-            platform: "humble",
-            platformLabel: "Humble Bundle",
-            storeUrl: `https://www.humblebundle.com/store/${item.machine_name}`,
-            originalPrice: item.full_price?.amount
-                ? `$${parseFloat(item.full_price.amount).toFixed(2)}`
-                : null,
-            banner: item.image || null,
-            endDate: item.sale_end ? new Date(item.sale_end * 1000).toISOString() : null,
-            fetchedAt: new Date().toISOString(),
-        }));
+        .map(g => {
+            const platforms = (g.platforms || "").split(",").map(p => p.trim());
+            const primaryName = platforms.find(p => PLATFORM_MAP[p]) || platforms[0] || "PC";
+            const platformKey = PLATFORM_MAP[primaryName] || "pc";
+            return {
+                id: `gamerpower:${g.id}`,
+                title: g.title || "Unknown",
+                platform: platformKey,
+                platformLabel: primaryName,
+                storeUrl: g.open_giveaway_url || g.giveaway_url || "https://www.gamerpower.com",
+                originalPrice: g.worth !== "N/A" ? g.worth : null,
+                banner: g.thumbnail || g.image || null,
+                endDate: g.end_date && g.end_date !== "N/A" ? new Date(g.end_date).toISOString() : null,
+                fetchedAt: new Date().toISOString(),
+            };
+        });
 }
 
 /**
- * itch.io — RSS feed for free games (sale price = 0, original price > 0)
- * Parses the sale RSS feed which includes price metadata.
+ * itch.io — sale feed for 100%-off games (real giveaways only)
  */
 async function fetchItchio() {
-    // itch.io sale feed: games on sale, minimum price = 0
     const url = "https://itch.io/games/on-sale.json?min_price=0&max_price=0&classification=game";
 
     const { data } = await axios.get(url, {
         timeout: REQUEST_TIMEOUT,
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://itch.io/games/on-sale",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
         },
     });
 
@@ -301,19 +320,27 @@ async function fetchItchio() {
 // ─── Aggregation ──────────────────────────────────────────────────────────────
 
 const SOURCES = [
-    { name: "Epic",    fn: fetchEpic    },
-    { name: "GOG",     fn: fetchGOG     },
-    { name: "Steam",   fn: fetchSteam   },
-    { name: "Humble",  fn: fetchHumble  },
-    { name: "itch.io", fn: fetchItchio  },
+    { name: "Epic",       fn: fetchEpic       },
+    { name: "GOG",        fn: fetchGOG        },
+    { name: "Steam",      fn: fetchSteam      },
+    { name: "GamerPower", fn: fetchGamerPower },
+    { name: "itch.io",    fn: fetchItchio     },
 ];
 
 async function fetchAll() {
     const results = await Promise.allSettled(SOURCES.map(s => s.fn()));
-    return results.flatMap((r, i) => {
+    const all = results.flatMap((r, i) => {
         if (r.status === "fulfilled") return r.value;
         console.error(`[FreeGamesAPI] ${SOURCES[i].name} fetch failed:`, r.reason?.message);
         return [];
+    });
+    // Deduplicate by normalized title (Epic appears in both fetchEpic and GamerPower)
+    const seen = new Set();
+    return all.filter(game => {
+        const key = (game.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
     });
 }
 
