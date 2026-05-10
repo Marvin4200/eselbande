@@ -416,6 +416,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `c8f4658` | Security: 4 HTTP-Security-Header in `config.php`; doppeltes `session_start()` in `server-backup.php` entfernt | H1 teilweise behoben, N1 behoben |
 | `d4d70c6` | Security H2: `ajax_preview` GET→POST + `X-CSRF-Token`; `verifyDashboardCsrf()` erzwingt CSRF-Prüfung | H2 behoben |
 | `249ac18` | M1 fix: `$botOffline` + `.alert-warning`-Banner auf `botinfo.php` + `cockpit.php` | M1 teilw. behoben (2/7 Seiten) |
+| `c907447` | M1 fix: `$botOffline` + `.alert-warning`-Banner auf `security.php` + `deploys.php` | M1 teilw. behoben (4/7 Seiten) |
 
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. Typografie: 3/3. UX Polish: 3/3. Score: 18/20.**
 
@@ -443,7 +444,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Kritisch | — | Keine |
 | Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
 | Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | ✅ Behoben (`d4d70c6`) — POST + `X-CSRF-Token` |
-| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ⚠️ Teilweise behoben (`249ac18`) — `botinfo.php` + `cockpit.php`; 5 weitere Seiten offen |
+| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ⚠️ Teilweise behoben (`c907447`) — `botinfo.php`, `cockpit.php`, `security.php`, `deploys.php`; 3 weitere Seiten offen |
 | Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | Offen |
 | Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
 | Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
@@ -464,7 +465,23 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Smoke-Test (Port 3181) | `/fahrstuhl/`: **200** · `/pages/botinfo.php`: **302** · `/pages/cockpit.php`: **302** — ALL_OK |
 | Banner-Verifikation (Server) | `grep -n 'botOffline\|alert-warning'` — beide Dateien: Zeilen korrekt vorhanden |
 | Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
-| Noch offen (M1) | 5 weitere Seiten: `analytics.php`, `guilds.php`, `logs.php`, `ueberwachung.php`, `setup.php` |
+| Noch offen (M1) | 3 weitere Seiten: `analytics.php`, `guilds.php`, `logs.php` (oder `ueberwachung.php`, `setup.php`) — je nach Scope |
+
+---
+
+### Abschluss-Report — Security-Audit M1 Fortsetzung (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `c907447` | M1 weitergeführt: `$botOffline`-Flag + `.alert-warning`-Banner in `security.php` + `deploys.php` |
+| Fix `security.php` | Nach `$raw = getAPI('/security/checks')`: `$botOffline = !isset($raw['data']);` · Banner nach `<?php include '../includes/sidebar.php'; ?>` |
+| Fix `deploys.php` | Nach `$projects = $raw['data']['projects'] ?? []`: `$botOffline = !isset($raw['data']);` · Banner nach `<?php include '../includes/sidebar.php'; ?>` |
+| Kein neues CSS | Reuse von `.alert .alert-warning` — kein neuer Stil |
+| php -l (Server) | `security.php`: **No syntax errors** · `deploys.php`: **No syntax errors** |
+| Smoke-Test (Port 3181) | `/pages/security.php`: **302** · `/pages/deploys.php`: **302** — ALL_OK |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
+| M1-Fortschritt | 4/7 Seiten behoben (`botinfo`, `cockpit`, `security`, `deploys`) |
+| Noch offen (M1) | 3 weitere Seiten: `analytics.php`, `guilds.php`, `logs.php` |
 
 ---
 
