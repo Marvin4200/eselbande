@@ -18,6 +18,8 @@ const refreshIntervals = new Map();
 const automixRetryTimeouts = new Map();
 /** @type {Map<string, NodeJS.Timeout>} guildId → 24/7 voice rejoin timeout */
 const rejoinTimeouts = new Map();
+/** @type {Set<string>} guildIds where createGuildPlayer is actively replacing the connection (suppress closed-handler rejoin) */
+const replacingGuilds = new Set();
 /** @type {Map<string, number>} guildId → consecutive failed rejoin attempts */
 const rejoinFailCounts = new Map();
 /** @type {Map<string, NodeJS.Timeout>} guildId → timer to reset reconnect-failure counter after stable voice connection */
@@ -612,10 +614,14 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
 
     // Clear stale guild connection handles before creating a fresh player.
     if (shoukaku.players?.has(guildId)) {
+        // Mark as replacing so the old player's 'closed' handler doesn't schedule a new rejoin.
+        replacingGuilds.add(guildId);
         try {
             shoukaku.leaveVoiceChannel(guildId);
         } catch { }
-        await new Promise(resolve => setTimeout(resolve, 350));
+        // Wait long enough for the 'closed' event to fire before clearing the guard.
+        await new Promise(resolve => setTimeout(resolve, 750));
+        replacingGuilds.delete(guildId);
     }
 
     let player = null;
@@ -700,10 +706,14 @@ async function createGuildPlayer({ guildId, voiceChannelId, shardId, textChannel
     });
 
     player.on('closed', () => {
+        // If createGuildPlayer is actively replacing this connection, ignore — it will set up the new player.
+        if (replacingGuilds.has(guildId)) return;
         const wasIs247 = state.is247;
         players.delete(guildId);
         if (wasIs247) {
             clearRejoinStability(guildId);
+            // Don't stack multiple rejoin timers — if one is already pending, skip.
+            if (rejoinTimeouts.has(guildId)) return;
             const failures = (rejoinFailCounts.get(guildId) || 0) + 1;
             rejoinFailCounts.set(guildId, failures);
             const nextDelay = Math.min(10_000 * Math.pow(2, Math.max(0, failures - 1)), 60_000);
