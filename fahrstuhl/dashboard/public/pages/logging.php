@@ -284,6 +284,84 @@ foreach ($channels as $channel) {
             </p>
         </div>
     </form>
+
+    <?php
+    // Recent log events from DB
+    $eventsRaw = $guildId ? getAPI('/guilds/' . urlencode($guildId) . '/logging/events?limit=50', 10) : null;
+    $recentEvents = $eventsRaw['data']['events'] ?? [];
+    $groupStyles = [
+        'memberJoin' => ['icon' => '👤', 'label' => 'Member Join'],
+        'memberLeave' => ['icon' => '👤', 'label' => 'Member Leave'],
+        'memberBan' => ['icon' => '🔨', 'label' => 'Ban'],
+        'memberUnban' => ['icon' => '✅', 'label' => 'Unban'],
+        'messageDelete' => ['icon' => '💬', 'label' => 'Message Delete'],
+        'messageUpdate' => ['icon' => '💬', 'label' => 'Message Edit'],
+        'moderation' => ['icon' => '🛡️', 'label' => 'Moderation'],
+        'automod' => ['icon' => '🚨', 'label' => 'AutoMod'],
+        'tickets' => ['icon' => '🎫', 'label' => 'Ticket'],
+        'voiceState' => ['icon' => '🔊', 'label' => 'Voice'],
+        'roleCreate' => ['icon' => '🧱', 'label' => 'Role Create'],
+        'roleDelete' => ['icon' => '🧱', 'label' => 'Role Delete'],
+        'roleUpdate' => ['icon' => '🧱', 'label' => 'Role Update'],
+        'channelCreate' => ['icon' => '🧱', 'label' => 'Channel Create'],
+        'channelDelete' => ['icon' => '🧱', 'label' => 'Channel Delete'],
+        'channelUpdate' => ['icon' => '🧱', 'label' => 'Channel Update'],
+        'inviteCreate' => ['icon' => '🔗', 'label' => 'Invite Create'],
+        'inviteDelete' => ['icon' => '🔗', 'label' => 'Invite Delete'],
+    ];
+    ?>
+
+    <div style="margin-top: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h2 style="font-size: 1rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📋</span> Recent Log Events
+            </h2>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                <?php echo count($recentEvents); ?> events · last 14 days
+            </span>
+        </div>
+
+        <?php if (empty($recentEvents)): ?>
+            <div class="empty-state" style="padding: 1.5rem;">
+                <strong>Keine Events gefunden</strong>
+                <p>Events werden hier angezeigt sobald der Bot das erste Log in Discord sendet.</p>
+            </div>
+        <?php else: ?>
+            <div class="dashboard-table-wrap">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Zeit</th>
+                            <th style="width: 140px;">Event</th>
+                            <th>Titel</th>
+                            <th>Beschreibung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recentEvents as $ev):
+                            $evKey = $ev['event_key'] ?? '';
+                            $icon = $groupStyles[$evKey]['icon'] ?? '📜';
+                            $label = $groupStyles[$evKey]['label'] ?? $evKey;
+                            $ts = (int)($ev['created_at'] ?? 0);
+                            $timeStr = $ts > 0 ? date('d.m. H:i', intdiv($ts, 1000)) : '—';
+                        ?>
+                            <tr>
+                                <td style="color: var(--text-secondary); font-size: 0.8rem; white-space: nowrap;"><?php echo esc($timeStr); ?></td>
+                                <td>
+                                    <span style="font-size: 0.82rem;"><?php echo $icon; ?> <?php echo esc($label); ?></span>
+                                </td>
+                                <td style="font-size: 0.85rem; font-weight: 600;"><?php echo esc($ev['title'] ?? '—'); ?></td>
+                                <td style="font-size: 0.8rem; color: var(--text-secondary); max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?php echo esc($ev['description'] ?? ''); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
 <?php endif; ?>
 
 <?php include '../includes/footer.php'; ?>

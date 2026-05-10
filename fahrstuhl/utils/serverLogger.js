@@ -1,5 +1,6 @@
 const { EmbedBuilder, PermissionsBitField } = require("discord.js");
 const { parseBoolean } = require("./valueParsers");
+const { getPool } = require("./db");
 
 const LOG_EVENT_GROUPS = {
     memberJoin: "member",
@@ -132,6 +133,20 @@ async function sendServerLog(guild, config, eventKey, embedData = {}) {
         }
 
         await channel.send({ embeds: [embed] });
+
+        // Store event in DB for dashboard display (fire-and-forget)
+        const pool = getPool();
+        const descSnippet = trimText(embedData.description, 500) || null;
+        pool.query(
+            "INSERT INTO server_log_events (guild_id, event_key, title, description, color, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            [guild.id, eventKey, rawTitle, descSnippet, embedData.color ?? style.color, Date.now()]
+        ).catch(() => {});
+        // Prune: keep last 14 days per guild
+        pool.query(
+            "DELETE FROM server_log_events WHERE guild_id = ? AND created_at < ?",
+            [guild.id, Date.now() - 14 * 24 * 60 * 60 * 1000]
+        ).catch(() => {});
+
         return true;
     } catch (error) {
         console.warn(`Server logging failed in ${guild?.name || "unknown guild"}: ${error.message}`);

@@ -113,6 +113,19 @@ async function initDb({ host, port, user, password, database }) {
     `);
 
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS server_log_events (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            guild_id VARCHAR(32) NOT NULL,
+            event_key VARCHAR(64) NOT NULL,
+            title VARCHAR(256),
+            description TEXT,
+            color INT DEFAULT NULL,
+            created_at BIGINT NOT NULL,
+            INDEX idx_sle_guild_time (guild_id, created_at)
+        )
+    `);
+
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS temp_voice_channels (
             channel_id VARCHAR(32) PRIMARY KEY,
             guild_id VARCHAR(32) NOT NULL,

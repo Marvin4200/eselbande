@@ -3025,6 +3025,25 @@ class BotAPIServer {
             }
         });
 
+        this.app.get('/guilds/:guildId/logging/events', async (req, res) => {
+            try {
+                const guild = this.client.guilds.cache.get(req.params.guildId);
+                if (!guild) return res.status(404).json(APIResponse.notFound('Guild not found'));
+                const access = await this.getDashboardGuildAccess(req, guild.id);
+                if (!access.allowed) return res.status(403).json(APIResponse.forbidden('No access to this guild'));
+
+                const { getPool } = require('../utils/db');
+                const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+                const [rows] = await getPool().query(
+                    "SELECT id, event_key, title, description, color, created_at FROM server_log_events WHERE guild_id = ? ORDER BY created_at DESC LIMIT ?",
+                    [guild.id, limit]
+                );
+                res.json(APIResponse.success({ events: rows }, 'Log events fetched', 'LOG_EVENTS_OK'));
+            } catch (error) {
+                res.status(500).json(APIResponse.error(error.message, 'LOG_EVENTS_FAILED'));
+            }
+        });
+
         this.app.post('/guilds/:guildId/logging/test', async (req, res) => {
             try {
                 const guild = this.client.guilds.cache.get(req.params.guildId);
