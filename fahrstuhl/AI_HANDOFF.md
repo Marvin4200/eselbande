@@ -404,7 +404,9 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `23fa20d` | CSS/JS Anti-Pattern-Fixes (side-tabs → inset shadow, transition:width → scaleX, :root Duplikat) | Impeccable: 7 → **0** Findings |
 | `cd873c4` | Audit-Dokumentation + Smoke-Test in AI_HANDOFF.md | Score: **14 / 20** |
 | `2b940bf` | Component consistency pass — alle border-radius auf Tokens, doppelter CSS-Block entfernt | Score: **15 / 20**, Impeccable: **0** |
+| `4336eb5` | Audit-Doku: Komponenten-Konsistenz 3/3, Score 15/20 eingetragen | — |
+| `fa47cf5` | Minor token cleanup: raw `12px !important` im Card-Cleanup-Block → `var(--radius-md) !important` | Letzter raw-!important-Wert tokenisiert |
 
-**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3.**
+**Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Komponenten-Konsistenz: 3/3. Alle `!important`-border-radius vollständig tokenisiert.**
 
-Nächster Schritt: Typografie 2/3 → 3/3 (System-Font-Stack ersetzen) oder Inline-Hex-Farben in PHP-Dateien bereinigen.
+Nächster Schritt: Spacing-System 2/3 → 3/3 (wiederkehrende Padding-Werte tokenisieren, nur finale gerenderte Werte, keine Layout-Verschiebungen).
