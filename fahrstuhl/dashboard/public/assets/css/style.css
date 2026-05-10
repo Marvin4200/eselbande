@@ -83,7 +83,7 @@ body {
     border-radius: 999px;
     background: #f23f43;
     color: #fff;
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 900;
     display: inline-flex;
     align-items: center;
@@ -135,7 +135,7 @@ body {
     flex-shrink: 0;
 }
 .notif-head strong {
-    font-size: 0.88rem;
+    font-size: var(--fs-base);
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.01em;
@@ -148,7 +148,7 @@ body {
     border: 1px solid rgba(88, 101, 242, 0.48);
     background: rgba(88, 101, 242, 0.16);
     color: #b8c0ff;
-    font-size: 0.65rem;
+    font-size: var(--fs-2xs);
     font-weight: 800;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -171,7 +171,7 @@ body {
     background: rgba(255,255,255,0.05);
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.74rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.14s, color 0.14s;
@@ -188,7 +188,7 @@ body {
     background: rgba(88,101,242,0.12);
     color: #c7d2fe;
     text-decoration: none;
-    font-size: 0.76rem;
+    font-size: var(--fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.14s;
@@ -275,7 +275,7 @@ body {
 .notif-item-copy p {
     margin: 0;
     color: var(--text-primary);
-    font-size: 0.81rem;
+    font-size: var(--fs-sm);
     line-height: 1.38;
     font-weight: 500;
     white-space: nowrap;
@@ -287,7 +287,7 @@ body {
     margin-top: 0.18rem;
     display: inline-block;
     color: var(--text-secondary);
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
 }
 
 .notif-empty {
@@ -296,7 +296,7 @@ body {
     padding: 1.5rem 1rem;
     text-align: center;
     color: var(--text-secondary);
-    font-size: 0.82rem;
+    font-size: var(--fs-base);
     line-height: 1.5;
 }
 
@@ -317,7 +317,7 @@ body {
     border-radius: 7px;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.73rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     padding: 0.26rem 0.65rem;
     cursor: pointer;
@@ -347,7 +347,7 @@ body {
     border-radius: 999px;
     background: #f23f43;
     color: #fff;
-    font-size: 0.6rem;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     display: inline-flex;
     align-items: center;
@@ -374,7 +374,7 @@ a.notif-item:focus-visible {
 /* ── Type label ── */
 .notif-item-type {
     display: inline-block;
-    font-size: 0.65rem;
+    font-size: var(--fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -396,7 +396,7 @@ a.notif-item:focus-visible {
 }
 .notif-item-meta span {
     color: #5a6478;
-    font-size: 0.69rem;
+    font-size: var(--fs-xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -423,7 +423,7 @@ a.notif-item:focus-visible {
 /* ── Footer count ── */
 .notif-count {
     color: #5a6478;
-    font-size: 0.71rem;
+    font-size: var(--fs-xs);
     font-weight: 500;
 }
 
@@ -455,7 +455,7 @@ a.notif-item:focus-visible {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     font-weight: 500;
     transition: all 0.2s;
     border: none;
@@ -475,7 +475,7 @@ a.notif-item:focus-visible {
     padding: 0.5rem 0.85rem;
     border-radius: 6px;
     text-decoration: none;
-    font-size: 0.86rem;
+    font-size: var(--fs-base);
     font-weight: 700;
 }
 
@@ -603,7 +603,7 @@ a.notif-item:focus-visible {
 .nav-group summary::after {
     content: "›";
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
     line-height: 1;
     transition: transform 0.18s ease;
 }
@@ -709,7 +709,7 @@ a.notif-item:focus-visible {
 
 .stat-label {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -765,7 +765,7 @@ a.notif-item:focus-visible {
 .table-compact th,
 .table-compact td {
     padding: 0.55rem 0.75rem;
-    font-size: 0.86rem;
+    font-size: var(--fs-base);
 }
 
 .page-header-row {
@@ -777,7 +777,7 @@ a.notif-item:focus-visible {
 
 .page-meta {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: var(--fs-base);
     white-space: nowrap;
 }
 
@@ -837,7 +837,7 @@ a.notif-item:focus-visible {
 }
 
 .hub-card h3 {
-    font-size: 1.05rem;
+    font-size: var(--fs-lg);
     margin-bottom: 0.35rem;
 }
 
@@ -854,7 +854,7 @@ a.notif-item:focus-visible {
     font-weight: 600;
     color: var(--primary);
     border-bottom: 2px solid var(--border-light);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -933,7 +933,7 @@ a.notif-item:focus-visible {
     color: var(--text-secondary);
     border-top: 1px solid var(--border-light);
     background: var(--bg-secondary);
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
 }
 
 /* Responsive */
@@ -1014,6 +1014,9 @@ a.notif-item:focus-visible {
     /* Spacing scale (rem; base: html default 16px — body font-size:15px does not affect rem) */
     --sp-1: 0.25rem; --sp-2: 0.5rem;  --sp-3: 0.75rem; --sp-4: 1rem;
     --sp-5: 1.25rem; --sp-6: 1.5rem;  --sp-8: 2rem;
+    /* Font-size scale */
+    --fs-2xs: 0.65rem; --fs-xs: 0.72rem; --fs-sm: 0.78rem;
+    --fs-base: 0.86rem; --fs-md: 0.9rem; --fs-lg: 1.1rem;
     /* Sidebar */
     --sidebar-width: 264px;
     --sidebar-transition: 0.26s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1071,7 +1074,7 @@ body {
 
 .brand-copy small {
     color: var(--text-secondary);
-    font-size: 0.73rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -1090,7 +1093,7 @@ body {
     border-radius: 999px;
     color: #7ee2a8;
     background: rgba(35, 165, 89, 0.08);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 800;
 }
 
@@ -1190,7 +1193,7 @@ body {
 
 .nav-group-description {
     color: var(--text-secondary);
-    font-size: 0.71rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
@@ -1267,7 +1270,7 @@ body {
 
 .nav-description {
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
@@ -1623,7 +1626,7 @@ code {
     background: rgba(88,101,242,0.1);
     border: 1px solid rgba(88,101,242,0.25);
     color: #a5b4fc;
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     font-weight: 700;
     letter-spacing: 0.03em;
     transition: background 0.2s;
@@ -1661,7 +1664,7 @@ code {
     border: 1px solid rgba(52, 61, 77, 0.9);
     backdrop-filter: blur(16px);
     box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     pointer-events: all;
     animation: toastIn 0.3s ease both;
@@ -1755,7 +1758,7 @@ code {
 .dashboard-hero p {
     margin: 0.25rem 0 0;
     color: var(--text-secondary);
-    font-size: 0.88rem;
+    font-size: var(--fs-base);
 }
 
 .dashboard-kpi {
@@ -1773,7 +1776,7 @@ code {
 }
 
 .dashboard-kpi span {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -1868,7 +1871,7 @@ code {
 
 .muted-help {
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     line-height: 1.35;
 }
 
@@ -1897,7 +1900,7 @@ code {
 
 .dashboard-page-eyebrow {
     color: var(--text-secondary);
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -1966,7 +1969,7 @@ code {
 .dashboard-panel-header p {
     margin: 0.2rem 0 0;
     color: var(--text-secondary);
-    font-size: 0.84rem;
+    font-size: var(--fs-base);
 }
 
 .dashboard-kpi-grid {
@@ -1984,7 +1987,7 @@ code {
 
 .dashboard-kpi-label {
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -1999,7 +2002,7 @@ code {
 .dashboard-kpi-help {
     margin-top: 0.18rem;
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
 }
 
 .dashboard-link-grid {
@@ -2045,12 +2048,12 @@ code {
 }
 
 .dashboard-link-copy strong {
-    font-size: 0.88rem;
+    font-size: var(--fs-base);
 }
 
 .dashboard-link-copy span {
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     line-height: 1.35;
 }
 
@@ -2075,14 +2078,14 @@ code {
 .dashboard-warning-item strong,
 .dashboard-list-item strong {
     display: block;
-    font-size: 0.86rem;
+    font-size: var(--fs-base);
 }
 
 .dashboard-warning-item p,
 .dashboard-list-item p {
     margin: 0.15rem 0 0;
     color: var(--text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     line-height: 1.35;
 }
 
@@ -2264,7 +2267,7 @@ code {
 
 /* upgrade nudge inline hint */
 .upgrade-hint {
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -2339,11 +2342,11 @@ code {
 }
 
 .ux-save-info strong {
-    font-size: 0.86rem;
+    font-size: var(--fs-base);
 }
 
 .ux-save-info span {
-    font-size: 0.76rem;
+    font-size: var(--fs-sm);
     color: var(--text-secondary);
 }
 
@@ -2355,7 +2358,7 @@ code {
 }
 
 .ux-save-status {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -2412,7 +2415,7 @@ code {
 .upgrade-limit-card .ulc-icon { font-size: 2rem; flex-shrink: 0; }
 .upgrade-limit-card .ulc-body { flex: 1; min-width: 0; }
 .upgrade-limit-card .ulc-title { font-size: 1rem; font-weight: 900; margin-bottom: .3rem; }
-.upgrade-limit-card .ulc-hint { color: var(--text-secondary); font-size: .85rem; line-height: 1.45; }
+.upgrade-limit-card .ulc-hint { color: var(--text-secondary); font-size: var(--fs-base); line-height: 1.45; }
 .upgrade-limit-card .ulc-cta {
     display: inline-flex;
     align-items: center;
@@ -2423,7 +2426,7 @@ code {
     color: #fff;
     font-weight: 900;
     text-decoration: none;
-    font-size: .9rem;
+    font-size: var(--fs-md);
     white-space: nowrap;
     transition: opacity .15s, transform .1s;
 }
@@ -2443,8 +2446,8 @@ code {
 }
 .ctx-upsell-card .cu-icon { font-size: 1.5rem; flex-shrink: 0; }
 .ctx-upsell-card .cu-body { flex: 1; min-width: 0; }
-.ctx-upsell-card .cu-title { font-size: .9rem; font-weight: 800; margin-bottom: .2rem; }
-.ctx-upsell-card .cu-hint { color: var(--text-secondary); font-size: .8rem; line-height: 1.45; }
+.ctx-upsell-card .cu-title { font-size: var(--fs-md); font-weight: 800; margin-bottom: .2rem; }
+.ctx-upsell-card .cu-hint { color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.45; }
 .ctx-upsell-card .cu-cta {
     display: inline-flex;
     align-items: center;
@@ -2456,7 +2459,7 @@ code {
     color: #c4b5fd;
     font-weight: 800;
     text-decoration: none;
-    font-size: .82rem;
+    font-size: var(--fs-base);
     white-space: nowrap;
     transition: background .15s;
 }
@@ -2474,7 +2477,7 @@ code {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    font-size: .82rem;
+    font-size: var(--fs-base);
     flex-wrap: wrap;
 }
 .sticky-upgrade-bar .sub-text { color: var(--text-secondary); }
@@ -2491,7 +2494,7 @@ code {
     text-decoration: none;
     white-space: nowrap;
     transition: background .15s;
-    font-size: .78rem;
+    font-size: var(--fs-sm);
 }
 
 /* ================================================================
@@ -2511,7 +2514,7 @@ code {
     font-weight: 700;
     text-decoration: none;
     transition: top 0.15s;
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
 }
 .skip-to-content:focus { top: 0; }
 
@@ -2609,7 +2612,7 @@ textarea:focus-visible {
     border-radius: var(--radius-sm);
     border: 1px solid;
     margin-bottom: 1.25rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
 }
 .alert-success {
     background: rgba(35, 165, 89, 0.10);
@@ -2651,7 +2654,7 @@ textarea:focus-visible {
     cursor: pointer;
     list-style: none;
     user-select: none;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 800;
     letter-spacing: 0.03em;
     color: var(--text-secondary);
@@ -2694,7 +2697,7 @@ textarea:focus-visible {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
     flex-shrink: 0;
     transition: background 0.15s, border-color 0.15s;
 }
@@ -2721,7 +2724,7 @@ textarea:focus-visible {
     display: none !important;
 }
 .md-tile-cat {
-    font-size: 0.66rem;
+    font-size: var(--fs-2xs);
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -2738,7 +2741,7 @@ input[type="url"],
 input[type="password"],
 select,
 textarea {
-    font-size: 0.88rem;
+    font-size: var(--fs-base);
 }
 input[type="text"]:focus,
 input[type="number"]:focus,
@@ -2941,7 +2944,7 @@ textarea:focus {
     .btn-view-mode { display: none; }
     .nav-status { display: none; }
     .notif-filter-tabs { gap: 0.2rem; }
-    .notif-tab { font-size: 0.68rem; padding: 0.3rem 0.45rem; }
+    .notif-tab { font-size: var(--fs-xs); padding: 0.3rem 0.45rem; }
 }
 
 /* ── Back-to-top button ── */
@@ -2955,7 +2958,7 @@ textarea:focus {
     border: 1px solid var(--border-light);
     background: rgba(23, 27, 35, 0.95);
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
     display: none;
     align-items: center;
     justify-content: center;
@@ -3048,7 +3051,7 @@ textarea:focus {
     border-radius: var(--radius-md);
     background: rgba(168,85,247,.08);
     border: 1px solid rgba(168,85,247,.3);
-    font-size: .84rem;
+    font-size: var(--fs-base);
     flex-wrap: wrap;
     margin-top: .75rem;
 }
@@ -3065,7 +3068,7 @@ textarea:focus {
     color: #fff;
     font-weight: 800;
     text-decoration: none;
-    font-size: .78rem;
+    font-size: var(--fs-sm);
     transition: opacity .15s;
 }
 .plock-banner .pl-cta:hover { opacity: .85; }
@@ -3106,7 +3109,7 @@ body {
 }
 
 .sidebar-section-title {
-    font-size: 0.62rem;
+    font-size: var(--fs-2xs);
     padding: 0.2rem 0.45rem;
     color: #6f7b90;
 }
@@ -3117,12 +3120,12 @@ body {
 
 .sidebar .nav-group summary {
     padding: 0.45rem 0.6rem;
-    font-size: 0.64rem;
+    font-size: var(--fs-2xs);
     letter-spacing: 0.07em;
 }
 
 .nav-group-title {
-    font-size: 0.64rem;
+    font-size: var(--fs-2xs);
 }
 
 .nav-group-count,
@@ -3135,19 +3138,19 @@ body {
     min-height: 34px;
     gap: 0.38rem;
     padding: 0.38rem 0.46rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
 }
 
 .nav-icon {
     width: 20px;
     height: 20px;
     flex-basis: 20px;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     border-radius: 6px;
 }
 
 .nav-label {
-    font-size: 0.76rem;
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 
@@ -3167,7 +3170,7 @@ body {
 }
 
 .dashboard-page-copy p {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     max-width: 640px;
 }
 
@@ -3187,7 +3190,7 @@ body {
 .btn-save {
     min-height: 36px;
     border-radius: var(--radius-md);
-    font-size: 0.82rem;
+    font-size: var(--fs-base);
     font-weight: 800;
 }
 
@@ -3291,7 +3294,7 @@ body {
 .social-pill,
 .state-pill,
 .tk-priority {
-    font-size: 0.64rem;
+    font-size: var(--fs-2xs);
     letter-spacing: 0.04em;
 }
 
@@ -3396,7 +3399,7 @@ body {
     padding: 0.3rem 0.55rem;
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     font-weight: 900;
     letter-spacing: 0.05em;
     transition: background .14s, color .14s, border-color .14s;
