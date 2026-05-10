@@ -22,7 +22,15 @@ function normalizeFreeGamesConfig(config = {}) {
 
 function buildGameEmbed(game) {
     const title = game.title || "Unbekanntes Spiel";
-    const slug = game.productSlug || game.urlSlug || game.catalogNs?.mappings?.[0]?.pageSlug || "";
+    // catalogNs.mappings pageSlug is the most reliable for /p/ URLs.
+    // productSlug often contains "slug/home" which results in 404 — strip everything after "/"
+    const rawSlug =
+        game.catalogNs?.mappings?.[0]?.pageSlug ||
+        game.offerMappings?.[0]?.pageSlug ||
+        (game.productSlug ? game.productSlug.split("/")[0] : null) ||
+        game.urlSlug ||
+        "";
+    const slug = rawSlug.trim();
     const storeUrl = slug ? `https://store.epicgames.com/de/p/${slug}` : "https://store.epicgames.com/de/free-games";
 
     // Determine original price
