@@ -555,18 +555,12 @@ async function playNext(guildId, { silent = false } = {}) {
             const related = await getRelatedTrackFor247(guildId);
             if (related?.track) {
                 state.queue.push(related.track);
-                sendTemp(state.textChannel, {
-                    embeds: [{ color: 0x5865F2, description: `🔁 **24/7 AutoMix**: Verwandter Song zu **${related.seed.title}** geladen.` }],
-                });
                 return playNext(guildId, { silent: true });
             }
 
             const fallbackTrack = await getFallbackDeutschrapTrackFor247();
             if (fallbackTrack) {
                 state.queue.push(fallbackTrack);
-                sendTemp(state.textChannel, {
-                    embeds: [{ color: 0x5865F2, description: '🎤 **24/7 Deutschrap AutoMix**: Keine direkten Related-Songs gefunden, nutze Deutschrap-Fallback.' }],
-                });
                 return playNext(guildId, { silent: true });
             }
 
@@ -594,12 +588,7 @@ async function playNext(guildId, { silent = false } = {}) {
         addRecentUri(guildId, next.info?.uri, next.info?.author);
         startPanelRefresh(guildId);
         if (_client) updateMusicPanel(_client, guildId, state).catch(() => { });
-        if (!silent) {
-            sendTemp(state.textChannel, {
-                ...buildBrandPayload(buildNowPlayingEmbed(next), { includeBanner: true }),
-                components: [buildPlayerControlsRow()],
-            });
-        }
+
         // Keep the buffer filled — trigger fill whenever queue is below target
         if (state.is247 && state.queue.length < BUFFER_TARGET) {
             fillBufferFor247(guildId).catch(() => { });
@@ -760,4 +749,5 @@ module.exports = {
     applyPlayerVolume,
     setDiscordClient,
     setShoukaku,
+    sendTemp,
 };

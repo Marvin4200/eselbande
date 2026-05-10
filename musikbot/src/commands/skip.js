@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { players } = require('../utils/playerManager');
+const { players, sendTemp } = require('../utils/playerManager');
 const { hasDJPermission } = require('../utils/djCheck');
 
 module.exports = {
@@ -21,6 +21,7 @@ module.exports = {
         const wasLooping = state.loop === 'track';
         if (wasLooping) state.loop = 'off'; // force past the current track
         await state.player.stopTrack(); // triggers 'end' → playNext
-        return interaction.reply({ embeds: [{ color: 0x5865F2, description: `⏭️ Skipped **${skipped}**${wasLooping ? ' *(Track-Loop deaktiviert)*' : ''}` }] });
+        sendTemp(state.textChannel, { embeds: [{ color: 0x5865F2, description: `⏭️ Skipped **${skipped}**${wasLooping ? ' *(Track-Loop deaktiviert)*' : ''}` }] });
+        return interaction.deferReply().then(() => interaction.deleteReply()).catch(() => {});
     },
 };
