@@ -835,6 +835,11 @@ a.notif-item:focus-visible {
     transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.16);
 }
+.hub-card:focus-visible {
+    border-color: rgba(102, 126, 234, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.16);
+}
 
 .hub-card h3 {
     font-size: var(--fs-lg);
@@ -1709,6 +1714,10 @@ code {
     transform: translateY(-3px);
     box-shadow: 0 12px 32px rgba(88,101,242,0.18);
 }
+.guild-card:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(88,101,242,0.18);
+}
 
 /* Cockpit grid */
 .cockpit-kpi-grid {
@@ -2025,6 +2034,11 @@ code {
 }
 
 .dashboard-link-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(88, 101, 242, 0.34);
+    background: rgba(88, 101, 242, 0.08);
+}
+.dashboard-link-card:focus-visible {
     transform: translateY(-1px);
     border-color: rgba(88, 101, 242, 0.34);
     background: rgba(88, 101, 242, 0.08);
@@ -2523,7 +2537,7 @@ code {
 *:focus-visible {
     outline: 2px solid #5865f2;
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: inherit;
 }
 a:focus-visible,
 button:focus-visible,
@@ -2584,6 +2598,25 @@ textarea:focus-visible {
     border-color: rgba(64, 72, 84, 0.5);
 }
 .btn-full { width: 100%; justify-content: center; }
+
+/* ── Button :active press feedback ── */
+.btn-primary:active,
+.btn-primary-ui:active {
+    transform: translateY(0);
+    transition-duration: 0.08s;
+    box-shadow: none;
+}
+.btn-secondary-ui:active,
+.btn-success-ui:active,
+.btn-danger-ui:active {
+    transform: translateY(0);
+    transition-duration: 0.08s;
+}
+.btn-logout:active {
+    transform: translateY(0);
+    transition-duration: 0.08s;
+    box-shadow: none;
+}
 
 /* ── Status badge extras ── */
 .status-badge.info {
