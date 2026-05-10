@@ -343,7 +343,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 |---|---|---|
 | Typografie | 2/3 | System-Font-Stack (`-apple-system` etc.) — kein eigener Font |
 | Farb-Tokens | 3/3 | Vollständig in `:root`, konsistent genutzt |
-| Spacing-System | 3/3 | `--sp-*`-Token-Werte in `:root` auf rem migriert (Option A, Commit `tbd`). PHP-Inline-Styles `var(--sp-*)` kompatibel. Basis: `html` default 16px — `body { font-size: 15px }` beeinflusst `rem` nicht. |
+| Spacing-System | 3/3 | `--sp-*`-Token-Werte in `:root` auf rem migriert (Option A, Commit `51ba282`). PHP-Inline-Styles `var(--sp-*)` kompatibel. Basis: `html` default 16px — `body { font-size: 15px }` beeinflusst `rem` nicht. |
 | Komponenten-Konsistenz | 3/3 | Alle border-radius auf Design-Tokens tokenisiert, doppelter CSS-Block entfernt |
 | Animationen | 3/3 | GPU-only: `transform: scaleX()` für Progress Bars, kein `transition: width` mehr |
 | Anti-Patterns (Impeccable) | 4/4 | **0 Findings** — clean seit Commit `23fa20d` |
@@ -408,7 +408,7 @@ ssh root@192.168.2.177 "cd /home/marvin && git pull origin main && docker compos
 | `fa47cf5` | Minor token cleanup: raw `12px !important` im Card-Cleanup-Block → `var(--radius-md) !important` | Letzter raw-!important-Wert tokenisiert |
 | `8a1dedd` | Doku: AI_HANDOFF.md nach fa47cf5 aktualisiert | — |
 | `f2b6d4a` | Spacing tokens in PHP-Inline-Styles (exakte px-Matches, 10 Dateien, ~45 Werte) | Spacing-System bleibt 2/3 — Core CSS rem-basiert |
-| `tbd` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
+| `51ba282` | Option A: `--sp-*`-Token-Werte in `:root` auf rem migriert (7 Zeilen, kein Selektor berührt) | Spacing-System **3/3**, Score **16/20** |
 
 **Aktueller Status: Impeccable-clean — 0 known AI-UI anti-patterns. Spacing-System: 3/3. `--sp-*`-Tokens rem-basiert (Option A, 7 Zeilen). PHP-Inline-Styles und `:root`-Tokens nutzen dieselbe Einheit. Score: 16/20.**
 
