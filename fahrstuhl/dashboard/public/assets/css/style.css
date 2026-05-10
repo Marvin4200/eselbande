@@ -1,23 +1,5 @@
 /* Fahrstuhl Dashboard - Modern Styles */
 
-:root {
-    --primary: #667eea;
-    --primary-light: #7c8ff5;
-    --secondary: #764ba2;
-    --success: #51cf66;
-    --danger: #ff6b6b;
-    --warning: #ffd43b;
-    --bg-main: #0f1419;
-    --bg-secondary: #1a1f2e;
-    --bg-tertiary: #252d3d;
-    --bg-light: #2d3748;
-    --text-primary: #e2e8f0;
-    --text-secondary: #a0aec0;
-    --border: #2d3748;
-    --border-light: #404854;
-    --white: #ffffff;
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -1158,7 +1140,7 @@ body {
     gap: 0.42rem;
     padding: 0.44rem 0.52rem;
     border-radius: 8px;
-    font-weight: 750;
+    font-weight: 700;
     font-size: 0.82rem;
 }
 
@@ -1299,7 +1281,7 @@ body {
 
 .stat-label {
     color: #8e99aa;
-    font-weight: 850;
+    font-weight: 800;
     letter-spacing: 0.05em;
 }
 
@@ -1373,7 +1355,8 @@ code {
 
 @media (max-width: 768px) {
     .navbar {
-        position: static;
+        position: sticky;
+        top: 0;
         padding: 0.85rem 1rem;
     }
 
@@ -2528,10 +2511,47 @@ textarea:focus-visible {
     background: rgba(88, 101, 242, 0.10);
 }
 .status-badge.danger,
-.status-badge.error {
+.status-badge.error,
+.status-badge.critical {
     color: #ffb3b3;
     border-color: rgba(242, 63, 67, 0.4);
     background: rgba(242, 63, 67, 0.12);
+}
+.status-badge.ok,
+.status-badge.online,
+.status-badge.healthy {
+    color: #b3f0c8;
+    border-color: rgba(35, 165, 89, 0.4);
+    background: rgba(35, 165, 89, 0.12);
+}
+
+/* ── Alert banners (used across pages) ── */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+}
+.alert-success {
+    background: rgba(35, 165, 89, 0.10);
+    color: #4ade80;
+    border-color: #23a559;
+}
+.alert-error {
+    background: rgba(242, 63, 67, 0.10);
+    color: #fb7185;
+    border-color: #f23f43;
+}
+.alert-warning {
+    background: rgba(240, 178, 50, 0.10);
+    color: #fbbf24;
+    border-color: #f0b232;
+}
+.alert-info {
+    background: rgba(88, 101, 242, 0.10);
+    color: #a5b4fc;
+    border-color: #5865f2;
 }
 
 /* ── Advanced / collapsible section ── */
@@ -3046,7 +3066,7 @@ body {
 
 .nav-label {
     font-size: 0.76rem;
-    font-weight: 750;
+    font-weight: 700;
 }
 
 .dashboard-page-header {

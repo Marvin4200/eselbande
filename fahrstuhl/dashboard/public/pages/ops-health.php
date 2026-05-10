@@ -38,13 +38,9 @@ function opsBadgeClass($status) {
 <?php include '../includes/sidebar.php'; ?>
 
 <style>
-.ops-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:.9rem; margin-bottom:1.1rem; }
-.ops-kpi { background:#111827; border:1px solid rgba(80,92,120,.35); border-radius:10px; padding:.85rem; }
-.ops-kpi .label { color:#94a3b8; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; }
-.ops-kpi .value { color:#e5e7eb; font-size:1.35rem; font-weight:800; margin-top:.2rem; }
-.ops-health-table td code { color:#c4b5fd; }
-.ops-service { display:flex; align-items:center; gap:.45rem; font-weight:700; }
-.ops-muted { color:#94a3b8; font-size:.82rem; }
+.ops-health-table td code { color: var(--primary-light); }
+.ops-service { display: flex; align-items: center; gap: .45rem; font-weight: 700; }
+.ops-muted { color: var(--text-secondary); font-size: .82rem; margin-top: .15rem; }
 </style>
 
 <div class="page-header">
@@ -60,22 +56,22 @@ function opsBadgeClass($status) {
     </div>
 </div>
 
-<div class="ops-kpi-grid">
-    <div class="ops-kpi">
-        <div class="label">Services</div>
-        <div class="value"><?php echo (int)($totals['total'] ?? 0); ?></div>
+<div class="dashboard-kpi-grid" style="margin-bottom:1.1rem;">
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label">Services</div>
+        <div class="dashboard-kpi-value"><?php echo (int)($totals['total'] ?? 0); ?></div>
     </div>
-    <div class="ops-kpi">
-        <div class="label">Online</div>
-        <div class="value" style="color:#4ade80;"><?php echo (int)($totals['online'] ?? 0); ?></div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label">Online</div>
+        <div class="dashboard-kpi-value" style="color: var(--color-success, #4ade80);"><?php echo (int)($totals['online'] ?? 0); ?></div>
     </div>
-    <div class="ops-kpi">
-        <div class="label">Offline</div>
-        <div class="value" style="color:#f87171;"><?php echo (int)($totals['offline'] ?? 0); ?></div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label">Offline</div>
+        <div class="dashboard-kpi-value" style="color: var(--danger, #fb7185);"><?php echo (int)($totals['offline'] ?? 0); ?></div>
     </div>
-    <div class="ops-kpi">
-        <div class="label">Checked</div>
-        <div class="value" style="font-size:1rem;"><?php echo esc(isset($data['checkedAt']) ? date('d.m.Y H:i:s', strtotime($data['checkedAt'])) : '—'); ?></div>
+    <div class="dashboard-kpi">
+        <div class="dashboard-kpi-label">Checked</div>
+        <div class="dashboard-kpi-value" style="font-size:1rem;"><?php echo esc(isset($data['checkedAt']) ? date('d.m.Y H:i:s', strtotime($data['checkedAt'])) : '—'); ?></div>
     </div>
 </div>
 
@@ -105,7 +101,7 @@ function opsBadgeClass($status) {
                     <div class="ops-muted"><?php echo esc($svc['id'] ?? ''); ?></div>
                 </td>
                 <td>
-                    <span class="badge <?php echo opsBadgeClass($svc['status'] ?? 'unknown'); ?>"><?php echo esc(strtoupper($svc['status'] ?? 'unknown')); ?></span>
+                    <span class="status-badge <?php echo ($svc['status'] ?? '') === 'online' ? 'ok' : (($svc['status'] ?? '') === 'offline' ? 'danger' : 'warning'); ?>"><?php echo esc(strtoupper($svc['status'] ?? 'unknown')); ?></span>
                     <?php if (!empty($svc['error'])): ?>
                         <div class="ops-muted"><?php echo esc($svc['error']); ?></div>
                     <?php endif; ?>
@@ -125,7 +121,7 @@ function opsBadgeClass($status) {
                 </td>
                 <td>
                     <?php if (!empty($svc['pm2'])): ?>
-                        <span class="badge <?php echo ($svc['pm2']['status'] ?? '') === 'online' ? 'badge-ok' : 'badge-warn'; ?>"><?php echo esc($svc['pm2']['status'] ?? 'unknown'); ?></span>
+                        <span class="status-badge <?php echo ($svc['pm2']['status'] ?? '') === 'online' ? 'ok' : 'warning'; ?>"><?php echo esc($svc['pm2']['status'] ?? 'unknown'); ?></span>
                         <div class="ops-muted">r=<?php echo (int)($svc['pm2']['restarts'] ?? 0); ?></div>
                     <?php else: ?>
                         —
@@ -138,7 +134,7 @@ function opsBadgeClass($status) {
             </tr>
             <?php endforeach; ?>
             <?php if (empty($services)): ?>
-            <tr><td colspan="8" style="text-align:center; color:#94a3b8;">Keine Service-Daten verfügbar.</td></tr>
+            <tr><td colspan="8" style="text-align:center; color: var(--text-secondary);">Keine Service-Daten verfügbar.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

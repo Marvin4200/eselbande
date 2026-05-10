@@ -22,6 +22,38 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
 
+<style>
+.analytics-chart-row {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 1100px) {
+    .analytics-chart-row { grid-template-columns: 1fr; }
+}
+.btn-tf {
+    padding: .3rem .85rem;
+    border-radius: var(--radius-sm);
+    font-size: .82rem;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    transition: background .15s, border-color .15s, color .15s;
+}
+.btn-tf:hover {
+    background: var(--bg-light);
+    color: var(--text-primary);
+}
+.btn-tf.is-active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+</style>
+
 <div class="page-header">
     <h1>📊 Analytics</h1>
     <p class="subtitle">Real-time bot statistics and performance metrics</p>
@@ -75,18 +107,14 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 </div>
 
 <!-- Charts row -->
-<div style="display:grid; grid-template-columns:1fr 340px; gap:16px; margin-bottom:24px;">
+<div class="analytics-chart-row">
     <!-- Activity Timeline -->
     <div class="section" style="padding:18px 20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
             <h2 style="margin:0;">📈 Command Activity</h2>
             <div style="display:flex; gap:6px;">
                 <?php foreach (['24h'=>'24h','7d'=>'7d','30d'=>'30d','all'=>'All'] as $key=>$label): ?>
-                <a href="?tf=<?php echo $key; ?>"
-                   style="padding:4px 12px; border-radius:4px; font-size:0.82em; text-decoration:none;
-                          background:<?php echo $tf===$key?'#5865F2':'#1a1a2e'; ?>;
-                          color:<?php echo $tf===$key?'#fff':'#aaa'; ?>;
-                          border:1px solid <?php echo $tf===$key?'#5865F2':'#333'; ?>;">
+                <a href="?tf=<?php echo $key; ?>" class="btn-tf<?php echo $tf===$key?' is-active':''; ?>">
                     <?php echo $label; ?>
                 </a>
                 <?php endforeach; ?>
@@ -111,6 +139,7 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
 <!-- Recent Activity Table -->
 <div class="section">
     <h2>🕐 Recent Activity</h2>
+    <div class="dashboard-table-wrap">
     <table class="table">
         <thead>
             <tr>
@@ -123,26 +152,25 @@ $cmdCounts    = json_encode(array_column($commands, 'count'));
         </thead>
         <tbody>
             <?php if (empty($recentActivity)): ?>
-                <tr><td colspan="5" style="text-align:center; padding:1.5rem; color:#999;">No recent activity recorded yet</td></tr>
+                <tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No recent activity recorded yet</td></tr>
             <?php else: ?>
                 <?php foreach (array_slice($recentActivity, 0, 25) as $row): ?>
                     <tr>
-                        <td style="color:#aaa; font-size:0.82em; white-space:nowrap;"><?php
+                        <td style="color:var(--text-secondary); font-size:.82em; white-space:nowrap;"><?php
                             $ts = $row['timestamp'] ?? '';
                             echo $ts ? date('d.m H:i', strtotime($ts)) : '—';
                         ?></td>
-                        <td><code style="background:#1a1a2e; padding:2px 7px; border-radius:4px;">/<?php echo esc($row['command'] ?? ''); ?></code></td>
-                        <td style="color:#666; font-size:0.82em; font-family:monospace;"><?php echo esc($row['user_id'] ?? ''); ?></td>
-                        <td style="color:#666; font-size:0.82em; font-family:monospace;"><?php echo esc($row['guild_id'] ?? ''); ?></td>
-                        <td><?php echo ($row['success'] ?? 1) ? '<span style="color:#57F287;">✅</span>' : '<span style="color:#ED4245;">❌</span>'; ?></td>
+                        <td><code>/<?php echo esc($row['command'] ?? ''); ?></code></td>
+                        <td style="color:var(--text-secondary); font-size:.82em; font-family:monospace;"><?php echo esc($row['user_id'] ?? ''); ?></td>
+                        <td style="color:var(--text-secondary); font-size:.82em; font-family:monospace;"><?php echo esc($row['guild_id'] ?? ''); ?></td>
+                        <td><?php echo ($row['success'] ?? 1) ? '<span class="status-badge ok">✓ ok</span>' : '<span class="status-badge danger">✕ fail</span>'; ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
     </table>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    </div>
+</div>npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 Chart.defaults.color = '#aaa';
 Chart.defaults.borderColor = '#2a2a3e';

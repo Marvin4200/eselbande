@@ -65,17 +65,10 @@ function cockpitUptime($ms) {
 <?php include '../includes/sidebar.php'; ?>
 
 <style>
-.alert { padding:12px 15px; border-radius:8px; border-left:4px solid; margin-bottom:20px; }
-.alert-success { background:rgba(81,207,102,.12); color:#51cf66; border-color:#51cf66; }
-.alert-error { background:rgba(255,107,107,.12); color:#ff6b6b; border-color:#ff6b6b; }
 .cockpit-grid { display:grid; grid-template-columns:1.35fr .65fr; gap:1.25rem; }
 .quick-actions { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.25rem; }
 .quick-actions a, .quick-actions button { width:auto; }
 .quick-actions form { margin:0; }
-.badge { display:inline-flex; padding:.22rem .55rem; border-radius:999px; font-size:.78rem; font-weight:800; }
-.badge-ok { background:rgba(81,207,102,.14); color:#51cf66; border:1px solid rgba(81,207,102,.45); }
-.badge-warn { background:rgba(255,212,59,.14); color:#ffd43b; border:1px solid rgba(255,212,59,.45); }
-.badge-critical { background:rgba(255,107,107,.14); color:#ff6b6b; border:1px solid rgba(255,107,107,.45); }
 @media (max-width: 1050px) { .cockpit-grid { grid-template-columns:1fr; } }
 .cp-runtime-row { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid rgba(52,61,77,0.5); font-size:.9rem; }
 .cp-runtime-row:last-child { border-bottom:none; }
@@ -190,8 +183,8 @@ function cockpitUptime($ms) {
             <h2>🛡️ Health & Warnungen</h2>
             <?php $overall = $health['overall']['status'] ?? 'unknown'; ?>
             <p style="margin-bottom:1rem;">Status:
-                <span class="badge badge-<?php echo $overall === 'critical' ? 'critical' : ($overall === 'warn' ? 'warn' : 'ok'); ?>"><?php echo esc(strtoupper($overall)); ?></span>
-                <span style="color:#aaa; margin-left:.6rem;">Ping <?php echo esc($bot['wsPing'] ?? '—'); ?>ms · Memory <?php echo cockpitBytes($api['memory']['rss'] ?? 0); ?></span>
+                <span class="status-badge <?php echo $overall === 'critical' ? 'danger' : ($overall === 'warn' ? 'warning' : 'ok'); ?>"><?php echo esc(strtoupper($overall)); ?></span>
+                <span style="color:var(--text-secondary); margin-left:.6rem;">Ping <?php echo esc($bot['wsPing'] ?? '—'); ?>ms · Memory <?php echo cockpitBytes($api['memory']['rss'] ?? 0); ?></span>
             </p>
             <?php if (empty($warningsTop)): ?>
                 <p style="color:#51cf66;">✅ Keine aktuellen Warnungen.</p>
@@ -202,7 +195,7 @@ function cockpitUptime($ms) {
                     <tbody>
                         <?php foreach ($warningsTop as $w): ?>
                         <tr>
-                            <td><span class="badge badge-<?php echo ($w['severity'] ?? '') === 'critical' ? 'critical' : 'warn'; ?>"><?php echo esc($w['severity'] ?? 'warn'); ?></span></td>
+                            <td><span class="status-badge <?php echo ($w['severity'] ?? '') === 'critical' ? 'danger' : 'warning'; ?>"><?php echo esc($w['severity'] ?? 'warn'); ?></span></td>
                             <td><?php echo esc($w['title'] ?? ''); ?></td>
                             <td>
                                 <?php echo esc($w['detail'] ?? ''); ?>
@@ -241,7 +234,7 @@ function cockpitUptime($ms) {
                         <td><code>/<?php echo esc($row['command'] ?? ''); ?></code></td>
                         <td><code><?php echo esc($row['user_id'] ?? ''); ?></code></td>
                         <td><code><?php echo esc($row['guild_id'] ?? ''); ?></code></td>
-                        <td><span class="badge badge-<?php echo !empty($row['success']) ? 'ok' : 'critical'; ?>"><?php echo !empty($row['success']) ? 'ok' : 'error'; ?></span></td>
+                        <td><span class="status-badge <?php echo !empty($row['success']) ? 'ok' : 'danger'; ?>"><?php echo !empty($row['success']) ? 'ok' : 'error'; ?></span></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($recent)): ?><tr><td colspan="5" style="text-align:center;color:#999;">Noch keine Aktivität</td></tr><?php endif; ?>

@@ -66,11 +66,20 @@ if (isAdmin()) {
 <?php endif; ?>
 
 <div class="section">
-    <div class="section-header"><h2>Next Moderation Features</h2></div>
+    <div class="section-header"><h2>🔮 Coming Soon</h2></div>
     <div class="hub-grid">
-        <div class="hub-card"><h3>Escalation Rules</h3><p>Next step: auto-escalate repeated warnings into timed actions.</p></div>
-        <div class="hub-card"><h3>Member Case Page</h3><p>Next step: compact case history directly on each user detail page.</p></div>
-        <div class="hub-card"><h3>Mod Commands</h3><p>Next step: slash commands for warn/note/timeout from Discord.</p></div>
+        <div class="hub-card" style="opacity:.7; pointer-events:none;">
+            <h3>Escalation Rules <span class="status-badge coming" style="vertical-align:middle;">Soon</span></h3>
+            <p>Auto-escalate repeated warnings into timed actions.</p>
+        </div>
+        <div class="hub-card" style="opacity:.7; pointer-events:none;">
+            <h3>Member Case Page <span class="status-badge coming" style="vertical-align:middle;">Soon</span></h3>
+            <p>Compact case history directly on each user detail page.</p>
+        </div>
+        <div class="hub-card" style="opacity:.7; pointer-events:none;">
+            <h3>Mod Commands <span class="status-badge coming" style="vertical-align:middle;">Soon</span></h3>
+            <p>Slash commands for warn/note/timeout directly from Discord.</p>
+        </div>
     </div>
 </div>
 
