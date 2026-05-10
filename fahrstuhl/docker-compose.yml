@@ -306,12 +306,35 @@ services:
       - marvin_internal
 
 
+  freegamesapi:
+    build:
+      context: ../freegamesapi
+      dockerfile: Dockerfile
+    container_name: freegamesapi-phase1
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3016
+    ports:
+      - "127.0.0.1:3116:3016"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3016/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - marvin_internal
+
   fahrstuhl-docker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: fahrstuhl-phase1
     restart: unless-stopped
+    depends_on:
+      freegamesapi:
+        condition: service_healthy
     env_file:
       - path: ./.env
         required: false
@@ -336,6 +359,7 @@ services:
       STATUSPAGE_HEALTH_URL: http://statuspage:3012/health
       TEAM_HEALTH_URL: http://team:3014/health
       ZITATBOARD_HEALTH_URL: http://zitatboard:3013/health
+      FREE_GAMES_API_URL: http://freegamesapi:3016
     ports:
       - "127.0.0.1:3102:3002"
     command: ["node", "index.js"]
