@@ -8,6 +8,7 @@ $styleVersion = file_exists($stylePath) ? filemtime($stylePath) : time();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? esc($page_title) : 'Dashboard'; ?> - Fahrstuhl</title>
+    <link rel="icon" type="image/svg+xml" href="<?= BASE_URL ?>/assets/img/favicon.svg">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/style.css?v=<?= $styleVersion ?>">
 </head>
 <body class="app">
