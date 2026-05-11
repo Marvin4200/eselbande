@@ -245,6 +245,45 @@ Neue Features:
 
 ---
 
+## Dashboard-Leveling Finaltest (2026-05-11)
+
+**Test-Guild:** 483321401529597962  
+**Backup-Pfad:** `/home/marvin/fahrstuhl/guildConfigs.json.backup_dashboard_leveling_20260511_204256`
+
+**Testergebnisse:**
+
+1. **leveling.php Zugriff:** HTTP 200 ✅
+   - Lädt mit Login-Kontext ohne Access-Denied
+   - Dashboard-CSS/JS laden korrekt
+
+2. **Settings GET:** HTTP 200 ✅
+   - Erfolg bestätigt (success=true)
+   - Alle Felder korrekt: enabled, xp_range 8-16, cooldownSeconds 0, minMessageLength 5, announceMessage, ignoredRoles, noXpChannels, voiceXpEnabled, voiceXpPerMinute
+
+3. **Settings POST:** HTTP 200 ✅
+   - Speichern von Settings funktioniert
+   - Temporäre announceMessage-Teständerung wurde durchgeführt
+
+4. **Settings Rollback:** HTTP 200 ✅
+   - Temporäre Änderungen wurden vollständig zurückgesetzt
+   - Ursprüngliche announceMessage wiederhergestellt
+
+5. **Leaderboard GET:** HTTP 200 ✅
+   - Erfolg bestätigt (success=true)
+   - 4 Rows korrekt zurückgegeben
+   - Top-User korrekt sortiert
+
+6. **API Authentication:** ✅
+   - Dashboard-Kontext (Bearer Token + X-Dashboard-User-Id Header) funktioniert
+   - Authentifizierung validiert alle requests korrekt
+
+7. **PHP Logs:** ✅
+   - Keine Warnings/Notices/Fatals in dashboard-php während Test
+
+**Ergebnis:** Keine neuen Bugs gefunden. Dashboard-Leveling ist einsatzbereit. ✅
+
+---
+
 ### Priorität 7 — Leveling Erweiterungen
 
 Bestehendes System nutzen:
