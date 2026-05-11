@@ -224,6 +224,27 @@ Neue Features:
 
 ---
 
+## Leveling-System Live-Test abgeschlossen
+
+- Test-Guild: 483321401529597962
+- Leveling wurde für diese Guild aktiviert.
+- DB-Tabelle guild_user_levels ist vorhanden und schreibt korrekt.
+- /rank funktioniert.
+- /leaderboard funktioniert.
+- Message-XP funktioniert.
+- Admin-User bekommt XP.
+- AutoMod-Bypass-Bug wurde behoben:
+  - AutoMod-Bypass beendet messageCreate nicht mehr vor Leveling.
+  - Commit: c1e4c46
+- globalStats.json Permission-Fix bestätigt:
+  - Datei ist für Bot-User node beschreibbar.
+  - /rank wurde getrackt.
+  - Kein neuer EACCES-Fehler.
+  - rank_count wurde aktualisiert.
+- Ergebnis: Leveling ist produktiv funktionsfähig bestätigt.
+
+---
+
 ### Priorität 7 — Leveling Erweiterungen
 
 Bestehendes System nutzen:
