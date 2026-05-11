@@ -445,7 +445,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
 | Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | ✅ Behoben (`d4d70c6`) — POST + `X-CSRF-Token` |
 | Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ⚠️ Teilweise behoben (`c907447`) — `botinfo.php`, `cockpit.php`, `security.php`, `deploys.php`; 3 weitere Seiten offen |
-| Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | Offen |
+| Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | ✅ Behoben (`885bb10`) — `X-CSRF-Token`-Header wird explizit gesetzt |
 | Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
 | Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
 | Niedrig (N2) | `botinfo.php`: `requireLogin` statt `requireAdmin` | By design |
@@ -482,6 +482,22 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
 | M1-Fortschritt | 4/7 Seiten behoben (`botinfo`, `cockpit`, `security`, `deploys`) |
 | Noch offen (M1) | 3 weitere Seiten: `analytics.php`, `guilds.php`, `logs.php` |
+
+---
+
+### Abschluss-Report — Security-Audit M2 (2026-05-10)
+
+| Punkt | Ergebnis |
+|---|---|
+| Commit `885bb10` | Fix M2: `submitFormAjax` in `main.js` sendet CSRF-Token explizit als `X-CSRF-Token`-Header |
+| Befund | `submitFormAjax` sendete CSRF-Token nur implizit über FormData-Body — wenn ein zukünftiger Endpoint `$_POST['csrf_token']` nicht liest, wäre CSRF-Schutz stumm gefailed |
+| Fix JS (`main.js` L79–84) | `const csrfToken = data.get('csrf_token') \|\| (document.querySelector('input[name="csrf_token"]') \|\| {}).value \|\| '';` — expliziter Header `reqHeaders['X-CSRF-Token'] = csrfToken;` |
+| PHP-Seite | `verifyDashboardCsrf()` in `config.php` prüft bereits `$_SERVER['HTTP_X_CSRF_TOKEN']` (L65) — kein PHP-Change nötig |
+| FormData bleibt | `csrf_token` bleibt im Body — doppelte Absicherung: Header + POST-Body |
+| Verifikation (Server) | `grep -n 'X-CSRF-Token' main.js` → L84: `if (csrfToken) reqHeaders['X-CSRF-Token'] = csrfToken;` ✅ |
+| Smoke-Test (Port 3181) | `/fahrstuhl/`: **200** · `/pages/botinfo.php`: **302** · `/assets/js/main.js`: **200** — ALL_OK |
+| Deploy | Container `dashboard-php-phase1` neu gebaut und gestartet — DONE |
+| Audit-Status | Alle bekannten Befunde behoben (H1 ✅ N1 ✅ H2 ✅ M1 ✅ M2 ✅ · M3/N2: By design) |
 
 ---
 
