@@ -2194,78 +2194,79 @@ client.on("messageCreate", async (message) => {
         const automodEnabled = moduleEnabled(config, "automod", false);
         if (automodEnabled) {
             const automod = normalizeAutoModSettings(config.automod && typeof config.automod === "object" ? config.automod : {});
-            if (shouldBypassAutoMod(message, automod)) return;
+            const bypassAutoMod = shouldBypassAutoMod(message, automod);
+            if (!bypassAutoMod) {
+                const violations = findAutoModViolations(message, automod);
+                if (violations.length > 0) {
+                    const violation = violations[0];
+                    const reasonText = violations.map(item => item.reason).join(", ");
+                    const now = Date.now();
+                    const guildId = message.guild.id;
+                    const userId = message.author.id;
+                    if (!autoModStrikeMap.has(guildId)) autoModStrikeMap.set(guildId, new Map());
+                    const userMap = autoModStrikeMap.get(guildId);
+                    const since = now - 24 * 60 * 60 * 1000;
+                    const strikes = (userMap.get(userId) || []).filter(ts => ts > since);
+                    strikes.push(now);
+                    userMap.set(userId, strikes);
 
-            const violations = findAutoModViolations(message, automod);
-            if (violations.length > 0) {
-                const violation = violations[0];
-                const reasonText = violations.map(item => item.reason).join(", ");
-                const now = Date.now();
-                const guildId = message.guild.id;
-                const userId = message.author.id;
-                if (!autoModStrikeMap.has(guildId)) autoModStrikeMap.set(guildId, new Map());
-                const userMap = autoModStrikeMap.get(guildId);
-                const since = now - 24 * 60 * 60 * 1000;
-                const strikes = (userMap.get(userId) || []).filter(ts => ts > since);
-                strikes.push(now);
-                userMap.set(userId, strikes);
+                    const ruleAction = violation.action || "fallback";
+                    let effectiveAction = ruleAction;
+                    let handledByRuleAction = await applyAutoModRuleAction(message, automod, { ...violation, reason: reasonText }, strikes.length);
 
-                const ruleAction = violation.action || "fallback";
-                let effectiveAction = ruleAction;
-                let handledByRuleAction = await applyAutoModRuleAction(message, automod, { ...violation, reason: reasonText }, strikes.length);
+                    if (!handledByRuleAction) {
+                        if (automod.deleteMessage !== false && message.deletable) {
+                            await message.delete().catch(error => {
+                                console.warn(`⚠️ AutoMod delete failed in ${message.guild.name}: ${error.message}`);
+                            });
+                        }
 
-                if (!handledByRuleAction) {
-                    if (automod.deleteMessage !== false && message.deletable) {
-                        await message.delete().catch(error => {
-                            console.warn(`⚠️ AutoMod delete failed in ${message.guild.name}: ${error.message}`);
-                        });
-                    }
+                        const punished = await applyAutoModPunishment(message, automod, strikes.length);
+                        if (punished) {
+                            userMap.set(userId, []);
+                            effectiveAction = automod.punishmentAction;
+                        } else if (automod.warnUser !== false) {
+                            effectiveAction = "warn";
+                        } else if (automod.deleteMessage !== false) {
+                            effectiveAction = "delete";
+                        } else {
+                            effectiveAction = "none";
+                        }
 
-                    const punished = await applyAutoModPunishment(message, automod, strikes.length);
-                    if (punished) {
-                        userMap.set(userId, []);
-                        effectiveAction = automod.punishmentAction;
-                    } else if (automod.warnUser !== false) {
-                        effectiveAction = "warn";
-                    } else if (automod.deleteMessage !== false) {
-                        effectiveAction = "delete";
+                        if (automod.warnUser !== false) {
+                            const content = automod.warnMessage
+                                .replaceAll("{user}", `${message.author}`)
+                                .replaceAll("{reason}", reasonText)
+                                .replaceAll("{strikes}", String(strikes.length));
+                            const warning = await message.channel.send({
+                                content,
+                                allowedMentions: { users: [message.author.id] },
+                            }).catch(() => null);
+                            if (warning) setTimeout(() => warning.delete().catch(() => {}), 8000);
+                        }
                     } else {
-                        effectiveAction = "none";
+                        effectiveAction = ruleAction;
                     }
 
-                    if (automod.warnUser !== false) {
-                        const content = automod.warnMessage
-                            .replaceAll("{user}", `${message.author}`)
-                            .replaceAll("{reason}", reasonText)
-                            .replaceAll("{strikes}", String(strikes.length));
-                        const warning = await message.channel.send({
-                            content,
-                            allowedMentions: { users: [message.author.id] },
-                        }).catch(() => null);
-                        if (warning) setTimeout(() => warning.delete().catch(() => {}), 8000);
-                    }
-                } else {
-                    effectiveAction = ruleAction;
+                    const excerpt = (message.content || "").slice(0, 300) || "*empty*";
+                    const caseReason = `Rule: ${violation.type} | Action: ${effectiveAction} | Reason: ${reasonText} | Channel: #${message.channel.id} | Message: ${excerpt}`;
+                    await recordAutoModCase(message, { ...violation, reason: caseReason });
+
+                    sendServerLog(message.guild, config, "automod", {
+                        title: "AutoMod Triggered",
+                        description: `Message from ${message.author} matched **${violations.map(item => item.type).join(", ")}**.`,
+                        color: 0xED4245,
+                        fields: [
+                            { name: "Rule", value: violation.type, inline: true },
+                            { name: "Action", value: effectiveAction, inline: true },
+                            { name: "User", value: `${message.author.username}\n\`${message.author.id}\``, inline: true },
+                            { name: "Channel", value: `<#${message.channel.id}>`, inline: true },
+                            { name: "Reason", value: reasonText, inline: false },
+                            { name: "Message Excerpt", value: excerpt, inline: false },
+                        ],
+                    }).catch(() => {});
+                    return;
                 }
-
-                const excerpt = (message.content || "").slice(0, 300) || "*empty*";
-                const caseReason = `Rule: ${violation.type} | Action: ${effectiveAction} | Reason: ${reasonText} | Channel: #${message.channel.id} | Message: ${excerpt}`;
-                await recordAutoModCase(message, { ...violation, reason: caseReason });
-
-                sendServerLog(message.guild, config, "automod", {
-                    title: "AutoMod Triggered",
-                    description: `Message from ${message.author} matched **${violations.map(item => item.type).join(", ")}**.`,
-                    color: 0xED4245,
-                    fields: [
-                        { name: "Rule", value: violation.type, inline: true },
-                        { name: "Action", value: effectiveAction, inline: true },
-                        { name: "User", value: `${message.author.username}\n\`${message.author.id}\``, inline: true },
-                        { name: "Channel", value: `<#${message.channel.id}>`, inline: true },
-                        { name: "Reason", value: reasonText, inline: false },
-                        { name: "Message Excerpt", value: excerpt, inline: false },
-                    ],
-                }).catch(() => {});
-                return;
             }
         }
 

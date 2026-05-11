@@ -218,6 +218,12 @@ Neue Features:
 
 ---
 
+## Feature Notes
+
+- Fixed messageCreate flow: AutoMod bypass no longer prevents Leveling XP.
+
+---
+
 ### Priorität 7 — Leveling Erweiterungen
 
 Bestehendes System nutzen:
