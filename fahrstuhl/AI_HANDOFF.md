@@ -444,7 +444,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 | Kritisch | — | Keine |
 | Hoch (H1) | Keine HTTP Security Headers | ✅ Teilweise behoben — 4 Header gesetzt; CSP + HSTS bewusst offen |
 | Hoch (H2) | `server-backup.php` GET `ajax_preview` ohne CSRF | ✅ Behoben (`d4d70c6`) — POST + `X-CSRF-Token` |
-| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ⚠️ Teilweise behoben (`c907447`) — `botinfo.php`, `cockpit.php`, `security.php`, `deploys.php`; 3 weitere Seiten offen |
+| Mittel (M1) | Bot-Offline kein Error-State (7 Seiten) | ✅ Behoben (`304734e`) — alle 7 Seiten: `botinfo`, `cockpit`, `security`, `deploys`, `analytics`, `guilds`, `logs` |
 | Mittel (M2) | `submitFormAjax`: implizites CSRF via FormData | ✅ Behoben (`885bb10`) — `X-CSRF-Token`-Header wird explizit gesetzt |
 | Mittel (M3) | Sidebar: `activity` + `botinfo` doppelt | By design (admin vs. user view) |
 | Niedrig (N1) | `server-backup.php`: doppeltes `session_start()` | ✅ Behoben (`c8f4658`) |
