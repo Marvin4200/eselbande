@@ -58,6 +58,9 @@ Thumbs.db
 
 # Misc
 coverage/
+COPILOT_NOTES.md
+skills-lock.json
+.agents/
 
 # Linux home directory files (server-only, never commit)
 .bash_history
