@@ -2617,7 +2617,21 @@ client.on("interactionCreate", async (interaction) => {
                 }
                 if (interaction.customId.startsWith("ticket:priority:")) {
                     const priority = interaction.customId.split(":")[2] || "normal";
-                    await ticketManager.setTicketPriority(interaction, config, priority);
+                    console.log(
+                        `[PriorityDebug] received customId=${interaction.customId} user=${interaction.user?.id || "unknown"} channel=${interaction.channel?.id || "unknown"} selected=${priority}`
+                    );
+                    try {
+                        await ticketManager.setTicketPriority(interaction, config, priority);
+                        console.log(
+                            `[PriorityDebug] completed customId=${interaction.customId} user=${interaction.user?.id || "unknown"} channel=${interaction.channel?.id || "unknown"} selected=${priority}`
+                        );
+                    } catch (error) {
+                        console.error(
+                            `[PriorityDebug] failed customId=${interaction.customId} user=${interaction.user?.id || "unknown"} channel=${interaction.channel?.id || "unknown"} selected=${priority}:`,
+                            error
+                        );
+                        throw error;
+                    }
                     const ticketInfo = ticketManager.parseTicketTopic(interaction.channel?.topic || "");
                     if (ticketInfo.isTicket) {
                         emitActivityEvent(interaction.guild.id, {
