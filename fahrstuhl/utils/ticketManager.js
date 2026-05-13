@@ -175,6 +175,23 @@ function ticketControls({ claimedBy = null, priority = "normal", status = "open"
     ];
 }
 
+async function prepareTicketControlReply(interaction) {
+    // Button handlers may run DB + channel updates that exceed Discord's 3s ack window.
+    if (typeof interaction?.isButton === "function" && interaction.isButton() && !interaction.deferred && !interaction.replied) {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
+    }
+}
+
+function sendTicketControlReply(interaction, payload) {
+    if (interaction?.deferred && !interaction.replied) {
+        return interaction.editReply(payload).catch(() => {});
+    }
+    if (interaction?.replied || interaction?.deferred) {
+        return interaction.followUp(payload).catch(() => {});
+    }
+    return interaction.reply(payload).catch(() => {});
+}
+
 async function openTicket(interaction, config, options = {}) {
     const settings = config.tickets || {};
     const me = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
@@ -351,12 +368,13 @@ async function unclaimTicket(interaction, config) {
 }
 
 async function setTicketPriority(interaction, config, priority) {
+    await prepareTicketControlReply(interaction);
     const settings = config.tickets || {};
     if (!isTicketChannel(interaction.channel)) {
-        return interaction.reply({ content: "This is not a Fahrstuhl ticket channel.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
+        return sendTicketControlReply(interaction, { content: "This is not a Fahrstuhl ticket channel.", flags: [MessageFlags.Ephemeral] });
     }
     if (!isTicketStaff(interaction, settings)) {
-        return interaction.reply({ content: "Only staff can change ticket priority.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
+        return sendTicketControlReply(interaction, { content: "Only staff can change ticket priority.", flags: [MessageFlags.Ephemeral] });
     }
     if (!PRIORITIES[priority]) priority = "normal";
 
@@ -379,16 +397,17 @@ async function setTicketPriority(interaction, config, priority) {
     const embed = new EmbedBuilder()
         .setDescription(`${interaction.user} set this ticket to **${PRIORITIES[priority].label}** priority.`)
         .setTimestamp();
-    return interaction.reply({ embeds: [embed] }).catch(() => {});
+    return sendTicketControlReply(interaction, { embeds: [embed] });
 }
 
 async function setTicketStatus(interaction, config, status) {
+    await prepareTicketControlReply(interaction);
     const settings = config.tickets || {};
     if (!isTicketChannel(interaction.channel)) {
-        return interaction.reply({ content: "This is not a Fahrstuhl ticket channel.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
+        return sendTicketControlReply(interaction, { content: "This is not a Fahrstuhl ticket channel.", flags: [MessageFlags.Ephemeral] });
     }
     if (!isTicketStaff(interaction, settings)) {
-        return interaction.reply({ content: "Only staff can change ticket status.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
+        return sendTicketControlReply(interaction, { content: "Only staff can change ticket status.", flags: [MessageFlags.Ephemeral] });
     }
     if (!STATUSES[status]) status = "open";
     const info = parseTicketTopic(interaction.channel.topic);
@@ -408,7 +427,7 @@ async function setTicketStatus(interaction, config, status) {
         .setTitle("Ticket Status Updated")
         .setDescription(`${interaction.user} set this ticket to **${STATUSES[status].label}**.`)
         .setTimestamp();
-    return interaction.reply({ embeds: [embed] }).catch(() => {});
+    return sendTicketControlReply(interaction, { embeds: [embed] });
 }
 
 async function addTicketNote(interaction, config, note) {
