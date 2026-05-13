@@ -518,6 +518,43 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 
 ---
 
+## Ticket-Button Live-Test (Post Ack-Fix, 2026-05-13)
+
+- Ack-Fix ist produktiv live.
+- Deploy-Commit: `4511cf0`
+- Test-Ticket: `1503480295989575710`
+
+### Testergebnisse
+
+- Claim: PASS
+- Unclaim: PASS
+- Status Waiting Staff: PASS
+- Status Resolved: PASS
+- Close: PASS
+
+### Close-Verifikation
+
+- `status=closed` gesetzt
+- `closed_by` korrekt gesetzt
+- `closed_at` korrekt gesetzt
+- `updated_at` korrekt aktualisiert
+- Ticket-Channel nach Close erwartungsgemaess entfernt
+
+### Log-Verifikation
+
+- Keine neuen Interaction-Fehler
+- Keine neuen TypeError
+- Keine neuen DiscordAPIError
+
+### Ergebnis
+
+- Ticket-Button-Core-Flow ist produktiv bestaetigt.
+
+### Offene Nachpruefung (separat)
+
+- Priority High: Nach Ack-Fix separat final neu pruefen
+- Priority Normal: Nach Ack-Fix separat final neu pruefen
+
 ### Abschluss-Report — Security-Audit M1 (2026-05-10)
 
 | Punkt | Ergebnis |
