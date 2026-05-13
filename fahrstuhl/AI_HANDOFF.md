@@ -327,6 +327,42 @@ Neue Features:
 
 ---
 
+## Dashboard-Ticket-Seite Finaltest abgeschlossen (2026-05-13)
+
+**Scope:** Nur Doku, keine Codeaenderungen, keine Config-Aenderungen.
+
+**Test-Guild:** 483321401529597962  
+**Backup-Pfad:** /home/marvin/fahrstuhl/guildConfigs.json.dashboard-tickets-resttests-20260513-223428.bak
+
+**Testergebnisse:**
+
+1. **tickets.php mit Login-Kontext:** HTTP 200 ✅
+2. **Settings Read:** erfolgreich ✅
+3. **Settings Save + Rollback:** erfolgreich ✅
+4. **panelTitle Test:** erfolgreich ✅
+  - Vorher: "Need help?"
+  - Testweise: "Need help? [TMP_CHECK]"
+  - Danach: "Need help?"
+5. **send_panel:** erfolgreich getestet ✅
+  - Bestehende Panel-Message wurde in-place aktualisiert
+  - Panel Channel ID: 1503071175402848316
+  - Panel Message ID: 1503071252733104249
+6. **test_ticket:** erfolgreich ✅
+  - channelId: 1504206048284901526
+7. **Cleanup:** erfolgreich ✅
+  - Discord Channel geloescht / API-Check: 404 Unknown Channel
+  - DB-Record: status=closed
+  - DB-Record: closed_by=740958995887685696
+  - DB-Record: closed_at gesetzt
+8. **Logs:**
+  - PHP-Logs sauber ✅
+  - Bot-Logs im erfolgreichen Pfad sauber ✅
+  - Hinweis: Ein frueher SyntaxError kam von einem absichtlich fehlerhaften malformed-JSON-Testrequest und ist kein Code-Regressionsfehler.
+
+**Ergebnis:** tickets.php ist produktiv nutzbar. ✅
+
+---
+
 ### Priorität 7 — Leveling Erweiterungen
 
 Bestehendes System nutzen:
