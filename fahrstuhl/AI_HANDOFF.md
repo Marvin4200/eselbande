@@ -523,6 +523,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 - Ack-Fix ist produktiv live.
 - Deploy-Commit: `4511cf0`
 - Test-Ticket: `1503480295989575710`
+- Priority-Retest-Ticket: `1504206048284901526`
 
 ### Testergebnisse
 
@@ -531,6 +532,8 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 - Status Waiting Staff: PASS
 - Status Resolved: PASS
 - Close: PASS
+- Priority High: PASS
+- Priority Normal: PASS
 
 ### Close-Verifikation
 
@@ -548,12 +551,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 
 ### Ergebnis
 
-- Ticket-Button-Core-Flow ist produktiv bestaetigt.
-
-### Offene Nachpruefung (separat)
-
-- Priority High: Nach Ack-Fix separat final neu pruefen
-- Priority Normal: Nach Ack-Fix separat final neu pruefen
+- Ticket-Button-System ist vollstaendig produktiv bestaetigt.
 
 ### Abschluss-Report — Security-Audit M1 (2026-05-10)
 
