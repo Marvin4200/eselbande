@@ -552,6 +552,7 @@ Nächster Schritt: Feature-Arbeit (Setup Assistant, Logging Dashboard) oder Scor
 ### Ergebnis
 
 - Ticket-Button-System ist vollstaendig produktiv bestaetigt.
+- Temporaerer PriorityDebug-Code wurde nach Abschluss des Nachtests wieder entfernt (Cleanup).
 
 ### Abschluss-Report — Security-Audit M1 (2026-05-10)
 

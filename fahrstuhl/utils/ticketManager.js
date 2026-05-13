@@ -368,24 +368,15 @@ async function unclaimTicket(interaction, config) {
 }
 
 async function setTicketPriority(interaction, config, priority) {
-    console.log(
-        `[PriorityDebug] setTicketPriority:start customId=${interaction?.customId || "unknown"} user=${interaction?.user?.id || "unknown"} channel=${interaction?.channel?.id || interaction?.channelId || "unknown"} selected=${priority}`
-    );
     await prepareTicketControlReply(interaction);
-    console.log(
-        `[PriorityDebug] setTicketPriority:afterAck deferred=${interaction?.deferred ? "true" : "false"} replied=${interaction?.replied ? "true" : "false"}`
-    );
     const settings = config.tickets || {};
     if (!isTicketChannel(interaction.channel)) {
-        console.log("[PriorityDebug] setTicketPriority:abort notTicketChannel");
         return sendTicketControlReply(interaction, { content: "This is not a Fahrstuhl ticket channel.", flags: [MessageFlags.Ephemeral] });
     }
     if (!isTicketStaff(interaction, settings)) {
-        console.log("[PriorityDebug] setTicketPriority:abort notStaff");
         return sendTicketControlReply(interaction, { content: "Only staff can change ticket priority.", flags: [MessageFlags.Ephemeral] });
     }
     if (!PRIORITIES[priority]) priority = "normal";
-    console.log(`[PriorityDebug] setTicketPriority:validated selected=${priority}`);
 
     const info = parseTicketTopic(interaction.channel.topic);
     await interaction.channel.setTopic(buildTicketTopic({
@@ -399,9 +390,6 @@ async function setTicketPriority(interaction, config, priority) {
     const baseName = interaction.channel.name.replace(/^(low|high|ticket)-/, "");
     await interaction.channel.setName(`${PRIORITIES[priority].prefix}-${baseName}`).catch(() => {});
     await ticketStore.updateState(interaction.channel, { priority });
-    console.log(
-        `[PriorityDebug] setTicketPriority:stateUpdated channel=${interaction?.channel?.id || interaction?.channelId || "unknown"} priority=${priority}`
-    );
 
     const updatedInfoPrio = { ...info, priority };
     await updateTicketControlsMessage(interaction.channel, updatedInfoPrio, settings);
@@ -409,7 +397,6 @@ async function setTicketPriority(interaction, config, priority) {
     const embed = new EmbedBuilder()
         .setDescription(`${interaction.user} set this ticket to **${PRIORITIES[priority].label}** priority.`)
         .setTimestamp();
-    console.log(`[PriorityDebug] setTicketPriority:reply selected=${priority}`);
     return sendTicketControlReply(interaction, { embeds: [embed] });
 }
 
