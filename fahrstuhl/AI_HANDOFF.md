@@ -284,6 +284,49 @@ Neue Features:
 
 ---
 
+## Ticket-Transcript A/B Live-Test abgeschlossen (2026-05-13)
+
+**Test-Guild:** 483321401529597962  
+**Test A Transcript-Channel:** 783045918689198091
+
+**Test A (mit Transcript-Channel) - bestanden:**
+
+1. **Ticket erstellt und geschlossen:** ✅
+  - Ticket-Channel: `1504215303268208660`
+
+2. **Transcript Message erstellt:** ✅
+  - Transcript Message ID: `1504215310666825818`
+
+3. **Attachments vorhanden:** ✅
+  - TXT + HTML vorhanden
+
+4. **DB-Felder gesetzt:** ✅
+  - `transcript_channel_id` und `transcript_message_id` gesetzt
+
+5. **Ticket-Channel nach Close gelöscht:** ✅
+
+**Test B (ohne Transcript-Channel) - bestanden:**
+
+1. **Ticket erstellt und geschlossen:** ✅
+  - Ticket-Channel: `1504215352421126156`
+
+2. **DB-Transcript-Felder:** ✅
+  - `transcript_channel_id = null`
+  - `transcript_message_id = null`
+
+3. **Close ohne Transcript-Channel sauber:** ✅
+
+**Logs & Runtime-Status:**
+
+- Logs sauber, keine Interaction-/Discord-/TypeErrors
+- Runtime-Config wieder auf `transcriptChannelId = null`
+
+**Ergebnis:** Transcript-MVP produktiv nutzbar. ✅
+
+**Ops-Hinweis:** Backup-Workflow pruefen, da referenzierter Backup-Pfad spaeter nicht mehr lesbar war.
+
+---
+
 ### Priorität 7 — Leveling Erweiterungen
 
 Bestehendes System nutzen:
