@@ -73,6 +73,16 @@ function ticketTypePayloadFromPost() {
     return $ticketTypes;
 }
 
+function ticketPanelInfoPayloadFromPost() {
+    return [
+        'enabled' => isset($_POST['panelInfoEnabled']),
+        'showOpenTickets' => isset($_POST['panelInfoShowOpenTickets']),
+        'showAverageResolution' => isset($_POST['panelInfoShowAverageResolution']),
+        'showOverdueTickets' => isset($_POST['panelInfoShowOverdueTickets']),
+        'showLastUpdated' => isset($_POST['panelInfoShowLastUpdated']),
+    ];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
     $action = $_POST['action'] ?? 'save';
     if ($action === 'send_panel') {
@@ -91,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
             'panelTitle' => $_POST['panelTitle'] ?? '',
             'panelDescription' => $_POST['panelDescription'] ?? '',
             'panelButtonLabel' => $_POST['panelButtonLabel'] ?? '',
+            'ticketPanelInfo' => ticketPanelInfoPayloadFromPost(),
         ], 20);
         $panelSuccess = ($result['data']['success'] ?? false) === true;
         if ($panelSuccess) {
@@ -157,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guildId) {
         $payload['requireCloseReason'] = isset($_POST['requireCloseReason']);
         $payload['enableTicketTypes'] = isset($_POST['enableTicketTypes']);
         $payload['ticketTypes'] = ticketTypePayloadFromPost();
+        $payload['ticketPanelInfo'] = ticketPanelInfoPayloadFromPost();
         $result = api('/guilds/' . urlencode($guildId) . '/tickets', 'POST', $payload, 15);
         if (($result['data']['success'] ?? false) === true) {
             $message = 'Ticket settings saved.';
@@ -206,6 +218,12 @@ $ticketTypes = $settings['ticketTypes'] ?? [
     ['label' => 'Report', 'description' => 'Report a member or incident.', 'priority' => 'high'],
     ['label' => 'Appeal', 'description' => 'Appeal a moderation action.', 'priority' => 'normal'],
 ];
+$ticketPanelInfo = is_array($settings['ticketPanelInfo'] ?? null) ? $settings['ticketPanelInfo'] : [];
+$panelInfoEnabled = !empty($ticketPanelInfo['enabled']);
+$panelInfoShowOpenTickets = !empty($ticketPanelInfo['showOpenTickets']);
+$panelInfoShowAverageResolution = !empty($ticketPanelInfo['showAverageResolution']);
+$panelInfoShowOverdueTickets = !empty($ticketPanelInfo['showOverdueTickets']);
+$panelInfoShowLastUpdated = !empty($ticketPanelInfo['showLastUpdated']);
 
 $premRaw = $guildId ? getAPI('/guilds/' . urlencode($guildId) . '/premium', 5) : null;
 $maxTicketPanels = (int)(($premRaw['data']['featureLimits']['ticketPanels'] ?? 1));
@@ -493,6 +511,29 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
                 <label>Button Label</label>
                 <input type="text" name="panelButtonLabel" id="tkBtn" value="<?php echo esc($settings['panelButtonLabel'] ?? 'Open Ticket'); ?>">
             </div>
+
+            <div class="tk-section-title">Panel Info</div>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelInfoEnabled" <?php echo $panelInfoEnabled ? 'checked' : ''; ?>>
+                Zusätzliche Panel-Infos anzeigen
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelInfoShowOpenTickets" <?php echo $panelInfoShowOpenTickets ? 'checked' : ''; ?>>
+                Offene Tickets
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelInfoShowAverageResolution" <?php echo $panelInfoShowAverageResolution ? 'checked' : ''; ?>>
+                Ø Lösungszeit
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelInfoShowOverdueTickets" <?php echo $panelInfoShowOverdueTickets ? 'checked' : ''; ?>>
+                Überfällige Tickets
+            </label>
+            <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-secondary);">
+                <input type="checkbox" name="panelInfoShowLastUpdated" <?php echo $panelInfoShowLastUpdated ? 'checked' : ''; ?>>
+                Letzte Aktualisierung
+            </label>
+            <small style="color:var(--text-secondary); font-size:.72rem;">Wenn deaktiviert, bleibt das Panel exakt wie bisher.</small>
 
             <div class="tk-section-title">Ticket Types</div>
             <div id="tkTypeContainer" style="display:grid; gap:.42rem;">

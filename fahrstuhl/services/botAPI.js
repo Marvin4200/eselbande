@@ -150,6 +150,48 @@ function booleanWithDefault(value, fallback = false) {
     return parseBoolean(value, fallback);
 }
 
+function normalizeTicketPanelInfo(raw = {}) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    return {
+        enabled: dashboardBoolean(source.enabled),
+        showOpenTickets: dashboardBoolean(source.showOpenTickets),
+        showAverageResolution: dashboardBoolean(source.showAverageResolution),
+        showOverdueTickets: dashboardBoolean(source.showOverdueTickets),
+        showLastUpdated: dashboardBoolean(source.showLastUpdated),
+    };
+}
+
+function appendTicketPanelInfoField(embed, ticketStats, ticketPanelInfo) {
+    const info = normalizeTicketPanelInfo(ticketPanelInfo);
+    if (!info.enabled) return;
+
+    const lines = [];
+    if (info.showOpenTickets) {
+        lines.push(`Offene Tickets: ${Number(ticketStats?.open || 0)}`);
+    }
+    if (info.showAverageResolution) {
+        const avgMinutes = ticketStats?.avgResolutionMinutes;
+        const avgLabel = avgMinutes === null || avgMinutes === undefined
+            ? 'Keine Daten'
+            : `${Math.max(0, Math.round(Number(avgMinutes) || 0))} Min`;
+        lines.push(`Ø Lösungszeit: ${avgLabel}`);
+    }
+    if (info.showOverdueTickets) {
+        lines.push(`Überfällig: ${Number(ticketStats?.overdueOpen || 0)}`);
+    }
+    if (info.showLastUpdated) {
+        lines.push(`Aktualisiert: <t:${Math.floor(Date.now() / 1000)}:R>`);
+    }
+
+    if (lines.length > 0) {
+        embed.addFields({
+            name: '📊 Ticket-Status',
+            value: lines.join('\n'),
+            inline: false,
+        });
+    }
+}
+
 function normalizeDashboardModuleRoleMap(input = {}) {
     const source = input && typeof input === 'object' ? input : {};
     const normalized = {};
@@ -3787,6 +3829,7 @@ class BotAPIServer {
                     ticketStore.getTicketStats(guild.id, { slaMinutes }),
                     ticketStore.getRecentTickets(guild.id, 20),
                 ]);
+                const ticketPanelInfo = normalizeTicketPanelInfo(tickets.ticketPanelInfo);
 
                 res.json(APIResponse.success({
                     guildId: guild.id,
@@ -3817,6 +3860,7 @@ class BotAPIServer {
                         panelButtonLabel: tickets.panelButtonLabel ?? 'Open Ticket',
                         panelChannelId: tickets.panelChannelId || null,
                         panelMessageId: tickets.panelMessageId || null,
+                        ticketPanelInfo,
                     },
                 }, 'Ticket settings fetched', 'TICKET_SETTINGS_OK'));
             } catch (error) {
@@ -3867,8 +3911,51 @@ class BotAPIServer {
                     panelTitle: String(req.body?.panelTitle || config.tickets?.panelTitle || 'Need help?').slice(0, 120),
                     panelDescription: String(req.body?.panelDescription || config.tickets?.panelDescription || 'Open a private support ticket and the team will help you.').slice(0, 1200),
                     panelButtonLabel: String(req.body?.panelButtonLabel || config.tickets?.panelButtonLabel || 'Open Ticket').slice(0, 80),
+                    ticketPanelInfo: normalizeTicketPanelInfo(req.body?.ticketPanelInfo || config.tickets?.ticketPanelInfo),
                 };
                 setGuildConfig(guild.id, { tickets });
+
+                const panelInfo = normalizeTicketPanelInfo(tickets.ticketPanelInfo);
+                if (panelInfo.enabled && tickets.panelChannelId && tickets.panelMessageId) {
+                    const panelChannel = guild.channels.cache.get(tickets.panelChannelId)
+                        || await guild.channels.fetch(tickets.panelChannelId).catch(() => null);
+                    if (panelChannel?.isTextBased?.()) {
+                        const embed = new EmbedBuilder()
+                            .setColor(0xF0B232)
+                            .setTitle(tickets.panelTitle || 'Need help?')
+                            .setDescription(tickets.panelDescription || 'Open a private support ticket and the team will help you.')
+                            .setFooter({ text: 'Fahrstuhl Tickets' })
+                            .setTimestamp();
+
+                        const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: tickets.slaMinutes });
+                        appendTicketPanelInfoField(embed, panelStats, panelInfo);
+
+                        const components = [];
+                        if (tickets.enableTicketTypes) {
+                            const typeMenu = new StringSelectMenuBuilder()
+                                .setCustomId('ticket:type')
+                                .setPlaceholder('Choose a ticket type')
+                                .addOptions(normalizeTicketTypes(tickets.ticketTypes).map(type => ({
+                                    label: type.label,
+                                    value: type.key,
+                                    description: type.description || `${type.priority} priority`,
+                                })));
+                            components.push(new ActionRowBuilder().addComponents(typeMenu));
+                        } else {
+                            components.push(new ActionRowBuilder().addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId('ticket:open')
+                                    .setLabel(String(tickets.panelButtonLabel || 'Open Ticket').slice(0, 80))
+                                    .setStyle(ButtonStyle.Primary)
+                            ));
+                        }
+
+                        const panelMessage = await panelChannel.messages.fetch(tickets.panelMessageId).catch(() => null);
+                        if (panelMessage) {
+                            await panelMessage.edit({ embeds: [embed], components }).catch(() => {});
+                        }
+                    }
+                }
 
                 res.json(APIResponse.success({ guildId: guild.id, tickets }, 'Ticket settings updated', 'TICKET_SETTINGS_UPDATED'));
             } catch (error) {
@@ -3920,6 +4007,7 @@ class BotAPIServer {
                     enableClaiming: booleanWithDefault(req.body?.enableClaiming, true),
                     enableTicketTypes: dashboardBoolean(req.body?.enableTicketTypes),
                     ticketTypes: normalizeTicketTypes(req.body?.ticketTypes),
+                    ticketPanelInfo: normalizeTicketPanelInfo(req.body?.ticketPanelInfo || config.tickets?.ticketPanelInfo),
                 };
 
                 const embed = new EmbedBuilder()
@@ -3935,6 +4023,8 @@ class BotAPIServer {
                     panelDescription: description,
                     panelButtonLabel: buttonLabel,
                 };
+                const panelStats = await ticketStore.getTicketStats(guild.id, { slaMinutes: settings.slaMinutes });
+                appendTicketPanelInfoField(embed, panelStats, settings.ticketPanelInfo);
 
                 const existingPanelMessageId = config.tickets?.panelMessageId;
                 const existingPanelChannelId = config.tickets?.panelChannelId;
