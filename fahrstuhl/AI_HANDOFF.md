@@ -224,6 +224,39 @@ Neue Features:
 
 ---
 
+## Ticket Panel Info MVP abgeschlossen
+
+- Commit: fc525f8
+- Feature: konfigurierbare Zusatzinfos im Ticket-Panel
+- Dashboard: tickets.php wurde erweitert
+- Backend: botAPI.js wurde erweitert
+- Config-Struktur unter tickets.ticketPanelInfo:
+  - enabled
+  - showOpenTickets
+  - showAverageResolution
+  - showOverdueTickets
+  - showLastUpdated
+- Alle Optionen default false
+- Wenn deaktiviert, bleibt das Panel unveraendert wie vorher
+- Wenn aktiviert, wird ein kompaktes Stats-Field im Discord-Panel angezeigt
+- Genutzte Daten:
+  - offene Tickets
+  - durchschnittliche Loesungszeit
+  - ueberfaellige Tickets
+  - zuletzt aktualisiert
+- Online-Teamler wurden bewusst NICHT umgesetzt, weil Presence/Online-Status unzuverlaessiger ist und eigene Intents/Cache-Risiken hat
+- E2E-Test bestanden:
+  - GET Defaults PASS
+  - POST Save PASS
+  - Panel Stats Field PASS
+  - Disabled Panel Unchanged PASS
+  - Rollback PASS
+  - Bot-Logs sauber
+  - PHP-Logs sauber
+- Ergebnis: Ticket-Panel-Info-MVP produktiv nutzbar
+
+---
+
 ## Leveling-System Live-Test abgeschlossen
 
 - Test-Guild: 483321401529597962
