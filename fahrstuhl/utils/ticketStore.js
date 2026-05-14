@@ -42,6 +42,13 @@ async function recordOpen({ channel, user, type, priority, status = "open", clai
 }
 
 async function updateState(channel, updates = {}) {
+    const channelId = typeof channel === "string"
+        ? channel
+        : channel?.id || channel?.channelId || null;
+    if (!channelId) {
+        console.warn("[Tickets] updateState skipped: missing channel id");
+        return null;
+    }
     const fields = [];
     const values = [];
     for (const [key, column] of Object.entries({
@@ -58,7 +65,7 @@ async function updateState(channel, updates = {}) {
     }
     if (!fields.length) return;
     fields.push("updated_at = ?");
-    values.push(Date.now(), channel.id);
+    values.push(Date.now(), channelId);
     await safeQuery(pool => pool.query(
         `UPDATE ticket_records SET ${fields.join(", ")} WHERE channel_id = ?`,
         values
@@ -150,34 +157,87 @@ async function recordFeedback({ channelId, rating, user, comment = "" }) {
 }
 
 async function getTicketStats(guildId, options = {}) {
-    const slaMinutes = Math.max(0, Number(options.slaMinutes) || 0);
-    const overdueThreshold = slaMinutes > 0 ? Date.now() - (slaMinutes * 60 * 1000) : 0;
-    const result = await safeQuery(pool => pool.query(
-        `
-        SELECT
+    const baseStatsQuery = `
+        SELECT 
             COUNT(*) AS total,
+            SUM(status = 'open') AS open,
             SUM(status = 'closed') AS closed,
-            SUM(status != 'closed') AS open,
-            SUM(priority = 'high' AND status != 'closed') AS high_open,
-            SUM(claimed_by IS NOT NULL AND status != 'closed') AS claimed_open,
-            SUM(status != 'closed' AND ? > 0 AND opened_at < ?) AS overdue_open,
-            AVG(CASE WHEN feedback_rating BETWEEN 1 AND 5 THEN feedback_rating END) AS feedback_avg,
-            SUM(feedback_rating IS NOT NULL) AS feedback_count
+            SUM(priority = 'high' AND status = 'open') AS highOpen,
+            SUM(claimed_by IS NOT NULL AND status = 'open') AS claimedOpen,
+            SUM(status = 'open' AND updated_at < NOW() - INTERVAL 7 DAY) AS overdueOpen,
+            AVG(IF(feedback_rating IS NOT NULL, feedback_rating, NULL)) AS feedbackAvg,
+            COUNT(IF(feedback_rating IS NOT NULL, 1, NULL)) AS feedbackCount
+        FROM ticket_records
+        WHERE guild_id = ?;
+    `;
+
+    const byStatusQuery = `
+        SELECT status, COUNT(*) AS count
         FROM ticket_records
         WHERE guild_id = ?
-        `,
-        [overdueThreshold, overdueThreshold, guildId]
-    ));
-    const row = result?.[0]?.[0] || {};
+        GROUP BY status;
+    `;
+
+    const byPriorityQuery = `
+        SELECT priority, COUNT(*) AS count
+        FROM ticket_records
+        WHERE guild_id = ?
+        GROUP BY priority;
+    `;
+
+    const topClaimersQuery = `
+        SELECT claimed_by, COUNT(*) AS count
+        FROM ticket_records
+        WHERE guild_id = ? AND claimed_by IS NOT NULL
+        GROUP BY claimed_by
+        ORDER BY count DESC
+        LIMIT 10;
+    `;
+
+    const resolvedStatsQuery = `
+        SELECT 
+            AVG(TIMESTAMPDIFF(MINUTE, opened_at, closed_at)) AS avgResolutionMinutes,
+            COUNT(*) AS resolvedCount
+        FROM ticket_records
+        WHERE guild_id = ? AND status = 'closed';
+    `;
+
+    const [baseStats, byStatus, byPriority, topClaimers, resolvedStats] = await Promise.all([
+        safeQuery(pool => pool.query(baseStatsQuery, [guildId])),
+        safeQuery(pool => pool.query(byStatusQuery, [guildId])),
+        safeQuery(pool => pool.query(byPriorityQuery, [guildId])),
+        safeQuery(pool => pool.query(topClaimersQuery, [guildId])),
+        safeQuery(pool => pool.query(resolvedStatsQuery, [guildId]))
+    ]);
+
+    const rowsFromResult = (result) => {
+        if (Array.isArray(result?.[0])) return result[0];
+        if (Array.isArray(result)) return result;
+        return [];
+    };
+
+    const firstRowFromResult = (result) => rowsFromResult(result)[0] || {};
+
+    const baseRow = firstRowFromResult(baseStats);
+    const statusRows = rowsFromResult(byStatus);
+    const priorityRows = rowsFromResult(byPriority);
+    const claimerRows = rowsFromResult(topClaimers);
+    const resolvedRow = firstRowFromResult(resolvedStats);
+
     return {
-        total: Number(row.total || 0),
-        closed: Number(row.closed || 0),
-        open: Number(row.open || 0),
-        highOpen: Number(row.high_open || 0),
-        claimedOpen: Number(row.claimed_open || 0),
-        overdueOpen: Number(row.overdue_open || 0),
-        feedbackAvg: row.feedback_avg === null || row.feedback_avg === undefined ? null : Number(row.feedback_avg),
-        feedbackCount: Number(row.feedback_count || 0),
+        ...baseRow,
+        byStatus: statusRows.map(row => ({ status: row.status, count: row.count })),
+        byPriority: priorityRows.map(row => ({ priority: row.priority, count: row.count })),
+        feedback: {
+            average: baseRow.feedbackAvg || 0,
+            count: baseRow.feedbackCount || 0
+        },
+        claimed: {
+            openClaimed: baseRow.claimedOpen || 0,
+            topClaimers: claimerRows.map(row => ({ claimedBy: row.claimed_by, count: row.count }))
+        },
+        avgResolutionMinutes: resolvedRow.avgResolutionMinutes || 0,
+        resolvedCount: resolvedRow.resolvedCount || 0
     };
 }
 

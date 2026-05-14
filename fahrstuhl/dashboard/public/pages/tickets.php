@@ -711,6 +711,41 @@ $feedbackStars = $feedbackAvg !== null ? max(0, min(5, (int)round((float)$feedba
             <?php endif; ?>
         </div>
     </div>
+
+    <div class="tk-card">
+        <h2>Ticket Analytics</h2>
+        <div class="tk-metric-grid">
+            <div class="tk-metric">
+                <strong><?= $ticketStats['avgResolutionMinutes'] ?? 'N/A' ?></strong>
+                <span>Avg Resolution (min)</span>
+            </div>
+            <div class="tk-metric">
+                <strong><?= $ticketStats['resolvedCount'] ?? 0 ?></strong>
+                <span>Resolved Tickets</span>
+            </div>
+            <div class="tk-metric">
+                <strong><?= $ticketStats['feedback']['average'] ?? 'N/A' ?></strong>
+                <span>Feedback Avg</span>
+            </div>
+            <div class="tk-metric">
+                <strong><?= $ticketStats['feedback']['count'] ?? 0 ?></strong>
+                <span>Feedback Count</span>
+            </div>
+            <div class="tk-metric">
+                <strong><?= $ticketStats['claimed']['openClaimed'] ?? 0 ?></strong>
+                <span>Open Claimed</span>
+            </div>
+        </div>
+        <div class="tk-section-title">Top Claimers</div>
+        <ul>
+            <?php foreach ($ticketStats['claimed']['topClaimers'] ?? [] as $claimer): ?>
+                <li><?= esc($claimer['claimedBy']) ?>: <?= $claimer['count'] ?></li>
+            <?php endforeach; ?>
+            <?php if (empty($ticketStats['claimed']['topClaimers'])): ?>
+                <li>No claim data available</li>
+            <?php endif; ?>
+        </ul>
+    </div>
 <?php endif; ?>
 
 </div>
