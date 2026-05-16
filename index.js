@@ -206,15 +206,32 @@ client.on('interactionCreate', async (interaction) => {
     try {
         await command.execute(interaction, { shoukaku, client });
     } catch (err) {
+        const code = Number(err?.code);
+        const isIgnoredInteractionError = code === 10062 || code === 40060;
+        if (isIgnoredInteractionError) {
+            console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+            return;
+        }
+
         console.error(`[Command Error] /${interaction.commandName}:`, err);
         const errPayload = {
             embeds: [{ color: 0xED4245, description: `❌ An error occurred: ${err.message || 'Unknown error'}` }],
             flags: [64],
         };
         if (interaction.deferred || interaction.replied) {
-            await interaction.editReply(errPayload).catch(() => { });
+            await interaction.editReply(errPayload).catch((replyErr) => {
+                const replyCode = Number(replyErr?.code);
+                if (replyCode === 10062 || replyCode === 40060) {
+                    console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+                }
+            });
         } else {
-            await interaction.reply(errPayload).catch(() => { });
+            await interaction.reply(errPayload).catch((replyErr) => {
+                const replyCode = Number(replyErr?.code);
+                if (replyCode === 10062 || replyCode === 40060) {
+                    console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+                }
+            });
         }
     }
 });
