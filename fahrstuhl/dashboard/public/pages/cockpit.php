@@ -47,6 +47,10 @@ $chartRaw = getAPI('/analytics/chart?timeframe=24h', 5);
 $hourlyData = $chartRaw['data']['hourly'] ?? [];
 $topCommands = $chartRaw['data']['commands'] ?? [];
 
+// EselMusic status (read-only)
+$emRaw  = getAPI('/eselmusic/status');
+$emData = ($emRaw['success'] ?? false) ? ($emRaw['data'] ?? null) : null;
+
 function cockpitBytes($bytes) {
     $bytes = (int)$bytes;
     if ($bytes < 1024) return $bytes . ' B';
@@ -321,6 +325,36 @@ function cockpitUptime($ms) {
             <?php endforeach; ?>
             <?php if (empty($expiring)): ?><p style="color:#999; font-size:.87rem;">Keine Abläufe in 14 Tagen.</p><?php endif; ?>
             <p style="margin-top:.75rem;"><a href="<?= BASE_URL ?>/pages/premium-hub.php" style="color:var(--primary-light);text-decoration:none;">Premium Hub →</a></p>
+        </div>
+
+        <!-- EselMusic Status -->
+        <div class="section" style="margin-top:1.25rem;">
+            <h2>🎵 EselMusic</h2>
+            <?php if ($emData === null): ?>
+            <p style="color:var(--text-secondary); font-size:.87rem;">⚠️ Nicht erreichbar</p>
+            <?php else: ?>
+            <?php $emOnline = (bool)($emData['online'] ?? false); ?>
+            <?php $emLava   = (bool)($emData['lavalinkConnected'] ?? false); ?>
+            <div class="cp-runtime-row">
+                <span class="cp-runtime-key">Musikbot</span>
+                <span class="cp-runtime-val" style="color:<?php echo $emOnline ? '#4ade80' : '#fb7185'; ?>"><?php echo $emOnline ? 'Online' : 'Offline'; ?></span>
+            </div>
+            <div class="cp-runtime-row">
+                <span class="cp-runtime-key">Lavalink</span>
+                <span class="cp-runtime-val" style="color:<?php echo $emLava ? '#4ade80' : '#fb7185'; ?>"><?php echo $emLava ? 'Verbunden' : 'Getrennt'; ?></span>
+            </div>
+            <div class="cp-runtime-row">
+                <span class="cp-runtime-key">Aktive Player</span>
+                <span class="cp-runtime-val"><?php echo formatNum($emData['activePlayers'] ?? 0); ?></span>
+            </div>
+            <div class="cp-runtime-row" style="border-bottom:none;">
+                <span class="cp-runtime-key">Guilds</span>
+                <span class="cp-runtime-val"><?php echo formatNum($emData['guildCount'] ?? 0); ?></span>
+            </div>
+            <?php endif; ?>
+            <p style="margin-top:.75rem;">
+                <a href="<?= BASE_URL ?>/eselmusic" style="color:var(--primary-light);text-decoration:none;">EselMusic öffnen →</a>
+            </p>
         </div>
     </div>
 </div>
