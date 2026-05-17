@@ -7,8 +7,9 @@ const path = require('path');
 
 const { players, destroyPlayer, setDiscordClient, setShoukaku, createGuildPlayer, playNext, scheduleRejoin } = require('./src/utils/playerManager');
 const { getPlaybackControlError } = require('./src/utils/djCheck');
-const { getGuildSettings, getAllIs247Guilds } = require('./src/utils/config');
+const { getGuildSettings, getAllIs247Guilds, setGuildSettings } = require('./src/utils/config');
 const { updateMusicPanel } = require('./src/utils/musicPanel');
+const { logEvent, safeErrorMessage, shouldIgnoreError } = require('./src/utils/musicLogger');
 
 // Cooldown for music-channel diagnostic warnings to avoid spam.
 const musicChannelWarnCooldown = new Map();
@@ -50,13 +51,32 @@ shoukaku.on('error', (node, error) => {
 shoukaku.on('debug', (name, info) => {
     console.log(`[Shoukaku:${name}] ${info}`);
 });
-shoukaku.on('ready', (name) => console.log(`✅ Lavalink node "${name}" connected`));
+shoukaku.on('ready', (name) => {
+    console.log(`✅ Lavalink node "${name}" connected`);
+    // Log to every guild that has a log channel configured
+    for (const [guildId] of client.guilds.cache) {
+        logEvent(client, guildId, 'lavalink_connected', {
+            description: `Lavalink Node "${name}" ist verbunden.`,
+        }).catch(() => { });
+    }
+});
 shoukaku.on('close', (name, code, reason) => {
     console.warn(`⚠️ Lavalink node "${name}" closed: ${code} ${reason}`);
+    for (const [guildId] of client.guilds.cache) {
+        logEvent(client, guildId, 'lavalink_disconnected', {
+            description: `Lavalink Node "${name}" getrennt (Code ${code}).`,
+            reason: reason ? String(reason).slice(0, 100) : undefined,
+        }).catch(() => { });
+    }
 });
 shoukaku.on('disconnect', (name, moved) => {
     if (moved) return;
     console.warn(`⚠️ Lavalink node "${name}" disconnected`);
+    for (const [guildId] of client.guilds.cache) {
+        logEvent(client, guildId, 'lavalink_disconnected', {
+            description: `Lavalink Node "${name}" verbindung verloren.`,
+        }).catch(() => { });
+    }
 });
 
 // ─── Load Commands ────────────────────────────────────────────────────────────
@@ -90,6 +110,13 @@ client.once('clientReady', async () => {
         }
     }
     console.log(`✅ Registered ${commandData.length} slash command(s) in ${registered}/${guilds.length} guild(s)`);
+
+    // Log bot_start to every guild that has a log channel
+    for (const guildId of guilds) {
+        logEvent(client, guildId, 'bot_start', {
+            description: `${client.user.username} ist gestartet und bereit.`,
+        }).catch(() => { });
+    }
 
     // ── 24/7 Auto-Rejoin after restart ────────────────────────────────────────
     // Wait for Lavalink node to be fully ready before rejoining.
@@ -206,15 +233,43 @@ client.on('interactionCreate', async (interaction) => {
     try {
         await command.execute(interaction, { shoukaku, client });
     } catch (err) {
+        const code = Number(err?.code);
+        const isIgnoredInteractionError = code === 10062 || code === 40060;
+        if (isIgnoredInteractionError) {
+            console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+            return;
+        }
+
         console.error(`[Command Error] /${interaction.commandName}:`, err);
+
+        // Log to guild's Discord log channel (no stack, no secrets)
+        if (interaction.guildId) {
+            logEvent(client, interaction.guildId, 'command_error', {
+                userId: interaction.user?.id,
+                channelId: interaction.channelId,
+                reason: `/${interaction.commandName}: ${safeErrorMessage(err)}`,
+                errorCode: err?.code ? String(err.code) : undefined,
+            }).catch(() => { });
+        }
+
         const errPayload = {
             embeds: [{ color: 0xED4245, description: `❌ An error occurred: ${err.message || 'Unknown error'}` }],
             flags: [64],
         };
         if (interaction.deferred || interaction.replied) {
-            await interaction.editReply(errPayload).catch(() => { });
+            await interaction.editReply(errPayload).catch((replyErr) => {
+                const replyCode = Number(replyErr?.code);
+                if (replyCode === 10062 || replyCode === 40060) {
+                    console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+                }
+            });
         } else {
-            await interaction.reply(errPayload).catch(() => { });
+            await interaction.reply(errPayload).catch((replyErr) => {
+                const replyCode = Number(replyErr?.code);
+                if (replyCode === 10062 || replyCode === 40060) {
+                    console.warn(`[Interaction] Ignored expired/already acknowledged interaction for /${interaction.commandName}`);
+                }
+            });
         }
     }
 });
@@ -364,7 +419,177 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 const app = express();
+app.use(express.json());
+
+// ── API Auth middleware ───────────────────────────────────────────────────────
+// If MUSIKBOT_API_TOKEN is set in env, all /api/* routes require a matching Bearer token.
+// If not set, /api/* is restricted to loopback/container-internal callers only.
+function apiAuth(req, res, next) {
+    const expectedToken = process.env.MUSIKBOT_API_TOKEN || '';
+    if (expectedToken) {
+        const authHeader = req.headers['authorization'] || '';
+        const provided = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        if (!provided || provided !== expectedToken) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    } else {
+        // No token configured — only allow loopback
+        const ip = req.socket?.remoteAddress || '';
+        if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+            return res.status(403).json({ success: false, error: 'Forbidden: set MUSIKBOT_API_TOKEN to enable external access' });
+        }
+    }
+    next();
+}
+
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'musikbot', uptime: process.uptime() }));
-app.listen(3020, () => console.log('[musikbot] Health endpoint running on port 3020'));
+
+// ── GET /api/status ───────────────────────────────────────────────────────────
+app.get('/api/status', apiAuth, (req, res) => {
+    const lavalinkNode = shoukaku.nodes?.get('main');
+    const lavalinkConnected = lavalinkNode?.state === 1 /* Connected */ || lavalinkNode?.state === 'connected';
+
+    res.json({
+        success: true,
+        data: {
+            online: true,
+            uptime: process.uptime(),
+            guildCount: client.guilds.cache.size,
+            lavalinkConnected: Boolean(lavalinkConnected),
+            activePlayers: players.size,
+        },
+    });
+});
+
+// ── GET /api/guilds ───────────────────────────────────────────────────────────
+app.get('/api/guilds', apiAuth, (req, res) => {
+    const result = [];
+    for (const [guildId, guild] of client.guilds.cache) {
+        const state = players.get(guildId);
+        const settings = getGuildSettings(guildId);
+        result.push({
+            guildId,
+            guildName: guild.name,
+            is247: settings.is247,
+            hasPlayer: Boolean(state),
+            nowPlaying: state?.current?.info?.title || null,
+            queueLength: state?.queue?.length ?? 0,
+        });
+    }
+    res.json({ success: true, data: result });
+});
+
+// ── GET /api/guild/:id ────────────────────────────────────────────────────────
+app.get('/api/guild/:id', apiAuth, (req, res) => {
+    const guildId = req.params.id;
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return res.status(404).json({ success: false, error: 'Guild not found' });
+    }
+    const state = players.get(guildId);
+    const settings = getGuildSettings(guildId);
+
+    const nowPlaying = state?.current ? {
+        title: state.current.info?.title || null,
+        author: state.current.info?.author || null,
+        duration: state.current.info?.length || null,
+        isStream: state.current.info?.isStream || false,
+        uri: state.current.info?.uri || null,
+    } : null;
+
+    res.json({
+        success: true,
+        data: {
+            guildId,
+            guildName: guild.name,
+            is247: settings.is247,
+            voiceChannelId: settings.voiceChannelId,
+            musicChannelId: settings.musicChannelId,
+            logChannelId: settings.logChannelId,
+            volume: settings.volume,
+            hasPlayer: Boolean(state),
+            loop: state?.loop || 'none',
+            paused: state?.player?.paused || false,
+            nowPlaying,
+            queueLength: state?.queue?.length ?? 0,
+        },
+    });
+});
+
+// ── GET /api/guild/:id/settings ───────────────────────────────────────────────
+app.get('/api/guild/:id/settings', apiAuth, (req, res) => {
+    const guildId = req.params.id;
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return res.status(404).json({ success: false, error: 'Guild not found' });
+    }
+    const settings = getGuildSettings(guildId);
+    res.json({
+        success: true,
+        data: {
+            guildId,
+            djRoleId: settings.djRoleId,
+            is247: settings.is247,
+            volume: settings.volume,
+            musicChannelId: settings.musicChannelId,
+            voiceChannelId: settings.voiceChannelId,
+            logChannelId: settings.logChannelId,
+        },
+    });
+});
+
+// ── POST /api/guild/:id/settings ──────────────────────────────────────────────
+// Accepts: { is247, volume, logChannelId, musicChannelId, djRoleId }
+// Applies valid fields to guild_settings. Player in-memory state updated where applicable.
+app.post('/api/guild/:id/settings', apiAuth, (req, res) => {
+    const guildId = req.params.id;
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+        return res.status(404).json({ success: false, error: 'Guild not found' });
+    }
+
+    const body = req.body || {};
+    const update = {};
+
+    if (typeof body.is247 === 'boolean') {
+        update.is247 = body.is247;
+        const state = players.get(guildId);
+        if (state) state.is247 = body.is247;
+    }
+    if (typeof body.volume === 'number' && body.volume >= 0 && body.volume <= 150) {
+        update.volume = Math.round(body.volume);
+    }
+    if (body.logChannelId === null || typeof body.logChannelId === 'string') {
+        update.logChannelId = body.logChannelId || null;
+    }
+    if (body.musicChannelId === null || typeof body.musicChannelId === 'string') {
+        update.musicChannelId = body.musicChannelId || null;
+    }
+    if (body.djRoleId === null || typeof body.djRoleId === 'string') {
+        update.djRoleId = body.djRoleId || null;
+    }
+
+    if (Object.keys(update).length === 0) {
+        return res.status(400).json({ success: false, error: 'No valid fields provided' });
+    }
+
+    setGuildSettings(guildId, update);
+    const updated = getGuildSettings(guildId);
+
+    res.json({
+        success: true,
+        data: {
+            guildId,
+            djRoleId: updated.djRoleId,
+            is247: updated.is247,
+            volume: updated.volume,
+            musicChannelId: updated.musicChannelId,
+            voiceChannelId: updated.voiceChannelId,
+            logChannelId: updated.logChannelId,
+        },
+    });
+});
+
+app.listen(3020, () => console.log('[musikbot] Health + API endpoint running on port 3020'));
 
 client.login(process.env.DISCORD_TOKEN);

@@ -1,6 +1,29 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { players, createGuildPlayer, playNext } = require('../utils/playerManager');
 const { getGuildSettings, setGuildSettings } = require('../utils/config');
+const { logEvent } = require('../utils/musicLogger');
+
+const IGNORED_INTERACTION_CODES = new Set([10062, 40060]);
+
+function isIgnoredInteractionError(error) {
+    const code = Number(error?.code);
+    return IGNORED_INTERACTION_CODES.has(code);
+}
+
+async function safeRespond(interaction, payload) {
+    try {
+        if (interaction.deferred || interaction.replied) {
+            return await interaction.editReply(payload);
+        }
+        return await interaction.reply(payload);
+    } catch (error) {
+        if (isIgnoredInteractionError(error)) {
+            console.warn('[Interaction] Ignored expired/already acknowledged interaction for /247');
+            return null;
+        }
+        throw error;
+    }
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -8,8 +31,20 @@ module.exports = {
         .setDescription('Toggle 24/7 mode — bot stays in the channel even when queue is empty'),
 
     async execute(interaction, { shoukaku }) {
+        if (!interaction.deferred && !interaction.replied) {
+            try {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            } catch (error) {
+                if (isIgnoredInteractionError(error)) {
+                    console.warn('[Interaction] Ignored expired/already acknowledged interaction for /247');
+                    return;
+                }
+                throw error;
+            }
+        }
+
         if (!interaction.memberPermissions?.has('Administrator')) {
-            return interaction.reply({ embeds: [{ color: 0xED4245, description: '❌ Only admins can toggle 24/7 mode!' }], flags: [64] });
+            return safeRespond(interaction, { embeds: [{ color: 0xED4245, description: '❌ Only admins can toggle 24/7 mode!' }], flags: [64] });
         }
 
         const state = players.get(interaction.guildId);
@@ -22,6 +57,13 @@ module.exports = {
 
         // Always persist to DB
         setGuildSettings(interaction.guildId, { is247: new247 });
+
+        // Log the toggle to the guild's configured log channel
+        const logEventName = new247 ? 'twentyfourseven_enabled' : 'twentyfourseven_disabled';
+        logEvent(interaction.client, interaction.guildId, logEventName, {
+            userId: interaction.user.id,
+            channelId: interaction.channelId,
+        }).catch(() => { });
 
         const icon = new247 ? '🟢' : '🔴';
         const statusText = new247 ? 'aktiviert' : 'deaktiviert';
@@ -44,7 +86,7 @@ module.exports = {
                         await playNext(interaction.guildId, { silent: true });
                     }
 
-                    return interaction.reply({
+                    return safeRespond(interaction, {
                         embeds: [{ color: 0x5865F2, description: `${icon} 24/7 Modus **${statusText}** — Bot ist deinem Channel beigetreten und bleibt dort.` }],
                     });
                 } catch { /* fall through to normal reply */ }
@@ -60,7 +102,7 @@ module.exports = {
             ? '\n> Tipp: Nutze `/play` um den Bot in deinen Channel zu holen.'
             : '';
 
-        return interaction.reply({
+        return safeRespond(interaction, {
             embeds: [{ color: 0x5865F2, description: `${icon} 24/7 Modus **${statusText}**${hint}` }],
         });
     },
