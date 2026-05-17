@@ -345,6 +345,9 @@
         .hc-pink::before { background: linear-gradient(135deg, rgba(240,147,251,0.1), rgba(245,87,108,0.08)); }
         .hc-pink:hover   { border-color: rgba(240,147,251,0.4); box-shadow: 0 24px 60px rgba(240,147,251,0.15); }
 
+        .hc-cyan::before { background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(14,165,233,0.08)); }
+        .hc-cyan:hover   { border-color: rgba(56,189,248,0.4); box-shadow: 0 24px 60px rgba(56,189,248,0.15); }
+
         .hc-glow {
             position: absolute;
             top: -60px; right: -60px;
@@ -355,6 +358,7 @@
         }
         .hc-purple .hc-glow { background: #667eea; }
         .hc-pink   .hc-glow { background: #f093fb; }
+        .hc-cyan   .hc-glow { background: #38bdf8; }
 
         .hc-tag {
             display: inline-flex;
@@ -371,6 +375,7 @@
         }
         .hc-purple .hc-tag { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.25); }
         .hc-pink   .hc-tag { background: rgba(240,147,251,0.15); color: #e879f9; border: 1px solid rgba(240,147,251,0.25); }
+        .hc-cyan   .hc-tag { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25); }
 
         .hc-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
 
@@ -419,6 +424,7 @@
         .highlight-card:hover .hc-btn { filter: brightness(1.12); transform: scale(1.03); }
         .hc-purple .hc-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .hc-pink   .hc-btn { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
+        .hc-cyan   .hc-btn { background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: white; }
 
         /* ── Services grid ── */
         .services-grid {
@@ -617,7 +623,7 @@
     <section id="services">
         <div class="section-label">Highlights</div>
         <div class="section-title">Das Herzstück der Bande</div>
-        <p class="section-sub">Zwei große Projekte, die alles zusammenhalten.</p>
+        <p class="section-sub">Drei große Projekte, die alles zusammenhalten.</p>
 
         <div class="highlights">
             <a class="highlight-card hc-purple" href="/fahrstuhl/">
@@ -652,6 +658,23 @@
                     <span class="hc-feature">Rangliste</span>
                 </div>
                 <span class="hc-btn">Jetzt spielen →</span>
+            </a>
+
+            <a class="highlight-card hc-cyan" href="/eselmusic">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">🎵 Musikbot</span>
+                <span class="hc-icon">🎵</span>
+                <div class="hc-title">EselMusic</div>
+                <div class="hc-desc">Der Musikbot der Eselbande. Lavalink, 24/7-Modus, AutoMix, Queue, Loop, DJ-Rollen, Lyrics, Now Playing und Discord-Logging — alles für deine Community.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Lavalink</span>
+                    <span class="hc-feature">24/7 Modus</span>
+                    <span class="hc-feature">AutoMix</span>
+                    <span class="hc-feature">Queue</span>
+                    <span class="hc-feature">DJ-Rollen</span>
+                    <span class="hc-feature">Logging</span>
+                </div>
+                <span class="hc-btn">EselMusic öffnen →</span>
             </a>
         </div>
 
