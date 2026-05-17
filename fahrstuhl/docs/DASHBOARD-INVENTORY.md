@@ -155,3 +155,39 @@ Reason: These are endpoint pages used by frontend AJAX flows, not normal navigat
   - alias entries: 11
 - Router aliases checked: 1
 - Broken links/aliases found: 0
+
+## Cleanup Decisions (Phase 5)
+
+### 1) premium.php vs premium-hub.php
+- Entscheidung: beide behalten
+- Begruendung:
+  - premium-hub.php ist zentraler KPI-/Navigations-Hub
+  - premium.php enthaelt operative User-Aktionen
+  - Risiko fuer Merge/Loeschung: mittel
+
+### 2) members-hub.php vs users.php
+- Entscheidung: beide behalten
+- Begruendung:
+  - members-hub.php ist Landing-/Hub-Seite
+  - users.php ist funktionale Detailseite mit Filter/Aktionen
+  - Risiko: mittel
+
+### 3) moderation-hub.php vs moderation.php
+- Entscheidung: beide behalten
+- Begruendung:
+  - moderation-hub.php ist Einstieg
+  - moderation.php enthaelt operative Moderationskonsole
+  - Risiko: mittel-hoch
+
+### 4) ops-health.php vs ueberwachung.php
+- Entscheidung: beide behalten
+- Begruendung:
+  - ops-health.php ist Infrastruktur-/Service-Health
+  - ueberwachung.php ist Guild-/Permission-/Troll-Monitoring
+  - Risiko: mittel
+
+### Gesamtvermerk
+- Keine dieser Seiten ist aktuell Low-Risk-loeschbar.
+
+### Empfehlung
+- Nur Labels/Navigation verbessern, keine Loeschung ohne separaten E2E-Test.
