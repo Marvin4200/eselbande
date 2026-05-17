@@ -59,6 +59,25 @@ const DASHBOARD_PERMISSION_MODULES = [
 
 const DASHBOARD_PERMISSION_MODULE_KEYS = new Set(DASHBOARD_PERMISSION_MODULES.map((module) => module.key));
 
+const MUSIKBOT_URL = process.env.MUSIKBOT_URL || 'http://musikbot-docker:3020';
+const MUSIKBOT_TOKEN = process.env.MUSIKBOT_API_TOKEN || '';
+
+async function musikbotFetch(path, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (MUSIKBOT_TOKEN) headers['Authorization'] = `Bearer ${MUSIKBOT_TOKEN}`;
+        const res = await fetch(`${MUSIKBOT_URL}${path}`, { ...options, headers, signal: controller.signal });
+        const data = await res.json();
+        return { ok: res.ok, status: res.status, data };
+    } catch (err) {
+        return { ok: false, status: 503, data: { success: false, error: 'EselMusic nicht erreichbar' } };
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 /**
  * Feature limits per plan tier (soft gates — enforced gradually).
  * These are the canonical limits referenced by the dashboard UI and API.
@@ -8347,6 +8366,43 @@ class BotAPIServer {
             } catch (error) {
                 res.status(500).json(APIResponse.error(error.message, 'SOCIAL_SETTINGS_UPDATE_FAILED'));
             }
+        });
+
+        // ============ ESELMUSIC (MUSIKBOT PROXY) ============
+        const MUSIKBOT_GUILD_ID_RE = /^\d{17,20}$/;
+
+        this.app.get('/eselmusic/status', async (req, res) => {
+            const result = await musikbotFetch('/api/status');
+            res.status(result.status).json(result.data);
+        });
+
+        this.app.get('/eselmusic/guilds', async (req, res) => {
+            const result = await musikbotFetch('/api/guilds');
+            res.status(result.status).json(result.data);
+        });
+
+        this.app.get('/eselmusic/guild/:id', async (req, res) => {
+            const { id } = req.params;
+            if (!MUSIKBOT_GUILD_ID_RE.test(id)) return res.status(400).json(APIResponse.error('Invalid guild ID', 'INVALID_GUILD_ID'));
+            const result = await musikbotFetch(`/api/guild/${id}`);
+            res.status(result.status).json(result.data);
+        });
+
+        this.app.get('/eselmusic/guild/:id/settings', async (req, res) => {
+            const { id } = req.params;
+            if (!MUSIKBOT_GUILD_ID_RE.test(id)) return res.status(400).json(APIResponse.error('Invalid guild ID', 'INVALID_GUILD_ID'));
+            const result = await musikbotFetch(`/api/guild/${id}/settings`);
+            res.status(result.status).json(result.data);
+        });
+
+        this.app.post('/eselmusic/guild/:id/settings', async (req, res) => {
+            const { id } = req.params;
+            if (!MUSIKBOT_GUILD_ID_RE.test(id)) return res.status(400).json(APIResponse.error('Invalid guild ID', 'INVALID_GUILD_ID'));
+            const result = await musikbotFetch(`/api/guild/${id}/settings`, {
+                method: 'POST',
+                body: JSON.stringify(req.body),
+            });
+            res.status(result.status).json(result.data);
         });
     }
 

@@ -130,6 +130,7 @@ $adminGroups = [
         ['page' => 'commands', 'icon' => '⌨️', 'label' => 'Commands', 'description' => 'Slash Commands'],
         ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Fähigkeiten'],
         ['page' => 'tools', 'icon' => '🧰', 'label' => 'Tools', 'description' => 'Utilities'],
+        ['page' => 'eselmusic', 'icon' => '🎵', 'label' => 'EselMusic', 'description' => 'Musikbot Status & Guilds'],
       ],
     ],
   ];
