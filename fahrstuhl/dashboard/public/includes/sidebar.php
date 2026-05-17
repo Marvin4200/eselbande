@@ -137,6 +137,7 @@ $adminGroups = [
         ['page' => 'guild-premium', 'icon' => '👑', 'label' => 'Server-Plan vergeben', 'description' => 'Premium aktivieren'],
         ['page' => 'premium-hub', 'icon' => '💎', 'label' => 'Premium Hub', 'description' => 'Übersicht und Billing'],
         ['page' => 'monetization', 'icon' => '💰', 'label' => 'Monetization', 'description' => 'Revenue und Promos'],
+        ['page' => 'monetization-health', 'icon' => '🩺', 'label' => 'Monetization Health', 'description' => 'Read-only Health und Warnungen'],
         ['page' => 'rewards-hub', 'icon' => '🎁', 'label' => 'Rewards', 'description' => 'Votes, Shields und Rewards'],
       ],
     ],
