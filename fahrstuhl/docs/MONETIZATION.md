@@ -103,6 +103,7 @@ Hinweis: Schreiboperationen sind markiert. Auth bezieht sich auf den jeweils sic
 | /monetization/revenue | POST | Revenue-Eintrag anlegen | Bearer BOT_API_TOKEN | Ja |
 | /monetization/revenue/delete | POST | Revenue-Eintrag loeschen | Bearer BOT_API_TOKEN | Ja |
 | /monetization/promos | GET | Promo-Liste | Bearer BOT_API_TOKEN | Nein |
+| /monetization/promos/health | GET | Pending/Stale Redemption Health | Bearer BOT_API_TOKEN | Nein |
 | /monetization/promos/create | POST | Promo anlegen | Bearer BOT_API_TOKEN | Ja |
 | /monetization/promos/toggle | POST | Promo aktiv/inaktiv | Bearer BOT_API_TOKEN | Ja |
 | /monetization/promos/redeem | POST | Promo einloesen (Premium oder Shields) | Bearer BOT_API_TOKEN | Ja |
@@ -155,6 +156,16 @@ Hinweis: Schreiboperationen sind markiert. Auth bezieht sich auf den jeweils sic
 4. Erfolg: completePromoRedemption
 5. Fehler: cancelPromoRedemption
 
+### 5.3.1 Pending Promo Redemptions
+
+- Pending Redemptions bleiben im JSON-Store als `pending: true` markiert, bis der Apply-Schritt abgeschlossen ist.
+- Eine Redemption gilt als stale, wenn `pending === true` und `redeemedAt` aelter als 15 Minuten ist.
+- TTL-Konstante im Store: `STALE_PENDING_REDEMPTION_MS = 15 * 60 * 1000`.
+- Read-only Health-Route: `/monetization/promos/health`.
+- Die Monetization-Health-Seite zeigt stale pending Redemptions nur an.
+- Es wird nichts automatisch geloescht oder recovered.
+- Recovery bleibt ein separates spaeteres Thema.
+
 ### 5.4 Vote wird gezaehlt
 
 Variante A (Fahrstuhl/top.gg webhook):
@@ -178,8 +189,8 @@ Variante B (EselTokens Vote Claim):
 
 ## 6. Bekannte Risiken
 
-- JSON-Store ohne Locking
-	- filebasierte read-modify-write Operationen koennen parallel kollidieren.
+- JSON-Store bleibt filebasiert
+	- prozesslokales Write-Locking reduziert Kollisionen, ersetzt aber keine transaktionale Datenbank.
 - Pending-Promo-Redemptions koennen haengen bleiben
 	- wenn Prozess zwischen reserve und complete ausfaellt.
 - Mehrere Datenquellen

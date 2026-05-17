@@ -21,10 +21,24 @@ function safeApiGet($endpoint, $timeout = 10) {
     ];
 }
 
+function formatAgeMs($ageMs) {
+    if (!is_numeric($ageMs) || (int)$ageMs < 0) return 'N/A';
+
+    $totalSeconds = (int)floor(((int)$ageMs) / 1000);
+    $hours = intdiv($totalSeconds, 3600);
+    $minutes = intdiv($totalSeconds % 3600, 60);
+    $seconds = $totalSeconds % 60;
+
+    if ($hours > 0) return $hours . 'h ' . $minutes . 'm';
+    if ($minutes > 0) return $minutes . 'm ' . $seconds . 's';
+    return $seconds . 's';
+}
+
 $premiumUsersApi = safeApiGet('/premium/users', 12);
 $premiumCalendarApi = safeApiGet('/premium/calendar?days=30', 12);
 $revenueApi = safeApiGet('/monetization/revenue', 12);
 $promosApi = safeApiGet('/monetization/promos', 12);
+$promoHealthApi = safeApiGet('/monetization/promos/health', 12);
 $votesApi = safeApiGet('/monetization/votes?limit=100', 12);
 
 $apiChecks = [
@@ -32,6 +46,7 @@ $apiChecks = [
     $premiumCalendarApi,
     $revenueApi,
     $promosApi,
+    $promoHealthApi,
     $votesApi,
 ];
 
@@ -48,6 +63,7 @@ $calendarUsers = is_array($premiumCalendarApi['data']['users'] ?? null) ? $premi
 $calendarSummary = is_array($premiumCalendarApi['data']['summary'] ?? null) ? $premiumCalendarApi['data']['summary'] : [];
 
 $promoCodes = is_array($promosApi['data']['promoCodes'] ?? null) ? $promosApi['data']['promoCodes'] : [];
+$promoHealth = is_array($promoHealthApi['data'] ?? null) ? $promoHealthApi['data'] : [];
 
 $voteSummary = is_array($votesApi['data']['summary'] ?? null) ? $votesApi['data']['summary'] : [];
 $voteRows = is_array($votesApi['data']['votes'] ?? null) ? $votesApi['data']['votes'] : [];
@@ -72,8 +88,18 @@ foreach ($promoCodes as $promo) {
     }
 }
 
+$pendingHealthTotal = (int)($promoHealth['pendingTotal'] ?? $pendingPromoRedemptions);
+$stalePendingTotal = (int)($promoHealth['stalePendingTotal'] ?? 0);
+$oldestPendingAgeMs = array_key_exists('oldestPendingAgeMs', $promoHealth) ? $promoHealth['oldestPendingAgeMs'] : null;
+$promoHealthItems = is_array($promoHealth['items'] ?? null) ? $promoHealth['items'] : [];
+$stalePendingItems = array_slice(array_values(array_filter($promoHealthItems, static fn($item) => !empty($item['stale']))), 0, 10);
+
 if ($pendingPromoRedemptions > 0) {
     $warnings[] = 'Pending Promo-Redemptions erkannt: ' . $pendingPromoRedemptions;
+}
+
+if ($stalePendingTotal > 0) {
+    $warnings[] = 'Stale Pending Promo-Redemptions erkannt: ' . $stalePendingTotal;
 }
 
 if ($promosWithoutLimits > 0) {
@@ -159,6 +185,10 @@ $voteTopUsers = is_array($voteSummary['topUsers'] ?? null) ? array_slice($voteSu
         <div class="stat-value"><?php echo healthStatusBadge($promosApi['ok']); ?></div>
     </div>
     <div class="stat-card">
+        <div class="stat-label">/monetization/promos/health</div>
+        <div class="stat-value"><?php echo healthStatusBadge($promoHealthApi['ok']); ?></div>
+    </div>
+    <div class="stat-card">
         <div class="stat-label">/monetization/votes</div>
         <div class="stat-value"><?php echo healthStatusBadge($votesApi['ok']); ?></div>
     </div>
@@ -183,7 +213,17 @@ $voteTopUsers = is_array($voteSummary['topUsers'] ?? null) ? array_slice($voteSu
     <div class="stat-card">
         <div class="stat-icon">⏳</div>
         <div class="stat-label">Promo pending</div>
-        <div class="stat-value"><?php echo formatNum($pendingPromoRedemptions); ?></div>
+        <div class="stat-value"><?php echo formatNum($pendingHealthTotal); ?></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-label">Stale pending</div>
+        <div class="stat-value"><?php echo formatNum($stalePendingTotal); ?></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🕒</div>
+        <div class="stat-label">Aelteste Pending-Zeit</div>
+        <div class="stat-value"><?php echo esc(formatAgeMs($oldestPendingAgeMs)); ?></div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">⭐</div>
@@ -209,6 +249,37 @@ $voteTopUsers = is_array($voteSummary['topUsers'] ?? null) ? array_slice($voteSu
     <?php else: ?>
         <div class="ok-card">Keine Warnungen erkannt. Alle geprueften Read-only Signale wirken plausibel.</div>
     <?php endif; ?>
+</div>
+
+<div class="section">
+    <h2>Stale Pending Redemptions</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Promo Code</th>
+                <th>User ID</th>
+                <th>Alter</th>
+                <th>Typ</th>
+                <th>Tier</th>
+                <th>Max Uses</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($stalePendingItems as $item): ?>
+                <tr>
+                    <td><?php echo esc((string)($item['code'] ?? 'N/A')); ?></td>
+                    <td><?php echo esc((string)($item['userId'] ?? 'N/A')); ?></td>
+                    <td><?php echo esc(formatAgeMs($item['ageMs'] ?? null)); ?></td>
+                    <td><?php echo esc((string)($item['type'] ?? 'premium')); ?></td>
+                    <td><?php echo esc((string)($item['tier'] ?? 'basic')); ?></td>
+                    <td><?php echo esc((string)($item['maxUses'] ?? 'N/A')); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($stalePendingItems)): ?>
+                <tr><td colspan="6" class="muted" style="text-align:center;">Keine stale pending Redemptions erkannt.</td></tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
 </div>
 
 <div class="section">

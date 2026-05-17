@@ -6158,6 +6158,18 @@ class BotAPIServer {
             }
         });
 
+        this.app.get('/monetization/promos/health', (req, res) => {
+            try {
+                res.json(APIResponse.success(
+                    monetizationStore.getPromoRedemptionHealth(),
+                    'Promo redemption health fetched',
+                    'PROMO_HEALTH'
+                ));
+            } catch (_error) {
+                res.status(500).json(APIResponse.error('Failed to load promo redemption health', 'PROMO_HEALTH_FAILED'));
+            }
+        });
+
         this.app.post('/monetization/promos/create', (req, res) => {
             try {
                 const type = req.body.type === 'shields' ? 'shields' : 'premium';

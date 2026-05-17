@@ -5,6 +5,7 @@ const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const storePath = path.join(dataDir, 'monetization.json');
 const storeLockPath = `${storePath}.lock`;
+const STALE_PENDING_REDEMPTION_MS = 15 * 60 * 1000;
 
 let writeLockHeld = false;
 
@@ -83,6 +84,15 @@ function ensureStore() {
 function load() {
     ensureStore();
     try {
+        return { ...emptyStore(), ...JSON.parse(fs.readFileSync(storePath, 'utf8')) };
+    } catch {
+        return emptyStore();
+    }
+}
+
+function loadReadOnlyStore() {
+    try {
+        if (!fs.existsSync(storePath)) return emptyStore();
         return { ...emptyStore(), ...JSON.parse(fs.readFileSync(storePath, 'utf8')) };
     } catch {
         return emptyStore();
@@ -207,6 +217,56 @@ function listPromoCodes() {
     return store.promoCodes
         .slice()
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+function getPromoRedemptionHealth(options = {}) {
+    const thresholdMs = Number(options.staleThresholdMs) > 0
+        ? Number(options.staleThresholdMs)
+        : STALE_PENDING_REDEMPTION_MS;
+    const limit = Math.max(1, Math.min(Number(options.limit) || 100, 500));
+    const store = loadReadOnlyStore();
+    const items = [];
+    const now = Date.now();
+
+    for (const promo of store.promoCodes || []) {
+        const redemptions = Array.isArray(promo.redemptions) ? promo.redemptions : [];
+        for (const redemption of redemptions) {
+            if (!redemption || !redemption.pending) continue;
+
+            const redeemedAt = redemption.redeemedAt || null;
+            const redeemedAtMs = redeemedAt ? new Date(redeemedAt).getTime() : NaN;
+            const ageMs = Number.isFinite(redeemedAtMs) ? Math.max(0, now - redeemedAtMs) : null;
+            items.push({
+                promoId: promo.id || null,
+                code: promo.code || null,
+                userId: redemption.userId || null,
+                redeemedAt,
+                ageMs,
+                stale: ageMs !== null && ageMs >= thresholdMs,
+                type: promo.type || 'premium',
+                tier: promo.tier || 'basic',
+                maxUses: Number(promo.maxUses || 0),
+            });
+        }
+    }
+
+    items.sort((left, right) => (right.ageMs || 0) - (left.ageMs || 0));
+
+    const staleItems = items.filter(item => item.stale);
+    const promoCodesWithPending = new Set(items.map(item => item.code || item.promoId)).size;
+    const promoCodesWithStalePending = new Set(staleItems.map(item => item.code || item.promoId)).size;
+    const oldestPending = items[0] || null;
+
+    return {
+        pendingTotal: items.length,
+        stalePendingTotal: staleItems.length,
+        oldestPendingAgeMs: oldestPending ? oldestPending.ageMs : null,
+        oldestPendingAt: oldestPending ? oldestPending.redeemedAt : null,
+        promosWithPending: promoCodesWithPending,
+        promosWithStalePending: promoCodesWithStalePending,
+        staleThresholdMs: thresholdMs,
+        items: items.slice(0, limit),
+    };
 }
 
 function setPromoActive(code, active) {
@@ -398,6 +458,7 @@ module.exports = {
     revenueSummary,
     createPromoCode,
     listPromoCodes,
+    getPromoRedemptionHealth,
     setPromoActive,
     validatePromo,
     reservePromoRedemption,
