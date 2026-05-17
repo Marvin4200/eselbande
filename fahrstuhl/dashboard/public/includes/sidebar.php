@@ -83,54 +83,79 @@ $adminGroups = [
       'items' => [
         ['page' => 'cockpit', 'icon' => '🎛️', 'label' => 'Cockpit', 'description' => 'Live-Status und Alerts'],
         ['page' => 'status', 'icon' => '🟢', 'label' => 'Live Status', 'description' => 'Service Health'],
-      ],
-    ],
-    [
-      'title' => 'Server & User',
-      'description' => 'Guild and member management',
-      'items' => [
-        ['page' => 'guilds', 'icon' => '🏰', 'label' => 'Server', 'description' => 'Alle Guilds', 'aliases' => ['guild-detail']],
-        ['page' => 'members-hub', 'icon' => '👥', 'label' => 'User', 'description' => 'Profile und Stats', 'aliases' => ['users', 'user-detail', 'voice-time']],
-        ['page' => 'blacklist', 'icon' => '🚫', 'label' => 'Blacklist', 'description' => 'Gesperrte User'],
-      ],
-    ],
-    [
-      'title' => 'Analytik',
-      'description' => 'Platform metrics and logs',
-      'items' => [
         ['page' => 'analytics', 'icon' => '📊', 'label' => 'Analytics', 'description' => 'Plattform-Metriken'],
         ['page' => 'activity', 'icon' => '⚡', 'label' => 'Activity', 'description' => 'Aktuelle Events'],
-        ['page' => 'logs', 'icon' => '📄', 'label' => 'Logs', 'description' => 'App-Logs'],
-        ['page' => 'audit', 'icon' => '🧾', 'label' => 'Audit Log', 'description' => 'Admin-Aktionen'],
       ],
     ],
     [
       'title' => 'Betrieb',
-      'description' => 'Infrastructure and deployments',
+      'description' => 'Infrastructure and operations',
       'items' => [
         ['page' => 'operations', 'icon' => '🛠️', 'label' => 'Operations', 'description' => 'Deployments und Jobs', 'aliases' => ['deploys', 'webhooks', 'flags', 'ueberwachung', 'ops-health']],
         ['page' => 'backups', 'icon' => '🗄️', 'label' => 'Backups', 'description' => 'Datensicherung'],
+        ['page' => 'server-backup', 'icon' => '💾', 'label' => 'Server Backup', 'description' => 'Guild Backups und Restore'],
         ['page' => 'security', 'icon' => '🔐', 'label' => 'Security', 'description' => 'Sicherheitschecks'],
-        ['page' => 'console', 'icon' => '💻', 'label' => 'Console', 'description' => 'Admin-Konsole'],
       ],
     ],
     [
-      'title' => 'Premium',
-      'description' => 'Plans and billing',
+      'title' => 'Server & Mitglieder',
+      'description' => 'Guild and member management',
+      'items' => [
+        ['page' => 'guilds', 'icon' => '🏰', 'label' => 'Server', 'description' => 'Alle Guilds', 'aliases' => ['guild-detail']],
+        ['page' => 'members-hub', 'icon' => '👥', 'label' => 'Mitglieder', 'description' => 'Profile und Stats', 'aliases' => ['users', 'user-detail', 'voice-time']],
+      ],
+    ],
+    [
+      'title' => 'Moderation',
+      'description' => 'Moderation and policy tools',
+      'items' => [
+        ['page' => 'moderation-hub', 'icon' => '🛡️', 'label' => 'Moderation', 'description' => 'Cases und Aktionen', 'aliases' => ['moderation']],
+        ['page' => 'automod', 'icon' => '🚨', 'label' => 'AutoMod', 'description' => 'Filter und Schutz'],
+        ['page' => 'logging', 'icon' => '🧾', 'label' => 'Logging', 'description' => 'Audit Feeds'],
+        ['page' => 'blacklist', 'icon' => '🚫', 'label' => 'Blacklist', 'description' => 'Gesperrte User'],
+        ['page' => 'audit', 'icon' => '📄', 'label' => 'Audit Log', 'description' => 'Admin-Aktionen'],
+      ],
+    ],
+    [
+      'title' => 'Tickets',
+      'description' => 'Support workflows',
+      'items' => [
+        ['page' => 'tickets', 'icon' => '🎫', 'label' => 'Tickets', 'description' => 'Panels und Workflows'],
+      ],
+    ],
+    [
+      'title' => 'EselMusic',
+      'description' => 'Music bot monitoring',
+      'items' => [
+        ['page' => 'eselmusic', 'icon' => '🎵', 'label' => 'EselMusic', 'description' => 'Musikbot Status & Guilds', 'href' => BASE_URL . '/eselmusic'],
+      ],
+    ],
+    [
+      'title' => 'Monetization / Premium',
+      'description' => 'Plans, billing and rewards',
       'items' => [
         ['page' => 'guild-premium', 'icon' => '👑', 'label' => 'Server-Plan vergeben', 'description' => 'Premium aktivieren'],
         ['page' => 'premium-hub', 'icon' => '💎', 'label' => 'Premium Hub', 'description' => 'Übersicht und Billing'],
         ['page' => 'monetization', 'icon' => '💰', 'label' => 'Monetization', 'description' => 'Revenue und Promos'],
+        ['page' => 'rewards-hub', 'icon' => '🎁', 'label' => 'Rewards', 'description' => 'Votes, Shields und Rewards'],
       ],
     ],
     [
-      'title' => 'Bot',
-      'description' => 'Bot config and info',
+      'title' => 'Tools / Fun',
+      'description' => 'Utilities and fun controls',
       'items' => [
+        ['page' => 'tools', 'icon' => '🧰', 'label' => 'Tools', 'description' => 'Utilities'],
+        ['page' => 'fun-hub', 'icon' => '🎭', 'label' => 'Fun Hub', 'description' => 'Fun-Tools und Troll-Befehle', 'aliases' => ['voicetroll']],
         ['page' => 'commands', 'icon' => '⌨️', 'label' => 'Commands', 'description' => 'Slash Commands'],
         ['page' => 'botinfo', 'icon' => '🤖', 'label' => 'Bot Info', 'description' => 'Fähigkeiten'],
-        ['page' => 'tools', 'icon' => '🧰', 'label' => 'Tools', 'description' => 'Utilities'],
-        ['page' => 'eselmusic', 'icon' => '🎵', 'label' => 'EselMusic', 'description' => 'Musikbot Status & Guilds', 'href' => BASE_URL . '/eselmusic'],
+      ],
+    ],
+    [
+      'title' => 'System',
+      'description' => 'System logs and console',
+      'items' => [
+        ['page' => 'logs', 'icon' => '📋', 'label' => 'Logs', 'description' => 'App-Logs'],
+        ['page' => 'console', 'icon' => '💻', 'label' => 'Console', 'description' => 'Admin-Konsole'],
       ],
     ],
   ];
