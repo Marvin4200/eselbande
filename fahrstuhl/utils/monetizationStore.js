@@ -4,6 +4,65 @@ const path = require('path');
 
 const dataDir = path.join(__dirname, '../data');
 const storePath = path.join(dataDir, 'monetization.json');
+const storeLockPath = `${storePath}.lock`;
+
+let writeLockHeld = false;
+
+function ensureDataDir() {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function sleepMs(ms) {
+    const until = Date.now() + ms;
+    while (Date.now() < until) {
+        // Busy wait keeps this implementation sync and avoids async callsite migration.
+    }
+}
+
+function acquireFileLockSync(timeoutMs = 2000) {
+    ensureDataDir();
+    const startedAt = Date.now();
+    while (true) {
+        try {
+            const fd = fs.openSync(storeLockPath, 'wx');
+            fs.closeSync(fd);
+            return;
+        } catch (error) {
+            if (error && error.code !== 'EEXIST') {
+                throw error;
+            }
+            if (Date.now() - startedAt >= timeoutMs) {
+                throw new Error('Timed out acquiring monetization store write lock');
+            }
+            sleepMs(5);
+        }
+    }
+}
+
+function releaseFileLockSync() {
+    try {
+        if (fs.existsSync(storeLockPath)) {
+            fs.unlinkSync(storeLockPath);
+        }
+    } catch {
+        // Ignore lock cleanup issues to preserve original error behavior where possible.
+    }
+}
+
+function withStoreWriteLock(operation) {
+    if (writeLockHeld) {
+        throw new Error('Nested monetization store write is not allowed');
+    }
+
+    writeLockHeld = true;
+    acquireFileLockSync();
+    try {
+        return operation();
+    } finally {
+        releaseFileLockSync();
+        writeLockHeld = false;
+    }
+}
 
 function emptyStore() {
     return {
@@ -15,8 +74,10 @@ function emptyStore() {
 }
 
 function ensureStore() {
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-    if (!fs.existsSync(storePath)) save(emptyStore());
+    ensureDataDir();
+    if (!fs.existsSync(storePath)) {
+        fs.writeFileSync(storePath, JSON.stringify(emptyStore(), null, 2), 'utf8');
+    }
 }
 
 function load() {
@@ -29,8 +90,20 @@ function load() {
 }
 
 function save(store) {
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-    fs.writeFileSync(storePath, JSON.stringify({ ...emptyStore(), ...store }, null, 2), 'utf8');
+    ensureDataDir();
+    const payload = JSON.stringify({ ...emptyStore(), ...store }, null, 2);
+    const tmpPath = `${storePath}.tmp-${process.pid}-${Date.now()}-${crypto.randomUUID()}`;
+    try {
+        fs.writeFileSync(tmpPath, payload, 'utf8');
+        fs.renameSync(tmpPath, storePath);
+    } catch (error) {
+        try {
+            if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        } catch {
+            // Best-effort cleanup only.
+        }
+        throw error;
+    }
 }
 
 function normalizeCode(code) {
@@ -46,22 +119,24 @@ function createRandomCode() {
 }
 
 function addRevenue(entry) {
-    const store = load();
-    const row = {
-        id: createId('rev'),
-        userId: String(entry.userId || '').trim(),
-        username: String(entry.username || '').trim(),
-        amount: Number(entry.amount || 0),
-        currency: String(entry.currency || 'EUR').toUpperCase(),
-        source: String(entry.source || 'manual'),
-        tier: String(entry.tier || ''),
-        note: String(entry.note || ''),
-        createdAt: new Date().toISOString(),
-        createdBy: entry.createdBy || null,
-    };
-    store.revenue.push(row);
-    save(store);
-    return row;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const row = {
+            id: createId('rev'),
+            userId: String(entry.userId || '').trim(),
+            username: String(entry.username || '').trim(),
+            amount: Number(entry.amount || 0),
+            currency: String(entry.currency || 'EUR').toUpperCase(),
+            source: String(entry.source || 'manual'),
+            tier: String(entry.tier || ''),
+            note: String(entry.note || ''),
+            createdAt: new Date().toISOString(),
+            createdBy: entry.createdBy || null,
+        };
+        store.revenue.push(row);
+        save(store);
+        return row;
+    });
 }
 
 function listRevenue({ limit = 500 } = {}) {
@@ -73,11 +148,13 @@ function listRevenue({ limit = 500 } = {}) {
 }
 
 function removeRevenue(id) {
-    const store = load();
-    const before = store.revenue.length;
-    store.revenue = store.revenue.filter(row => row.id !== id);
-    save(store);
-    return before !== store.revenue.length;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const before = store.revenue.length;
+        store.revenue = store.revenue.filter(row => row.id !== id);
+        save(store);
+        return before !== store.revenue.length;
+    });
 }
 
 function revenueSummary() {
@@ -97,30 +174,32 @@ function revenueSummary() {
 }
 
 function createPromoCode(input) {
-    const store = load();
-    const code = normalizeCode(input.code) || createRandomCode();
-    if (!code) throw new Error('Invalid promo code');
-    if (store.promoCodes.some(row => row.code === code)) throw new Error('Promo code already exists');
+    return withStoreWriteLock(() => {
+        const store = load();
+        const code = normalizeCode(input.code) || createRandomCode();
+        if (!code) throw new Error('Invalid promo code');
+        if (store.promoCodes.some(row => row.code === code)) throw new Error('Promo code already exists');
 
-    const type = input.type === 'shields' ? 'shields' : 'premium';
-    const row = {
-        id: createId('promo'),
-        code,
-        type,
-        tier: type === 'premium' && input.tier === 'pro' ? 'pro' : 'basic',
-        days: type === 'premium' ? Math.max(1, Number(input.days || 30)) : 0,
-        shields: type === 'shields' ? Math.max(1, Number(input.shields || 1)) : 0,
-        maxUses: Math.max(1, Number(input.maxUses || 1)),
-        active: input.active !== false,
-        expiresAt: input.expiresAt || null,
-        note: String(input.note || ''),
-        createdAt: new Date().toISOString(),
-        createdBy: input.createdBy || null,
-        redemptions: [],
-    };
-    store.promoCodes.push(row);
-    save(store);
-    return row;
+        const type = input.type === 'shields' ? 'shields' : 'premium';
+        const row = {
+            id: createId('promo'),
+            code,
+            type,
+            tier: type === 'premium' && input.tier === 'pro' ? 'pro' : 'basic',
+            days: type === 'premium' ? Math.max(1, Number(input.days || 30)) : 0,
+            shields: type === 'shields' ? Math.max(1, Number(input.shields || 1)) : 0,
+            maxUses: Math.max(1, Number(input.maxUses || 1)),
+            active: input.active !== false,
+            expiresAt: input.expiresAt || null,
+            note: String(input.note || ''),
+            createdAt: new Date().toISOString(),
+            createdBy: input.createdBy || null,
+            redemptions: [],
+        };
+        store.promoCodes.push(row);
+        save(store);
+        return row;
+    });
 }
 
 function listPromoCodes() {
@@ -131,14 +210,16 @@ function listPromoCodes() {
 }
 
 function setPromoActive(code, active) {
-    const store = load();
-    const normalized = normalizeCode(code);
-    const promo = store.promoCodes.find(row => row.code === normalized);
-    if (!promo) throw new Error('Promo code not found');
-    promo.active = !!active;
-    promo.updatedAt = new Date().toISOString();
-    save(store);
-    return promo;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const normalized = normalizeCode(code);
+        const promo = store.promoCodes.find(row => row.code === normalized);
+        if (!promo) throw new Error('Promo code not found');
+        promo.active = !!active;
+        promo.updatedAt = new Date().toISOString();
+        save(store);
+        return promo;
+    });
 }
 
 function validatePromo(code) {
@@ -161,88 +242,98 @@ function assertPromoRedeemable(promo, userId) {
 }
 
 function reservePromoRedemption(code, input) {
-    const store = load();
-    const normalized = normalizeCode(code);
-    const promo = store.promoCodes.find(row => row.code === normalized);
-    if (!promo) throw new Error('Promo code not found');
+    return withStoreWriteLock(() => {
+        const store = load();
+        const normalized = normalizeCode(code);
+        const promo = store.promoCodes.find(row => row.code === normalized);
+        if (!promo) throw new Error('Promo code not found');
 
-    promo.redemptions = promo.redemptions || [];
-    const userId = String(input.userId || '').trim();
-    assertPromoRedeemable(promo, userId);
+        promo.redemptions = promo.redemptions || [];
+        const userId = String(input.userId || '').trim();
+        assertPromoRedeemable(promo, userId);
 
-    const redemption = {
-        id: createId('red'),
-        userId,
-        redeemedAt: new Date().toISOString(),
-        redeemedBy: input.redeemedBy || null,
-        pending: true,
-    };
-    promo.redemptions.push(redemption);
-    promo.updatedAt = new Date().toISOString();
-    save(store);
+        const redemption = {
+            id: createId('red'),
+            userId,
+            redeemedAt: new Date().toISOString(),
+            redeemedBy: input.redeemedBy || null,
+            pending: true,
+        };
+        promo.redemptions.push(redemption);
+        promo.updatedAt = new Date().toISOString();
+        save(store);
 
-    return { promo, redemption };
+        return { promo, redemption };
+    });
 }
 
 function completePromoRedemption(code, redemptionId) {
-    const store = load();
-    const normalized = normalizeCode(code);
-    const promo = store.promoCodes.find(row => row.code === normalized);
-    if (!promo) throw new Error('Promo code not found');
+    return withStoreWriteLock(() => {
+        const store = load();
+        const normalized = normalizeCode(code);
+        const promo = store.promoCodes.find(row => row.code === normalized);
+        if (!promo) throw new Error('Promo code not found');
 
-    const redemption = (promo.redemptions || []).find(row => row.id === redemptionId);
-    if (!redemption) throw new Error('Promo redemption not found');
+        const redemption = (promo.redemptions || []).find(row => row.id === redemptionId);
+        if (!redemption) throw new Error('Promo redemption not found');
 
-    redemption.pending = false;
-    redemption.completedAt = new Date().toISOString();
-    promo.updatedAt = new Date().toISOString();
-    save(store);
-    return promo;
+        redemption.pending = false;
+        redemption.completedAt = new Date().toISOString();
+        promo.updatedAt = new Date().toISOString();
+        save(store);
+        return promo;
+    });
 }
 
 function cancelPromoRedemption(code, redemptionId) {
-    const store = load();
-    const normalized = normalizeCode(code);
-    const promo = store.promoCodes.find(row => row.code === normalized);
-    if (!promo) return false;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const normalized = normalizeCode(code);
+        const promo = store.promoCodes.find(row => row.code === normalized);
+        if (!promo) return false;
 
-    const before = (promo.redemptions || []).length;
-    promo.redemptions = (promo.redemptions || []).filter(row => row.id !== redemptionId);
-    promo.updatedAt = new Date().toISOString();
-    save(store);
-    return before !== promo.redemptions.length;
+        const before = (promo.redemptions || []).length;
+        promo.redemptions = (promo.redemptions || []).filter(row => row.id !== redemptionId);
+        promo.updatedAt = new Date().toISOString();
+        save(store);
+        return before !== promo.redemptions.length;
+    });
 }
 
 function recordPromoRedemption(code, input) {
-    const store = load();
-    const normalized = normalizeCode(code);
-    const promo = store.promoCodes.find(row => row.code === normalized);
-    if (!promo) throw new Error('Promo code not found');
-    promo.redemptions = promo.redemptions || [];
-    promo.redemptions.push({
-        userId: String(input.userId || '').trim(),
-        redeemedAt: new Date().toISOString(),
-        redeemedBy: input.redeemedBy || null,
+    return withStoreWriteLock(() => {
+        const store = load();
+        const normalized = normalizeCode(code);
+        const promo = store.promoCodes.find(row => row.code === normalized);
+        if (!promo) throw new Error('Promo code not found');
+        promo.redemptions = promo.redemptions || [];
+        promo.redemptions.push({
+            userId: String(input.userId || '').trim(),
+            redeemedAt: new Date().toISOString(),
+            redeemedBy: input.redeemedBy || null,
+        });
+        promo.updatedAt = new Date().toISOString();
+        save(store);
+        return promo;
     });
-    promo.updatedAt = new Date().toISOString();
-    save(store);
-    return promo;
 }
 
 function recordVote(input) {
-    const store = load();
-    const row = {
-        id: createId('vote'),
-        userId: String(input.userId || '').trim(),
-        type: String(input.type || 'upvote'),
-        rewardedShields: Number(input.rewardedShields || 0),
-        source: input.source || 'top.gg',
-        createdAt: new Date().toISOString(),
-    };
-    store.votes.push(row);
-    if (store.votes.length > 20000) store.votes = store.votes.slice(-20000);
-    save(store);
-    return row;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const row = {
+            id: createId('vote'),
+            userId: String(input.userId || '').trim(),
+            type: String(input.type || 'upvote'),
+            rewardedShields: Number(input.rewardedShields || 0),
+            source: input.source || 'top.gg',
+            createdAt: new Date().toISOString(),
+        };
+        store.votes.push(row);
+        if (store.votes.length > 20000) store.votes = store.votes.slice(-20000);
+        save(store);
+        return row;
+    });
 }
 
 function listVotes({ limit = 500 } = {}) {
@@ -272,22 +363,24 @@ function voteSummary() {
 }
 
 function recordReminder(input) {
-    const store = load();
-    const row = {
-        id: createId('rem'),
-        userId: String(input.userId || '').trim(),
-        tier: input.tier || null,
-        expiresAt: input.expiresAt || null,
-        daysBefore: Number(input.daysBefore || 0),
-        sentAt: new Date().toISOString(),
-        success: input.success !== false,
-        error: input.error || null,
-        sentBy: input.sentBy || null,
-    };
-    store.reminders.push(row);
-    if (store.reminders.length > 5000) store.reminders = store.reminders.slice(-5000);
-    save(store);
-    return row;
+    return withStoreWriteLock(() => {
+        const store = load();
+        const row = {
+            id: createId('rem'),
+            userId: String(input.userId || '').trim(),
+            tier: input.tier || null,
+            expiresAt: input.expiresAt || null,
+            daysBefore: Number(input.daysBefore || 0),
+            sentAt: new Date().toISOString(),
+            success: input.success !== false,
+            error: input.error || null,
+            sentBy: input.sentBy || null,
+        };
+        store.reminders.push(row);
+        if (store.reminders.length > 5000) store.reminders = store.reminders.slice(-5000);
+        save(store);
+        return row;
+    });
 }
 
 function listReminders({ limit = 500 } = {}) {
