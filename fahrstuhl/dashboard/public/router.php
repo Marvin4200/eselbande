@@ -55,6 +55,15 @@ if (substr($uri, -1) === '/') {
     $uri .= 'index.php';
 }
 
+// Clean-URL-Aliases → interne PHP-Datei (ohne Präfix-Stripping, da bereits erledigt)
+$_clean_aliases = [
+    '/eselmusic' => '/pages/eselmusic.php',
+];
+if (isset($_clean_aliases[$uri])) {
+    $uri = $_clean_aliases[$uri];
+}
+unset($_clean_aliases);
+
 // URL-Decode für Dateisystem-Lookup
 $decoded = urldecode($uri);
 $path    = $docRoot . $decoded;
