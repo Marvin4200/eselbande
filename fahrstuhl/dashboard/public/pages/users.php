@@ -353,7 +353,6 @@ async function clearShield(userId) {
             style="width:100%; padding:.6rem .9rem; margin-top:.4rem; background:#0f0f1a; border:1px solid #444; color:#fff; border-radius:6px; font-size:1rem; box-sizing:border-box;">
             <option value="basic">basic</option>
             <option value="pro" selected>pro</option>
-            <option value="enterprise">enterprise</option>
         </select>
         <div style="display:flex; gap:.75rem; margin-top:1.25rem;">
             <button id="premiumConfirmBtn"

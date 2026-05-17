@@ -24,7 +24,7 @@ $voteSummary = $votesRaw['data']['summary'] ?? [];
 
 <div class="stats-grid" style="margin-bottom:1rem;">
     <div class="stat-card"><div class="stat-icon">🛡️</div><div class="stat-label">Total Troll Events</div><div class="stat-value"><?php echo formatNum($stats['totalTrolls'] ?? 0); ?></div><p style="color:#aaa;">shield economy driver</p></div>
-    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Votes</div><div class="stat-value"><?php echo formatNum($voteSummary['total'] ?? count($votes)); ?></div><p style="color:#aaa;">top.gg reward log</p></div>
+    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Votes</div><div class="stat-value"><?php echo formatNum($voteSummary['totalVotes'] ?? $voteSummary['total'] ?? 0); ?></div><p style="color:#aaa;">top.gg reward log</p></div>
     <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-label">Voice Rewards</div><div class="stat-value">Live</div><p style="color:#aaa;">paid through EselTokens bridge</p></div>
     <div class="stat-card"><div class="stat-icon">🎟️</div><div class="stat-label">Promo Codes</div><div class="stat-value">Ready</div><p style="color:#aaa;">manual campaigns</p></div>
 </div>

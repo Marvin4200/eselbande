@@ -21,7 +21,7 @@ $data = json_decode(file_get_contents('php://input'), true) ?? [];
 $userId = trim((string)($data['userId'] ?? ''));
 $days = max(1, (int)($data['days'] ?? 30));
 $tier = trim((string)($data['tier'] ?? 'pro'));
-$allowedTiers = ['basic', 'pro', 'enterprise'];
+$allowedTiers = ['basic', 'pro'];
 if (!in_array($tier, $allowedTiers, true)) $tier = 'pro';
 
 if (!$userId) {
