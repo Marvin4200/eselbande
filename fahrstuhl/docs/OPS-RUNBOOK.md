@@ -113,3 +113,58 @@ pm2 stop all
 pm2 start ecosystem.config.js
 pm2 save
 ```
+
+---
+
+## EselMusic (Musikbot) — Lavalink Recovery
+
+### Symptome
+
+- EselMusic joined einen Voice-Channel und verlässt ihn sofort wieder, im Minuten-Takt
+- Logs zeigen `Connection Destroyed` ohne eine vorherige `Connected`-Meldung von Shoukaku
+- `/play` schlägt fehl mit `Can't find any nodes to connect on`
+
+### Ursache
+
+Lavalink akkumuliert nach einem Neustart/Rebuild des `musikbot-docker`-Containers TCP-Verbindungen im `CLOSE_WAIT`-Zustand (alte Container-IP, neue Container-IP). Wenn genug Verbindungen in diesem Zustand sind, akzeptiert der Lavalink-Java-Prozess keine neuen WebSocket-Verbindungen mehr — ohne selbst abzustürzen. Der Container bleibt `Up`, aber Shoukaku kann nicht connecten.
+
+### Diagnose
+
+```bash
+# Shoukaku-Log prüfen: gibt es "Connected"? Oder nur "Connecting"?
+docker logs --since 30m musikbot-docker-phase1 2>&1 | grep -Ei 'shoukaku|connected|destroyed|error'
+
+# Lavalink-Log prüfen: Gibt es neue Session-Einträge?
+docker logs --since 30m lavalink-docker-phase1 2>&1 | tail -30
+
+# Container-Status
+docker ps --format 'table {{.Names}}\t{{.Status}}'
+```
+
+Wenn Shoukaku nur `Connecting to ws://lavalink-docker:2333...` zeigt, aber kein `Connected` folgt, ist Lavalink betroffen.
+
+### Fix
+
+**Reihenfolge wichtig:** Erst Lavalink, dann Musikbot — damit Shoukaku beim Start eine saubere Verbindung bekommt.
+
+```bash
+# 1. Lavalink neu starten (löscht stale CLOSE_WAIT-Verbindungen)
+docker restart lavalink-docker-phase1
+
+# 2. Warten bis Lavalink bereit ist (ca. 15 Sekunden)
+sleep 15
+
+# 3. Musikbot neu starten
+cd /home/marvin/fahrstuhl && docker compose restart musikbot-docker
+```
+
+### Verifikation
+
+```bash
+docker logs --since 10m musikbot-docker-phase1 2>&1 | grep -Ei 'Lavalink node|ready|Rejoin attempt|Connection Destroyed|Unknown interaction|DiscordAPIError'
+```
+
+Erwartet nach erfolgreichem Fix:
+- `✅ Lavalink node "main" connected`
+- `Lavalink is ready to communicate !`
+- Keine weiteren `Connection Destroyed`-Einträge im Loop
