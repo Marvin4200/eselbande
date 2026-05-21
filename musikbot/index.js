@@ -10,6 +10,7 @@ const { getPlaybackControlError } = require('./src/utils/djCheck');
 const { getGuildSettings, getAllIs247Guilds, setGuildSettings } = require('./src/utils/config');
 const { updateMusicPanel } = require('./src/utils/musicPanel');
 const { logEvent, safeErrorMessage, shouldIgnoreError } = require('./src/utils/musicLogger');
+const { createPrivateStatusEmbedManager } = require('./src/utils/privateStatusEmbed');
 
 // Cooldown for music-channel diagnostic warnings to avoid spam.
 const musicChannelWarnCooldown = new Map();
@@ -45,14 +46,22 @@ const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), lavalinkNodes, {
     resume: true,
 });
 
+const privateStatus = createPrivateStatusEmbedManager({
+    client,
+    shoukaku,
+    players,
+});
+
 shoukaku.on('error', (node, error) => {
     console.error(`[Shoukaku] Node "${node}" error:`, error.message);
+    privateStatus.requestUpdate();
 });
 shoukaku.on('debug', (name, info) => {
     console.log(`[Shoukaku:${name}] ${info}`);
 });
 shoukaku.on('ready', (name) => {
     console.log(`✅ Lavalink node "${name}" connected`);
+    privateStatus.requestUpdate();
     // Log to every guild that has a log channel configured
     for (const [guildId] of client.guilds.cache) {
         logEvent(client, guildId, 'lavalink_connected', {
@@ -62,6 +71,7 @@ shoukaku.on('ready', (name) => {
 });
 shoukaku.on('close', (name, code, reason) => {
     console.warn(`⚠️ Lavalink node "${name}" closed: ${code} ${reason}`);
+    privateStatus.requestUpdate();
     for (const [guildId] of client.guilds.cache) {
         logEvent(client, guildId, 'lavalink_disconnected', {
             description: `Lavalink Node "${name}" getrennt (Code ${code}).`,
@@ -72,6 +82,7 @@ shoukaku.on('close', (name, code, reason) => {
 shoukaku.on('disconnect', (name, moved) => {
     if (moved) return;
     console.warn(`⚠️ Lavalink node "${name}" disconnected`);
+    privateStatus.requestUpdate();
     for (const [guildId] of client.guilds.cache) {
         logEvent(client, guildId, 'lavalink_disconnected', {
             description: `Lavalink Node "${name}" verbindung verloren.`,
@@ -96,6 +107,7 @@ client.once('clientReady', async () => {
     console.log(`✅ Logged in as ${client.user.username}`);
     setDiscordClient(client);
     setShoukaku(shoukaku);
+    privateStatus.start();
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     // Register per-guild for instant availability (no 1-hour propagation delay).
@@ -151,6 +163,8 @@ client.once('clientReady', async () => {
             }
         }
     }, 15_000);
+
+    privateStatus.requestUpdate();
 });
 
 client.on('interactionCreate', async (interaction) => {
