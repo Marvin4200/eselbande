@@ -1,13 +1,13 @@
 {
   "name": "freegamesapi",
   "version": "1.0.0",
-  "description": "Self-hosted free games aggregation API — Epic, GOG, Steam, Humble Bundle",
+  "description": "Self-hosted free games aggregation API \u2014 Epic, GOG, Steam, Humble Bundle",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
-    "express": "^4.19.2"
+    "express": "^4.21.2"
   }
 }
