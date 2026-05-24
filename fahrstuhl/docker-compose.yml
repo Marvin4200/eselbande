@@ -10,6 +10,12 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   statuspage:
     build:
@@ -53,6 +59,9 @@ services:
       dockerfile: Dockerfile
     container_name: team-phase1
     restart: unless-stopped
+    depends_on:
+      fahrstuhl-docker:
+        condition: service_healthy
     env_file:
       - path: ../team/.env
         required: false
@@ -80,7 +89,8 @@ services:
     container_name: linkshortener-phase1
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     env_file:
       - path: ../linkshortener/.env
         required: false
@@ -128,7 +138,8 @@ services:
     container_name: filehoster-phase1
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     env_file:
       - path: ../filehoster/.env
         required: false
@@ -157,7 +168,8 @@ services:
     container_name: zitatboard-phase1
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     env_file:
       - path: ../zitatboard/.env
         required: false
@@ -221,11 +233,21 @@ services:
     image: fredboat/lavalink:4
     container_name: lavalink-docker-phase1
     restart: unless-stopped
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    mem_limit: 768m
+    mem_reservation: 256m
     volumes:
       - ../musikbot/application.yml:/opt/Lavalink/application.yml:ro
       - ../musikbot/plugins:/opt/Lavalink/plugins
     ports:
       - "127.0.0.1:3233:2333"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -S --spider http://127.0.0.1:2333/ 2>&1 | grep -q '401 Unauthorized'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
     networks:
       - marvin_internal
 
@@ -235,6 +257,11 @@ services:
       dockerfile: Dockerfile
     container_name: musikbot-docker-phase1
     restart: unless-stopped
+    mem_limit: 384m
+    mem_reservation: 128m
+    depends_on:
+      lavalink-docker:
+        condition: service_healthy
     env_file:
       - path: ../musikbot/.env
         required: false
@@ -242,8 +269,24 @@ services:
       NODE_ENV: production
       LAVALINK_HOST: lavalink-docker:2333
       LAVALINK_PORT: "2333"
+      NODE_OPTIONS: "--max-old-space-size=192"
+    command:
+      - sh
+      - -c
+      - |
+        until node -e "const net=require('net'); const raw=process.env.LAVALINK_HOST||'lavalink-docker:2333'; const parts=raw.split(':'); const host=parts[0]; const port=Number(parts[1]||process.env.LAVALINK_PORT||2333); const s=net.createConnection({host,port}); s.on('connect',()=>{s.end(); process.exit(0);}); s.on('error',()=>process.exit(1)); setTimeout(()=>process.exit(1),2000);"; do
+          echo "[musikbot] waiting for Lavalink ($$LAVALINK_HOST)..."
+          sleep 2
+        done
+        exec node index.js
     volumes:
       - ../musikbot/data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3020/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - marvin_internal
 
@@ -332,7 +375,15 @@ services:
       dockerfile: Dockerfile
     container_name: fahrstuhl-phase1
     restart: unless-stopped
+    mem_limit: 768m
+    mem_reservation: 256m
     depends_on:
+      redis:
+        condition: service_healthy
+      lavalink-docker:
+        condition: service_healthy
+      musikbot-docker:
+        condition: service_healthy
       freegamesapi:
         condition: service_healthy
     env_file:
@@ -344,6 +395,7 @@ services:
       NODE_ENV: production
       PORT: 3002
       REDIS_URL: redis://redis:6379
+      NODE_OPTIONS: "--max-old-space-size=384"
       # Override 127.0.0.1 defaults — use container names inside Docker network
       ESELTOKENS_VOICE_REWARD_URL: http://eseltokens-docker:3000/eseltokens/api/integrations/fahrstuhl/voice-reward/
       LAVALINK_HOST: lavalink-docker:2333
@@ -387,18 +439,27 @@ services:
       dockerfile: Dockerfile
     container_name: eseltokens-phase1
     restart: unless-stopped
+    mem_limit: 512m
+    mem_reservation: 160m
     env_file:
       - path: ../eseltokens/.env.local
         required: false
     environment:
       NODE_ENV: production
       PORT: 3000
+      NODE_OPTIONS: "--max-old-space-size=256"
     ports:
       - "127.0.0.1:3100:3000"
     volumes:
       - ../eseltokens/eseltokens.db:/app/eseltokens.db
       - ../eseltokens/eseltokens.db-wal:/app/eseltokens.db-wal
       - ../eseltokens/eseltokens.db-shm:/app/eseltokens.db-shm
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/eseltokens/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - marvin_internal
 
