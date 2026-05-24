@@ -634,18 +634,23 @@ function createTrollManager({
         const member = newState.member;
         if (!member || member.user.bot) return;
 
-        if (oldState.serverMute !== newState.serverMute) {
+        const wasServerMuted = Boolean(oldState.serverMute);
+        const isServerMuted = Boolean(newState.serverMute);
+        const wasServerDeaf = Boolean(oldState.serverDeaf);
+        const isServerDeaf = Boolean(newState.serverDeaf);
+
+        if (wasServerMuted !== isServerMuted) {
             await logToMaster({
                 title: "🔇 Server Mute",
-                description: `**User:** ${member.user.tag}\n**Status:** ${newState.serverMute ? "Muted" : "Unmuted"}\n**Server:** ${newState.guild.name}`,
-                color: newState.serverMute ? 0xED4245 : 0x57F287
+                description: `**User:** ${member.user.tag}\n**Status:** ${isServerMuted ? "Muted" : "Unmuted"}\n**Server:** ${newState.guild.name}`,
+                color: isServerMuted ? 0xED4245 : 0x57F287
             }, "SYSTEM");
         }
-        if (oldState.serverDeaf !== newState.serverDeaf) {
+        if (wasServerDeaf !== isServerDeaf) {
             await logToMaster({
                 title: "📞 Server Deaf",
-                description: `**User:** ${member.user.tag}\n**Status:** ${newState.serverDeaf ? "Deafened" : "Undeafened"}\n**Server:** ${newState.guild.name}`,
-                color: newState.serverDeaf ? 0xED4245 : 0x57F287
+                description: `**User:** ${member.user.tag}\n**Status:** ${isServerDeaf ? "Deafened" : "Undeafened"}\n**Server:** ${newState.guild.name}`,
+                color: isServerDeaf ? 0xED4245 : 0x57F287
             }, "SYSTEM");
         }
 
