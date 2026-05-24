@@ -132,3 +132,7 @@ Share these 3 files first for review:
 - docs/phase1-artifacts/<timestamp>/restore-test.txt
 
 After those are green, Phase 1 is done and we can execute Phase 2 (Proxmox install plan).
+
+Phase 2 runbook:
+
+- `docs/PROXMOX_PHASE2_CUTOVER.md`
