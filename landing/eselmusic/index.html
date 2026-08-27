@@ -424,6 +424,10 @@
             align-items: start;
         }
 
+        /* "Jetzt laeuft" laeuft ueber beide Spalten - die beiden Chart-Listen
+           stehen nebeneinander, der Live-Bereich als breites Band darunter. */
+        .live-panel-wide { grid-column: 1 / -1; }
+
         .live-panel {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -715,6 +719,14 @@
             </div>
             <div class="live-panel">
                 <div class="live-panel-head">
+                    <span class="live-panel-title">Top 10 Künstler</span>
+                </div>
+                <div class="charts-list" id="artists-list">
+                    <div class="np-empty">Lädt…</div>
+                </div>
+            </div>
+            <div class="live-panel live-panel-wide">
+                <div class="live-panel-head">
                     <span class="live-dot"></span>
                     <span class="live-panel-title">Jetzt läuft</span>
                 </div>
@@ -799,6 +811,13 @@
 
         // Now Playing
         (function () {
+            // Wie bei den Charts: Titel/Interpret kommen aus YouTube-Metadaten.
+            function esc(v) {
+                return String(v == null ? '' : v)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
             function render(tracks) {
                 const el = document.getElementById('np-list');
                 if (!tracks || !tracks.length) {
@@ -809,8 +828,8 @@
                     <div class="np-item">
                         <div class="np-icon">${t.isStream ? '🔴' : '🎵'}</div>
                         <div>
-                            <div class="np-title" title="${t.title.replace(/"/g,'&quot;')}">${t.title}</div>
-                            <div class="np-author">${t.author}</div>
+                            <div class="np-title" title="${esc(t.title)}">${esc(t.title)}</div>
+                            <div class="np-author">${esc(t.author)}</div>
                         </div>
                     </div>
                 `).join('');
@@ -838,29 +857,54 @@
                 return n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'k' : n + 'x';
             }
 
+            // Titel und Interpreten stammen aus YouTube-Metadaten, also aus
+            // fremder Quelle - vor dem Einsetzen ins HTML entschaerfen.
+            function esc(v) {
+                return String(v == null ? '' : v)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            function chartRow(rank, main, sub, right) {
+                return `
+                        <div class="chart-row">
+                            <div class="chart-rank${rank <= 3 ? ' top3' : ''}">${rank <= 3 ? medals[rank - 1] : rank}</div>
+                            <div class="chart-info">
+                                <div class="chart-title" title="${esc(main)}">${esc(main)}</div>
+                                <div class="chart-author">${esc(sub)}</div>
+                            </div>
+                            <div class="chart-plays">${right}</div>
+                        </div>`;
+            }
+
+            function fillList(id, rows, render) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!rows || !rows.length) {
+                    el.innerHTML = '<div class="np-empty">Noch keine Daten.</div>';
+                    return;
+                }
+                el.innerHTML = rows.map(render).join('');
+            }
+
+            function listError(id) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="np-empty">Nicht verfügbar.</div>';
+            }
+
             fetch('/musikbot/api/public-charts')
                 .then(r => r.json())
-                .then(d => {
-                    const el = document.getElementById('charts-list');
-                    if (!d.charts || !d.charts.length) {
-                        el.innerHTML = '<div class="np-empty">Noch keine Daten.</div>';
-                        return;
-                    }
-                    el.innerHTML = d.charts.map(c => `
-                        <div class="chart-row">
-                            <div class="chart-rank${c.rank <= 3 ? ' top3' : ''}">${c.rank <= 3 ? medals[c.rank - 1] : c.rank}</div>
-                            <div class="chart-info">
-                                <div class="chart-title" title="${c.title.replace(/"/g,'&quot;')}">${c.title}</div>
-                                <div class="chart-author">${c.author}</div>
-                            </div>
-                            <div class="chart-plays">${fmtPlays(c.plays)}</div>
-                        </div>
-                    `).join('');
-                })
-                .catch(() => {
-                    const el = document.getElementById('charts-list');
-                    if (el) el.innerHTML = '<div class="np-empty">Nicht verfügbar.</div>';
-                });
+                .then(d => fillList('charts-list', d.charts,
+                    c => chartRow(c.rank, c.title, c.author, fmtPlays(c.plays))))
+                .catch(() => listError('charts-list'));
+
+            fetch('/musikbot/api/public-artists')
+                .then(r => r.json())
+                .then(d => fillList('artists-list', d.artists,
+                    a => chartRow(a.rank, a.author,
+                        a.tracks + (a.tracks === 1 ? ' Track' : ' Tracks'),
+                        fmtPlays(a.plays))))
+                .catch(() => listError('artists-list'));
         })();
     </script>
 </body>
