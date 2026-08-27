@@ -1,0 +1,10 @@
+# PyInstaller / Build
+build/
+dist/
+EselShot.spec
+EselShot.ico
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

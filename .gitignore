@@ -88,3 +88,7 @@ fahrstuhl/data/deploy-deliveries.json
 fahrstuhl/data/eseltokens-deliveries.json
 fahrstuhl/data/deploy.lock
 fahrstuhl/data/eseltokens-deploy.lock
+
+# Python (eselshot)
+__pycache__/
+*.pyc

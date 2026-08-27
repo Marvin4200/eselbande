@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3011;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'https://files.eselbande.com/auth/callback';
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://files.eselbande.com').replace(/\/+$/, '');
 const SESSION_SECRET = process.env.SESSION_SECRET || 'changeme';
 if (SESSION_SECRET === 'changeme' && process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET must be set in production. Refusing to start.');
@@ -66,8 +67,20 @@ db.exec(`
     created_at   TEXT    DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS api_tokens (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL REFERENCES users(id),
+    name         TEXT    NOT NULL,
+    token_hash   TEXT    UNIQUE NOT NULL,
+    prefix       TEXT    NOT NULL,
+    last_used_at TEXT,
+    created_at   TEXT    DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_files_user   ON files(user_id);
   CREATE INDEX IF NOT EXISTS idx_files_fileid ON files(file_id);
+  CREATE INDEX IF NOT EXISTS idx_tokens_user  ON api_tokens(user_id);
+  CREATE INDEX IF NOT EXISTS idx_tokens_hash  ON api_tokens(token_hash);
 `);
 
 // ── Redis-ready session store ─────────────────────────────────────────────────
@@ -153,7 +166,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = req.session.user;
     next();
+}
+
+// ── API tokens (EselShot desktop client) ──────────────────────────────────────
+const TOKEN_PREFIX = 'esel_';
+const MAX_TOKENS_PER_USER = 10;
+
+function hashToken(raw) {
+    return crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
+}
+
+function userFromToken(raw) {
+    if (typeof raw !== 'string' || !raw.startsWith(TOKEN_PREFIX)) return null;
+    const row = db.prepare(`
+        SELECT t.id AS token_id, u.id, u.discord_id, u.username, u.avatar
+        FROM api_tokens t JOIN users u ON u.id = t.user_id
+        WHERE t.token_hash = ?
+    `).get(hashToken(raw));
+    if (!row) return null;
+    db.prepare("UPDATE api_tokens SET last_used_at = datetime('now') WHERE id = ?").run(row.token_id);
+    return { id: row.id, discordId: row.discord_id, username: row.username, avatar: row.avatar };
+}
+
+// Accepts either the browser session cookie or `Authorization: Bearer esel_…`.
+function requireUser(req, res, next) {
+    if (req.session.user) { req.user = req.session.user; return next(); }
+    const auth = req.headers.authorization || '';
+    if (auth.startsWith('Bearer ')) {
+        const user = userFromToken(auth.slice(7).trim());
+        if (user) { req.user = user; return next(); }
+    }
+    res.status(401).json({ error: 'Unauthorized' });
 }
 
 // ── Rate limiting (in-memory, per-process) ────────────────────────────────────
@@ -250,25 +295,23 @@ app.get('/auth/logout', (req, res) => {
 });
 
 // ── API ───────────────────────────────────────────────────────────────────────
-app.get('/api/me', (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
-    const userId = req.session.user.id;
+app.get('/api/me', requireUser, (req, res) => {
     const { total_bytes } = db.prepare(
         'SELECT COALESCE(SUM(size), 0) AS total_bytes FROM files WHERE user_id = ?'
-    ).get(userId);
-    res.json({ ...req.session.user, usedBytes: total_bytes, quotaBytes: MAX_TOTAL_BYTES_PER_USER });
+    ).get(req.user.id);
+    res.json({ ...req.user, usedBytes: total_bytes, quotaBytes: MAX_TOTAL_BYTES_PER_USER });
 });
 
-app.get('/api/files', requireAuth, (req, res) => {
+app.get('/api/files', requireUser, (req, res) => {
     const files = db.prepare(
         'SELECT id, file_id, orig_name, mime_type, size, downloads, created_at FROM files WHERE user_id = ? ORDER BY created_at DESC'
-    ).all(req.session.user.id);
+    ).all(req.user.id);
     res.json(files);
 });
 
 // Upload via busboy — streams directly to disk, no temp file in memory
-app.post('/api/upload', uploadLimiter, requireAuth, (req, res) => {
-    const userId = req.session.user.id;
+app.post('/api/upload', uploadLimiter, requireUser, (req, res) => {
+    const userId = req.user.id;
 
     const count = db.prepare('SELECT COUNT(*) as c FROM files WHERE user_id = ?').get(userId);
     if (count.c >= MAX_FILES_PER_USER) {
@@ -345,7 +388,7 @@ app.post('/api/upload', uploadLimiter, requireAuth, (req, res) => {
                 responded = true;
                 res.json({
                     fileId,
-                    url: `https://files.eselbande.com/f/${fileId}/${encodeURIComponent(safeName)}`,
+                    url: `${PUBLIC_BASE_URL}/f/${fileId}/${encodeURIComponent(safeName)}`,
                     name: safeName,
                     size: bytesWritten,
                 });
@@ -369,15 +412,48 @@ app.post('/api/upload', uploadLimiter, requireAuth, (req, res) => {
     req.pipe(bb);
 });
 
-app.delete('/api/files/:id', requireAuth, (req, res) => {
+app.delete('/api/files/:id', requireUser, (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'Ungültige ID' });
 
-    const file = db.prepare('SELECT * FROM files WHERE id = ? AND user_id = ?').get(id, req.session.user.id);
+    const file = db.prepare('SELECT * FROM files WHERE id = ? AND user_id = ?').get(id, req.user.id);
     if (!file) return res.status(404).json({ error: 'Datei nicht gefunden' });
 
     try { fs.unlinkSync(path.join(UPLOAD_DIR, file.stored_name)); } catch { }
     db.prepare('DELETE FROM files WHERE id = ?').run(id);
+    res.json({ success: true });
+});
+
+// ── API token management (session-only: a token may not mint more tokens) ─────
+app.get('/api/tokens', requireAuth, (req, res) => {
+    const tokens = db.prepare(
+        'SELECT id, name, prefix, last_used_at, created_at FROM api_tokens WHERE user_id = ? ORDER BY created_at DESC'
+    ).all(req.user.id);
+    res.json(tokens);
+});
+
+app.post('/api/tokens', authLimiter, requireAuth, (req, res) => {
+    const userId = req.user.id;
+    const { c } = db.prepare('SELECT COUNT(*) AS c FROM api_tokens WHERE user_id = ?').get(userId);
+    if (c >= MAX_TOKENS_PER_USER) {
+        return res.status(429).json({ error: `Token-Limit erreicht (${MAX_TOKENS_PER_USER})` });
+    }
+
+    const name = String(req.body?.name || 'EselShot').replace(/[^\w .\-]/g, '').trim().slice(0, 40) || 'EselShot';
+    const raw = TOKEN_PREFIX + crypto.randomBytes(24).toString('hex');
+
+    db.prepare('INSERT INTO api_tokens (user_id, name, token_hash, prefix) VALUES (?, ?, ?, ?)')
+        .run(userId, name, hashToken(raw), raw.slice(0, TOKEN_PREFIX.length + 6));
+
+    // The plaintext token is returned exactly once — only its hash is stored.
+    res.json({ token: raw, name });
+});
+
+app.delete('/api/tokens/:id', requireAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'Ungültige ID' });
+    const r = db.prepare('DELETE FROM api_tokens WHERE id = ? AND user_id = ?').run(id, req.user.id);
+    if (r.changes === 0) return res.status(404).json({ error: 'Token nicht gefunden' });
     res.json({ success: true });
 });
 
@@ -407,6 +483,33 @@ app.get('/f/:fileId/:filename?', (req, res) => {
     res.setHeader('Content-Length', file.size);
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     fs.createReadStream(filePath).pipe(res);
+});
+
+// ── EselShot-Download (öffentlich, keine Anmeldung) ──────────────────────────
+// Die Datei wird beim Container-Build in /app/downloads mitgebacken. Byte-Range
+// wird von express.static automatisch bedient, Cache lang, Dateien 500 MB max.
+const ESELSHOT_DIR = path.join(__dirname, 'downloads');
+const ESELSHOT_EXE = path.join(ESELSHOT_DIR, 'EselShot.exe');
+
+app.get('/eselshot', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'eselshot.html'));
+});
+
+app.get('/download/EselShot.exe', (req, res) => {
+    if (!fs.existsSync(ESELSHOT_EXE)) return res.status(404).send('EselShot.exe fehlt auf dem Server');
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="EselShot.exe"');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.sendFile(ESELSHOT_EXE);
+});
+
+app.get('/api/eselshot/version', (req, res) => {
+    try {
+        const st = fs.statSync(ESELSHOT_EXE);
+        res.json({ available: true, size: st.size, mtime: st.mtime });
+    } catch {
+        res.json({ available: false });
+    }
 });
 
 // ── Health ───────────────────────────────────────────────────────────────────
