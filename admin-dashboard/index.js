@@ -4,8 +4,10 @@ require('dotenv').config();
 const express = require('express');
 const compression = require('compression');
 const session = require('express-session');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const Database = require('better-sqlite3');
 
 const PORT = process.env.PORT || 3021;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
@@ -22,6 +24,77 @@ if (!OWNER_DISCORD_ID) {
     throw new Error('OWNER_DISCORD_ID must be set. Refusing to start.');
 }
 const STATS_PATH = process.env.STATS_PATH || path.join(__dirname, 'stats', 'admin-stats.json');
+
+// ── Log-Aufnahme (ersetzt die Discord-Log-Kanaele des Fahrstuhl-Bots) ────────
+// Shared-Secret statt Discord-Login: die Quelle ist ein Bot-Prozess, kein
+// Mensch im Browser. Ohne gesetztes LOG_INGEST_TOKEN bleibt die Aufnahme
+// abgeschaltet - lieber kein Log-Empfang als ein offener Schreibzugriff.
+const LOG_INGEST_TOKEN = process.env.LOG_INGEST_TOKEN || '';
+const LOG_DATA_DIR = process.env.LOG_DATA_DIR || path.join(__dirname, 'data');
+const LOG_MAX_ROWS = 20000;
+const LOG_MAX_AGE_DAYS = 60;
+
+fs.mkdirSync(LOG_DATA_DIR, { recursive: true });
+const logDb = new Database(path.join(LOG_DATA_DIR, 'logs.db'));
+logDb.pragma('journal_mode = WAL');
+logDb.exec(`
+CREATE TABLE IF NOT EXISTS logs (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    source       TEXT NOT NULL DEFAULT 'fahrstuhl',
+    type         TEXT NOT NULL DEFAULT 'SYSTEM',
+    title        TEXT,
+    description  TEXT,
+    color        INTEGER,
+    fields_json  TEXT,
+    created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_logs_type_time ON logs(type, created_at);
+CREATE INDEX IF NOT EXISTS idx_logs_time      ON logs(created_at);
+`);
+
+const insertLogStmt = logDb.prepare(`
+    INSERT INTO logs (source, type, title, description, color, fields_json)
+    VALUES (@source, @type, @title, @description, @color, @fields_json)
+`);
+const pruneOldStmt = logDb.prepare(`DELETE FROM logs WHERE created_at < datetime('now', ?)`);
+const pruneExcessStmt = logDb.prepare(`
+    DELETE FROM logs WHERE id IN (
+        SELECT id FROM logs ORDER BY id DESC LIMIT -1 OFFSET ?
+    )
+`);
+let _logInsertCount = 0;
+
+function insertLog(entry) {
+    insertLogStmt.run({
+        source: String(entry.source || 'fahrstuhl').slice(0, 40),
+        type: String(entry.type || 'SYSTEM').toUpperCase().slice(0, 40),
+        title: entry.title ? String(entry.title).slice(0, 256) : null,
+        description: entry.description ? String(entry.description).slice(0, 4096) : null,
+        color: Number.isFinite(entry.color) ? entry.color : null,
+        fields_json: Array.isArray(entry.fields) && entry.fields.length
+            ? JSON.stringify(entry.fields.slice(0, 25))
+            : null,
+    });
+    // Aufraeumen nicht bei jedem Insert - waere bei Log-Traffic unnoetig teuer.
+    if (++_logInsertCount % 200 === 0) {
+        pruneOldStmt.run(`-${LOG_MAX_AGE_DAYS} days`);
+        pruneExcessStmt.run(LOG_MAX_ROWS);
+    }
+}
+
+function timingSafeTokenEqual(a, b) {
+    const bufA = Buffer.from(String(a || ''));
+    const bufB = Buffer.from(String(b || ''));
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function requireLogToken(req, res, next) {
+    if (!LOG_INGEST_TOKEN) return res.status(503).json({ error: 'Log-Aufnahme ist nicht konfiguriert' });
+    const sent = req.get('X-Log-Token') || '';
+    if (!timingSafeTokenEqual(sent, LOG_INGEST_TOKEN)) return res.status(403).json({ error: 'Forbidden' });
+    next();
+}
 
 // ── Redis-ready session store (gleiches Muster wie im Filehoster) ────────────
 let _sessionStoreType = 'memory';
@@ -63,6 +136,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use(compression());
+app.use(express.json({ limit: '256kb' }));
 app.use(session({
     store: buildSessionStore(),
     secret: SESSION_SECRET,
@@ -158,6 +232,55 @@ app.get('/api/stats', requireOwner, (req, res) => {
     } catch (err) {
         res.status(503).json({ error: 'Noch keine Daten gesammelt', detail: err.code });
     }
+});
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+// Ersetzt die frueheren Discord-Log-Kanaele (#commands, #trolls, #guilds,
+// #errors, #system) des Fahrstuhl-Bots. Jede Quelle (der Bot, spaeter
+// vielleicht weitere Dienste) schickt Eintraege hierher statt nach Discord.
+app.post('/api/logs/ingest', requireLogToken, (req, res) => {
+    const body = req.body || {};
+    if (!body.title && !body.description) {
+        return res.status(400).json({ error: 'title oder description erforderlich' });
+    }
+    try {
+        insertLog(body);
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error('[logs] insert failed:', err.message);
+        res.status(500).json({ error: 'Insert fehlgeschlagen' });
+    }
+});
+
+app.get('/api/logs', requireOwner, (req, res) => {
+    const type = String(req.query.type || '').toUpperCase().trim();
+    const beforeId = Number(req.query.before) || null;
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
+
+    let sql = 'SELECT * FROM logs';
+    const where = [];
+    const params = {};
+    if (type && type !== 'ALL') { where.push('type = @type'); params.type = type; }
+    if (beforeId) { where.push('id < @beforeId'); params.beforeId = beforeId; }
+    if (where.length) sql += ' WHERE ' + where.join(' AND ');
+    sql += ' ORDER BY id DESC LIMIT @limit';
+    params.limit = limit;
+
+    try {
+        const rows = logDb.prepare(sql).all(params).map(r => ({
+            ...r,
+            fields: r.fields_json ? JSON.parse(r.fields_json) : null,
+            fields_json: undefined,
+        }));
+        res.json({ logs: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/logs/types', requireOwner, (req, res) => {
+    const rows = logDb.prepare('SELECT type, COUNT(*) AS count FROM logs GROUP BY type ORDER BY count DESC').all();
+    res.json({ types: rows });
 });
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'admin-dashboard', uptime: process.uptime(), session_store: _sessionStoreType }));

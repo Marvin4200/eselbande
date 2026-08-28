@@ -93,6 +93,30 @@
     .badge.priv { background: rgba(100,116,139,.2); color: var(--muted); }
 
     .empty { text-align: center; color: var(--muted); padding: 40px; }
+
+    .log-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .log-filter-btn {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      font-size: .78rem; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .log-filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .log-filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .log-filter-btn .n { opacity: .7; font-weight: 500; }
+
+    .log-list { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow-y: auto; }
+    .log-entry {
+      background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--muted);
+      border-radius: 8px; padding: 10px 14px; font-size: .85rem;
+    }
+    .log-entry-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .log-entry-title { font-weight: 700; }
+    .log-entry-time { color: var(--muted); font-size: .74rem; white-space: nowrap; flex-shrink: 0; }
+    .log-entry-desc { color: var(--muted); margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
+    .log-entry-fields { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; }
+    .log-entry-fields b { color: var(--text); }
+    .log-entry.is-new { animation: logFlash 1.6s ease-out; }
+    @keyframes logFlash { from { background: rgba(129,140,248,.18); } to { background: var(--surface); } }
     .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: var(--danger); padding: 14px 18px; border-radius: var(--radius); margin-bottom: 20px; }
 
     details.project {
@@ -122,6 +146,15 @@
 
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Nur fuer Log-Text: **fett** und `code` aus Discord-Embeds lesbar machen.
+  // Immer erst escapen, dann auf dem bereits-sicheren Text die Tags einsetzen -
+  // nie umgekehrt, sonst waere das ein Einfallstor fuer eingeschleusten HTML-Text.
+  function escMd(s) {
+    return esc(s)
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/`([^`]+?)`/g, '<code>$1</code>');
   }
 
   function fmtDate(iso) {
@@ -167,6 +200,10 @@
     } catch {
       renderLoading(true);
     }
+    // Eigenstaendig von den Stats: Logs sind live, Stats sind ein
+    // periodischer Snapshot. Ein fehlender Stats-Collector soll die
+    // Logs-Ansicht nicht mit runterreissen.
+    initLogs();
   }
 
   function renderLogin() {
@@ -184,8 +221,31 @@
       </div>`;
   }
 
+  // Kopfzeile + Logs-Bereich unabhaengig vom Stats-Ladezustand, damit ein
+  // fehlender Stats-Collector die Logs-Ansicht nicht mit ausblendet.
+  function shellHeader(statsBody) {
+    return `
+      <header>
+        <div class="brand"><span>eselbande</span> · Projekt-Dashboard</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <a class="logout" href="/auth/logout">Abmelden</a>
+        </div>
+      </header>
+
+      <section>
+        <h2>Live-Logs <span class="count-pill" id="logs-count-pill">–</span></h2>
+        <div class="log-filters" id="log-filters"></div>
+        <div id="logs-list"><div class="empty">Lädt …</div></div>
+      </section>
+
+      ${statsBody}
+    `;
+  }
+
   function renderLoading(failed) {
-    app.innerHTML = `<div class="empty">${failed ? 'Noch keine Daten gesammelt – der Collector läuft alle paar Minuten auf dem Server.' : 'Lädt …'}</div>`;
+    app.innerHTML = shellHeader(
+      `<div class="empty">${failed ? 'Noch keine Projekt-Statistiken – der Collector läuft alle paar Minuten auf dem Server. Die Logs oben laufen unabhängig davon.' : 'Lädt …'}</div>`
+    );
   }
 
   function statusPill(up) {
@@ -463,14 +523,8 @@
       return '';
     })();
 
-    app.innerHTML = `
-      <header>
-        <div class="brand"><span>eselbande</span> · Projekt-Dashboard</div>
-        <div style="display:flex;align-items:center;gap:14px">
-          <span class="updated">Stand: ${fmtDate(stats.generated_at)} (${fmtRelative(stats.generated_at)})</span>
-          <a class="logout" href="/auth/logout">Abmelden</a>
-        </div>
-      </header>
+    app.innerHTML = shellHeader(`
+      <div class="updated" style="margin:-14px 0 20px">Stats-Stand: ${fmtDate(stats.generated_at)} (${fmtRelative(stats.generated_at)})</div>
 
       ${staleWarning}
 
@@ -490,7 +544,96 @@
         <h2>Erreichbarkeit <span class="count-pill">statuspage.eselbande.com</span></h2>
         ${statuspageTable(stats.statuspage)}
       </section>
-    `;
+    `);
+  }
+
+  // ── Live-Logs ─────────────────────────────────────────────────────────────
+  let logType = 'ALL';
+  let knownLogIds = new Set();
+  let logPollTimer = null;
+
+  function logColorStyle(color) {
+    if (!Number.isFinite(color)) return '';
+    const hex = '#' + (color >>> 0).toString(16).padStart(6, '0').slice(-6);
+    return `border-left-color:${hex}`;
+  }
+
+  function renderLogEntry(log, isNew) {
+    const fields = Array.isArray(log.fields) && log.fields.length
+      ? `<div class="log-entry-fields">${log.fields.map(f =>
+          `<span><b>${esc(f.name)}:</b> ${esc(f.value)}</span>`).join('')}</div>`
+      : '';
+    return `
+      <div class="log-entry${isNew ? ' is-new' : ''}" style="${logColorStyle(log.color)}" data-id="${log.id}">
+        <div class="log-entry-head">
+          <span class="log-entry-title">${esc(log.title || log.type)}</span>
+          <span class="log-entry-time" title="${esc(log.created_at)}">${fmtRelative(log.created_at)}</span>
+        </div>
+        ${log.description ? `<div class="log-entry-desc">${escMd(log.description)}</div>` : ''}
+        ${fields}
+      </div>`;
+  }
+
+  async function loadLogTypes() {
+    const el = document.getElementById('log-filters');
+    if (!el) return;
+    try {
+      const { types } = await fetch('/api/logs/types').then(r => r.json());
+      const total = types.reduce((sum, t) => sum + t.count, 0);
+      const btns = [{ type: 'ALL', count: total }, ...types];
+      el.innerHTML = btns.map(t => `
+        <button class="log-filter-btn${t.type === logType ? ' active' : ''}" data-type="${esc(t.type)}">
+          ${esc(t.type === 'ALL' ? 'Alle' : t.type)} <span class="n">${fmtNum(t.count)}</span>
+        </button>`).join('');
+      el.querySelectorAll('.log-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          logType = btn.dataset.type;
+          el.querySelectorAll('.log-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+          knownLogIds = new Set();
+          loadLogs(true);
+        });
+      });
+    } catch { /* Typen-Leiste ist ein Nice-to-have, kein Beinbruch bei Fehlern */ }
+  }
+
+  async function loadLogs(replace) {
+    const list = document.getElementById('logs-list');
+    const pill = document.getElementById('logs-count-pill');
+    if (!list) return;
+    try {
+      const qs = new URLSearchParams({ limit: '100' });
+      if (logType !== 'ALL') qs.set('type', logType);
+      const { logs } = await fetch(`/api/logs?${qs}`).then(r => r.json());
+
+      if (pill) pill.textContent = fmtNum(logs.length) + (logs.length === 100 ? '+' : '');
+
+      if (!logs.length) {
+        if (replace) list.innerHTML = '<div class="empty">Noch keine Logs in dieser Kategorie.</div>';
+        return;
+      }
+
+      if (replace) {
+        knownLogIds = new Set(logs.map(l => l.id));
+        list.innerHTML = `<div class="log-list">${logs.map(l => renderLogEntry(l, false)).join('')}</div>`;
+        return;
+      }
+
+      // Nur wirklich neue Eintraege vorne einfuegen, kein volles Neuzeichnen -
+      // sonst springt die Liste bei jedem Poll unter dem Cursor weg.
+      const fresh = logs.filter(l => !knownLogIds.has(l.id));
+      if (!fresh.length) return;
+      fresh.forEach(l => knownLogIds.add(l.id));
+      const container = list.querySelector('.log-list');
+      if (!container) { list.innerHTML = `<div class="log-list">${logs.map(l => renderLogEntry(l, false)).join('')}</div>`; return; }
+      container.insertAdjacentHTML('afterbegin', fresh.reverse().map(l => renderLogEntry(l, true)).join(''));
+    } catch { /* naechster Poll versucht es erneut */ }
+  }
+
+  function initLogs() {
+    loadLogTypes();
+    loadLogs(true);
+    if (logPollTimer) clearInterval(logPollTimer);
+    logPollTimer = setInterval(() => { loadLogTypes(); loadLogs(false); }, 15_000);
   }
 
   init();
