@@ -88,3 +88,22 @@ fahrstuhl/data/deploy-deliveries.json
 fahrstuhl/data/eseltokens-deliveries.json
 fahrstuhl/data/deploy.lock
 fahrstuhl/data/eseltokens-deploy.lock
+
+# Diese Ordner sind eigene, unabhaengige Git-Repos (siehe deren jeweiliges
+# .git/) und sollen hier nicht mitverfolgt werden.
+/404/
+/esel/
+/eseltokens/
+/fahrstuhl/
+/filehoster/
+/freegamesapi/
+/linkshortener/
+/musikbot/
+/statuspage/
+/team/
+
+# System-/Konfigurationsverzeichnisse - gehoeren nie in ein Repo,
+# .ssh/.config enthalten Zugangsdaten.
+/.ssh/
+/.config/
+/.cache/
