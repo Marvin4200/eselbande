@@ -107,3 +107,7 @@ fahrstuhl/data/eseltokens-deploy.lock
 /.ssh/
 /.config/
 /.cache/
+
+# Python (eselshot)
+__pycache__/
+*.pyc
