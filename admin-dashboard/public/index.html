@@ -116,6 +116,10 @@
     .log-entry-fields { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; }
     .log-entry-fields b { color: var(--text); }
     .log-entry.is-new { animation: logFlash 1.6s ease-out; }
+    .log-toggle {
+      background: none; border: none; color: var(--accent); font-size: .76rem; font-weight: 600;
+      cursor: pointer; padding: 4px 0 0; text-decoration: underline;
+    }
     @keyframes logFlash { from { background: rgba(129,140,248,.18); } to { background: var(--surface); } }
     .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: var(--danger); padding: 14px 18px; border-radius: var(--radius); margin-bottom: 20px; }
 
@@ -558,21 +562,51 @@
     return `border-left-color:${hex}`;
   }
 
+  const LOG_DESC_PREVIEW = 260;
+
   function renderLogEntry(log, isNew) {
     const fields = Array.isArray(log.fields) && log.fields.length
       ? `<div class="log-entry-fields">${log.fields.map(f =>
           `<span><b>${esc(f.name)}:</b> ${esc(f.value)}</span>`).join('')}</div>`
       : '';
+    // Rohe Fehlerobjekte (z.B. Java-Stacktraces aus Lavalink) koennen
+    // mehrere tausend Zeichen lang sein - standardmaessig kuerzen statt die
+    // Liste unlesbar zu machen, mit Umschalter fuer den vollen Text.
+    let desc = '';
+    if (log.description) {
+      const full = escMd(log.description);
+      if (log.description.length > LOG_DESC_PREVIEW) {
+        const short = escMd(log.description.slice(0, LOG_DESC_PREVIEW)) + '…';
+        desc = `<div class="log-entry-desc log-entry-desc-short">${short}</div>` +
+               `<div class="log-entry-desc" hidden>${full}</div>` +
+               `<button class="log-toggle" type="button">mehr anzeigen</button>`;
+      } else {
+        desc = `<div class="log-entry-desc">${full}</div>`;
+      }
+    }
     return `
       <div class="log-entry${isNew ? ' is-new' : ''}" style="${logColorStyle(log.color)}" data-id="${log.id}">
         <div class="log-entry-head">
           <span class="log-entry-title">${esc(log.title || log.type)}</span>
           <span class="log-entry-time" title="${esc(log.created_at)}">${fmtRelative(log.created_at)}</span>
         </div>
-        ${log.description ? `<div class="log-entry-desc">${escMd(log.description)}</div>` : ''}
+        ${desc}
         ${fields}
       </div>`;
   }
+
+  // Ein Listener fuer alle Eintraege statt einer pro Button - funktioniert
+  // auch fuer Eintraege, die per Poll spaeter noch dazukommen.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.log-toggle');
+    if (!btn) return;
+    const entry = btn.closest('.log-entry');
+    const [shortEl, fullEl] = entry.querySelectorAll('.log-entry-desc');
+    const expanded = !fullEl.hidden;
+    fullEl.hidden = expanded;
+    shortEl.hidden = !expanded;
+    btn.textContent = expanded ? 'mehr anzeigen' : 'weniger anzeigen';
+  });
 
   async function loadLogTypes() {
     const el = document.getElementById('log-filters');
