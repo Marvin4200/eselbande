@@ -278,6 +278,27 @@ app.get('/api/logs', requireOwner, (req, res) => {
     }
 });
 
+// Zaehlt die Meldungen des letzten Tages serverseitig. Die Liste unter
+// /api/logs ist bewusst auf 200 Eintraege begrenzt - eine Kennzahl daraus
+// waere bei mehr Verkehr schlicht falsch und wuerde bei genau 200 haengen.
+app.get('/api/logs/summary', requireOwner, (req, res) => {
+    const stunden = Math.min(168, Math.max(1, Number(req.query.hours) || 24));
+    const seit = new Date(Date.now() - stunden * 3600 * 1000).toISOString();
+    try {
+        const rows = logDb
+            .prepare('SELECT type, COUNT(*) AS count FROM logs WHERE created_at >= ? GROUP BY type ORDER BY count DESC')
+            .all(seit);
+        res.json({
+            since: seit,
+            hours: stunden,
+            total: rows.reduce((summe, r) => summe + r.count, 0),
+            byType: rows,
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/logs/types', requireOwner, (req, res) => {
     const rows = logDb.prepare('SELECT type, COUNT(*) AS count FROM logs GROUP BY type ORDER BY count DESC').all();
     res.json({ types: rows });

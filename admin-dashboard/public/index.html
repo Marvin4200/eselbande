@@ -1,676 +1,679 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
-  <title>admin.eselbande.com – Projekt-Dashboard</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard · eselbande</title>
+<style>
+:root {
+    --bg: #0d1117;
+    --bg-alt: #010409;
+    --karte: #161b22;
+    --karte-hover: #1c2129;
+    --rand: #26303b;
+    --rand-hell: #364250;
+    --text: #e6edf3;
+    --gedaempft: #8b949e;
+    --leise: #6e7681;
+    --akzent: #f0b429;
+    --gruen: #3fb950;
+    --gelb: #d29922;
+    --rot: #f85149;
+    --blau: #58a6ff;
+    --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+a { color: var(--blau); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 0 20px 64px; }
 
-    :root {
-      --bg:           #080810;
-      --surface:      rgba(255,255,255,0.04);
-      --surface2:     rgba(255,255,255,0.07);
-      --border:       rgba(255,255,255,0.08);
-      --border-hover: rgba(255,255,255,0.14);
-      --accent:       #818cf8;
-      --accent2:      #667eea;
-      --text:         #e2e8f0;
-      --muted:        #64748b;
-      --danger:       #ef4444;
-      --success:      #22c55e;
-      --warning:      #f59e0b;
-      --discord:      #5865F2;
-      --radius:       12px;
-    }
+/* ── Kopfleiste ─────────────────────────────────────────────── */
+header {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(13,17,23,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rand);
+}
+.kopf {
+    max-width: 1400px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.marke { font-weight: 650; font-size: 1.05rem; letter-spacing: -.01em; }
+.marke span { color: var(--akzent); }
+.kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: .82rem; color: var(--gedaempft); }
+.puls { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gruen); margin-right: 6px; }
+.knopf {
+    background: var(--karte); border: 1px solid var(--rand); color: var(--text);
+    padding: 6px 12px; border-radius: 7px; font-size: .82rem; cursor: pointer;
+    font-family: inherit;
+}
+.knopf:hover { background: var(--karte-hover); border-color: var(--rand-hell); }
 
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(ellipse at 15% 15%, rgba(102,126,234,.07) 0%, transparent 55%),
-                  radial-gradient(ellipse at 85% 85%, rgba(129,140,248,.06) 0%, transparent 55%);
-    }
-    .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
+/* ── Kennzahlen ─────────────────────────────────────────────── */
+.kennzahlen {
+    display: grid; gap: 14px; margin: 22px 0;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+.kz {
+    background: var(--karte); border: 1px solid var(--rand);
+    border-radius: var(--radius); padding: 16px 18px;
+    position: relative; overflow: hidden;
+}
+.kz::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--rand-hell);
+}
+.kz.gut::before { background: var(--gruen); }
+.kz.warn::before { background: var(--gelb); }
+.kz.schlecht::before { background: var(--rot); }
+.kz-titel { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--leise); margin-bottom: 8px; }
+.kz-wert { font-size: 1.85rem; font-weight: 640; line-height: 1.1; letter-spacing: -.02em; }
+.kz-wert small { font-size: .95rem; font-weight: 400; color: var(--gedaempft); }
+.kz-zusatz { font-size: .78rem; color: var(--gedaempft); margin-top: 5px; }
+.balken { height: 4px; background: var(--bg-alt); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+.balken i { display: block; height: 100%; background: var(--gruen); border-radius: 3px; }
+.balken i.warn { background: var(--gelb); }
+.balken i.schlecht { background: var(--rot); }
 
-    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
-    .brand { font-size: 1.3rem; font-weight: 800; }
-    .brand span { color: var(--accent); }
-    .updated { color: var(--muted); font-size: .8rem; }
-    .logout { color: var(--muted); font-size: .85rem; text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; }
-    .logout:hover { border-color: var(--border-hover); color: var(--text); }
+/* ── Reiter ─────────────────────────────────────────────────── */
+.reiter { display: flex; gap: 4px; border-bottom: 1px solid var(--rand); margin-bottom: 22px; overflow-x: auto; }
+.reiter button {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--gedaempft); padding: 10px 15px; font-size: .9rem; cursor: pointer;
+    font-family: inherit; white-space: nowrap; margin-bottom: -1px;
+}
+.reiter button:hover { color: var(--text); }
+.reiter button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 550; }
+.reiter .zahl {
+    background: var(--rand); color: var(--gedaempft); border-radius: 20px;
+    padding: 1px 7px; font-size: .72rem; margin-left: 6px;
+}
+.blatt[hidden] { display: none; }
 
-    .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; text-align: center; gap: 18px; }
-    .login-screen h1 { font-size: 1.6rem; }
-    .login-screen p { color: var(--muted); max-width: 380px; }
-    .discord-btn {
-      display: inline-flex; align-items: center; gap: 10px; background: var(--discord); color: #fff;
-      padding: 12px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: .95rem;
-    }
-    .discord-btn:hover { opacity: .9; }
-    .denied { color: var(--danger); }
+/* ── Karten & Raster ────────────────────────────────────────── */
+.karte {
+    background: var(--karte); border: 1px solid var(--rand);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 18px;
+}
+.karte-kopf {
+    padding: 13px 18px; border-bottom: 1px solid var(--rand);
+    display: flex; align-items: center; gap: 10px;
+}
+.karte-kopf h2 { font-size: .92rem; font-weight: 600; }
+.karte-kopf .neben { margin-left: auto; font-size: .78rem; color: var(--gedaempft); }
+.karte-koerper { padding: 16px 18px; }
+.raster { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px 20px;
-    }
-    .card .label { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
-    .card .value { font-size: 1.7rem; font-weight: 800; }
-    .card .sub { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+/* ── Container-Kacheln ──────────────────────────────────────── */
+.container-raster { display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); }
+.cont {
+    background: var(--bg-alt); border: 1px solid var(--rand); border-radius: 8px;
+    padding: 11px 13px; display: flex; align-items: center; gap: 10px;
+}
+.punkt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--leise); }
+.punkt.gruen { background: var(--gruen); box-shadow: 0 0 0 3px rgba(63,185,80,.14); }
+.punkt.gelb { background: var(--gelb); box-shadow: 0 0 0 3px rgba(210,153,34,.14); }
+.punkt.rot { background: var(--rot); box-shadow: 0 0 0 3px rgba(248,81,73,.14); }
+.cont-name { font-size: .84rem; font-weight: 520; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cont-meta { font-size: .72rem; color: var(--leise); margin-top: 1px; }
+.cont-rechts { margin-left: auto; text-align: right; font-size: .72rem; color: var(--gedaempft); white-space: nowrap; }
 
-    .diskbar { height: 8px; border-radius: 4px; background: var(--surface2); overflow: hidden; margin-top: 10px; }
-    .diskbar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
-    .diskbar-fill.warn { background: var(--warning); }
-    .diskbar-fill.danger { background: var(--danger); }
+/* ── Tabellen ───────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+th {
+    text-align: left; font-weight: 550; color: var(--leise); padding: 8px 10px;
+    border-bottom: 1px solid var(--rand); font-size: .74rem;
+    text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+}
+td { padding: 9px 10px; border-bottom: 1px solid rgba(38,48,59,.55); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.018); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabelle-scroll { overflow-x: auto; }
 
-    section { margin-bottom: 32px; }
-    h2 { font-size: 1.1rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-    h3 { font-size: .9rem; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .03em; }
-    .count-pill { font-size: .75rem; color: var(--muted); font-weight: 500; background: var(--surface2); padding: 2px 9px; border-radius: 999px; }
+/* ── Protokoll ──────────────────────────────────────────────── */
+.filter { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.filter button {
+    background: var(--bg-alt); border: 1px solid var(--rand); color: var(--gedaempft);
+    padding: 5px 11px; border-radius: 20px; font-size: .78rem; cursor: pointer; font-family: inherit;
+}
+.filter button:hover { border-color: var(--rand-hell); color: var(--text); }
+.filter button[aria-pressed="true"] { background: var(--akzent); border-color: var(--akzent); color: #1a1200; font-weight: 550; }
+.suche {
+    background: var(--bg-alt); border: 1px solid var(--rand); color: var(--text);
+    padding: 6px 11px; border-radius: 7px; font-size: .82rem; font-family: inherit;
+    min-width: 190px; margin-left: auto;
+}
+.suche:focus { outline: none; border-color: var(--akzent); }
+.eintrag {
+    display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(38,48,59,.55);
+}
+.eintrag:last-child { border-bottom: none; }
+.e-links { flex-shrink: 0; width: 108px; }
+.e-typ {
+    display: inline-block; font-size: .66rem; font-weight: 600; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 4px; background: var(--rand); color: var(--gedaempft);
+}
+.e-typ.ERRORS { background: rgba(248,81,73,.15); color: #ff8983; }
+.e-typ.WARNINGS { background: rgba(210,153,34,.15); color: #e3b341; }
+.e-typ.SYSTEM { background: rgba(88,166,255,.13); color: var(--blau); }
+.e-typ.WATCHDOG, .e-typ.BOT-STATUS { background: rgba(163,113,247,.15); color: #bc8cff; }
+.e-typ.BACKUP, .e-typ.SPEICHER { background: rgba(63,185,80,.13); color: #56d364; }
+.e-typ.SICHERHEIT { background: rgba(248,81,73,.13); color: #ff8983; }
+.e-zeit { font-size: .7rem; color: var(--leise); margin-top: 4px; }
+.e-rechts { min-width: 0; flex: 1; }
+.e-titel { font-size: .87rem; font-weight: 550; margin-bottom: 2px; }
+.e-text {
+    font-size: .82rem; color: var(--gedaempft); white-space: pre-wrap;
+    word-break: break-word; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .77rem; line-height: 1.5;
+}
+.e-quelle { font-size: .7rem; color: var(--leise); margin-top: 4px; }
+.mehr {
+    background: none; border: none; color: var(--blau); font-size: .76rem;
+    cursor: pointer; padding: 3px 0; font-family: inherit;
+}
 
-    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    th, td { text-align: left; padding: 11px 16px; font-size: .87rem; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface2); }
-    td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    th.num { text-align: right; }
-    .truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
-    .dot.up { background: var(--success); box-shadow: 0 0 8px var(--success); }
-    .dot.down { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
-    .dot.unknown { background: var(--muted); }
-
-    .mono { font-family: 'Consolas', monospace; font-size: .82rem; color: var(--muted); }
-    .muted { color: var(--muted); }
-    .badge { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--surface2); color: var(--muted); white-space: nowrap; }
-    .badge.healthy { background: rgba(34,197,94,.15); color: var(--success); }
-    .badge.unhealthy { background: rgba(239,68,68,.15); color: var(--danger); }
-    .badge.pub { background: rgba(34,197,94,.15); color: var(--success); }
-    .badge.priv { background: rgba(100,116,139,.2); color: var(--muted); }
-
-    .empty { text-align: center; color: var(--muted); padding: 40px; }
-
-    .log-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-    .log-filter-btn {
-      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-      font-size: .78rem; font-weight: 600; padding: 5px 12px; border-radius: 999px;
-      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-    }
-    .log-filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
-    .log-filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .log-filter-btn .n { opacity: .7; font-weight: 500; }
-
-    .log-list { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow-y: auto; }
-    .log-entry {
-      background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--muted);
-      border-radius: 8px; padding: 10px 14px; font-size: .85rem;
-    }
-    .log-entry-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-    .log-entry-title { font-weight: 700; }
-    .log-entry-time { color: var(--muted); font-size: .74rem; white-space: nowrap; flex-shrink: 0; }
-    .log-entry-desc { color: var(--muted); margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
-    .log-entry-fields { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; }
-    .log-entry-fields b { color: var(--text); }
-    .log-entry.is-new { animation: logFlash 1.6s ease-out; }
-    .log-toggle {
-      background: none; border: none; color: var(--accent); font-size: .76rem; font-weight: 600;
-      cursor: pointer; padding: 4px 0 0; text-decoration: underline;
-    }
-    @keyframes logFlash { from { background: rgba(129,140,248,.18); } to { background: var(--surface); } }
-    .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: var(--danger); padding: 14px 18px; border-radius: var(--radius); margin-bottom: 20px; }
-
-    details.project {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      margin-bottom: 12px; overflow: hidden;
-    }
-    details.project[open] { border-color: var(--border-hover); }
-    details.project summary {
-      list-style: none; cursor: pointer; padding: 16px 20px; display: flex;
-      align-items: center; justify-content: space-between; gap: 12px;
-    }
-    details.project summary::-webkit-details-marker { display: none; }
-    .proj-title { font-weight: 700; font-size: 1rem; }
-    .proj-summary { color: var(--muted); font-size: .82rem; }
-    .chevron { transition: transform .15s; color: var(--muted); flex-shrink: 0; }
-    details.project[open] .chevron { transform: rotate(90deg); }
-    .proj-body { padding: 4px 20px 20px; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
-  </style>
+/* ── Sonstiges ──────────────────────────────────────────────── */
+.leer { color: var(--leise); font-size: .85rem; padding: 22px; text-align: center; }
+.pille { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 550; }
+.pille.auf { background: rgba(63,185,80,.14); color: #56d364; }
+.pille.ab { background: rgba(248,81,73,.14); color: #ff8983; }
+.anmeldung { max-width: 380px; margin: 15vh auto; text-align: center; padding: 36px 30px;
+    background: var(--karte); border: 1px solid var(--rand); border-radius: 14px; }
+.anmeldung h1 { font-size: 1.25rem; margin-bottom: 8px; }
+.anmeldung p { color: var(--gedaempft); font-size: .88rem; margin-bottom: 22px; }
+.anmeldung a {
+    display: inline-block; background: #5865f2; color: #fff; padding: 10px 22px;
+    border-radius: 8px; font-weight: 550; font-size: .9rem;
+}
+.anmeldung a:hover { background: #4752c4; text-decoration: none; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .78rem; }
+@media (max-width: 640px) {
+    .e-links { width: 84px; }
+    .kz-wert { font-size: 1.5rem; }
+    .suche { margin-left: 0; width: 100%; }
+}
+</style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
+<div id="app"></div>
 
 <script>
-  const app = document.getElementById('app');
+(function () {
+"use strict";
 
-  function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  // Nur fuer Log-Text: **fett** und `code` aus Discord-Embeds lesbar machen.
-  // Immer erst escapen, dann auf dem bereits-sicheren Text die Tags einsetzen -
-  // nie umgekehrt, sonst waere das ein Einfallstor fuer eingeschleusten HTML-Text.
-  function escMd(s) {
+// ── Hilfsmittel ──────────────────────────────────────────────
+function esc(s) {
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+// Erst maskieren, dann Auszeichnungen umsetzen - nie umgekehrt, sonst liesse
+// sich ueber Log-Inhalte fremdes Markup einschleusen.
+function escMd(s) {
     return esc(s)
-      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-      .replace(/`([^`]+?)`/g, '<code>$1</code>');
-  }
+        .replace(/```([\s\S]*?)```/g, function (_, i) { return "<code>" + i + "</code>"; })
+        .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+function zahl(n) {
+    if (n == null || isNaN(n)) return "–";
+    return Number(n).toLocaleString("de-DE");
+}
+function relativ(iso) {
+    if (!iso) return "–";
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (isNaN(s)) return "–";
+    if (s < 60) return "gerade eben";
+    if (s < 3600) return Math.floor(s / 60) + " Min.";
+    if (s < 86400) return Math.floor(s / 3600) + " Std.";
+    return Math.floor(s / 86400) + " Tage";
+}
+function uhrzeit(iso) {
+    if (!iso) return "–";
+    var d = new Date(iso);
+    if (isNaN(d)) return "–";
+    var heute = new Date().toDateString() === d.toDateString();
+    return heute
+        ? d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) + " " +
+          d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
 
-  function fmtDate(iso) {
-    if (!iso) return '–';
-    const d = new Date(iso);
-    return d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-  }
+var zustand = { stats: null, logs: [], typen: [], zusammenfassung: null, filter: "", suche: "", blatt: "uebersicht" };
 
-  function fmtRelative(iso) {
-    if (!iso) return '–';
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const days = Math.floor(diffMs / 86400000);
-    if (days > 0) return `vor ${days}d`;
-    const hours = Math.floor(diffMs / 3600000);
-    if (hours > 0) return `vor ${hours}h`;
-    const mins = Math.floor(diffMs / 60000);
-    return mins > 0 ? `vor ${mins}m` : 'gerade eben';
-  }
+// ── Einstieg ─────────────────────────────────────────────────
+async function start() {
+    var ich;
+    try { ich = await fetch("/api/me").then(function (r) { return r.json(); }); }
+    catch (e) { ich = {}; }
 
-  function fmtNum(n) {
-    if (n === null || n === undefined) return '–';
-    return n.toLocaleString('de-DE');
-  }
+    if (!ich || !ich.loggedIn) { anmeldungZeigen(); return; }
 
-  function fmtBytes(n) {
-    if (n === null || n === undefined) return '–';
-    if (n < 1024) return `${n} B`;
-    if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
-    if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
-    return `${(n / 1024 ** 3).toFixed(2)} GB`;
-  }
-
-  async function init() {
-    const me = await fetch('/api/me').then(r => r.json());
-    if (!me.loggedIn) return renderLogin();
-    renderLoading();
     try {
-      const stats = await fetch('/api/stats').then(r => {
-        if (!r.ok) throw new Error('no-data');
-        return r.json();
-      });
-      renderDashboard(stats);
-    } catch {
-      renderLoading(true);
-    }
-    // Eigenstaendig von den Stats: Logs sind live, Stats sind ein
-    // periodischer Snapshot. Ein fehlender Stats-Collector soll die
-    // Logs-Ansicht nicht mit runterreissen.
-    initLogs();
-  }
+        zustand.stats = await fetch("/api/stats").then(function (r) { return r.ok ? r.json() : null; });
+    } catch (e) { zustand.stats = null; }
 
-  function renderLogin() {
-    const params = new URLSearchParams(location.search);
-    const denied = params.get('error') === 'auth_failed';
-    app.innerHTML = `
-      <div class="login-screen">
-        <h1>admin.eselbande.com</h1>
-        <p>Privates Projekt-Dashboard. Nur für einen bestimmten Discord-Account freigeschaltet.</p>
-        ${denied ? '<p class="denied">Anmeldung fehlgeschlagen.</p>' : ''}
-        <a class="discord-btn" href="/auth/login">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-          Mit Discord anmelden
-        </a>
-      </div>`;
-  }
+    geruestZeichnen(ich);
+    await protokollLaden(true);
+    blattZeichnen();
 
-  // Kopfzeile + Logs-Bereich unabhaengig vom Stats-Ladezustand, damit ein
-  // fehlender Stats-Collector die Logs-Ansicht nicht mit ausblendet.
-  function shellHeader(statsBody) {
-    return `
-      <header>
-        <div class="brand"><span>eselbande</span> · Projekt-Dashboard</div>
-        <div style="display:flex;align-items:center;gap:14px">
-          <a class="logout" href="/auth/logout">Abmelden</a>
-        </div>
-      </header>
+    // Protokoll haeufiger nachladen als die Statistik: Meldungen sind das,
+    // weswegen man hier draufschaut. Die Container-Werte sammelt der Server
+    // ohnehin nur alle paar Minuten ein.
+    setInterval(function () { protokollLaden(false); }, 15000);
+    setInterval(statistikLaden, 60000);
+}
 
-      <section>
-        <h2>Live-Logs <span class="count-pill" id="logs-count-pill">–</span></h2>
-        <div class="log-filters" id="log-filters"></div>
-        <div id="logs-list"><div class="empty">Lädt …</div></div>
-      </section>
-
-      ${statsBody}
-    `;
-  }
-
-  function renderLoading(failed) {
-    app.innerHTML = shellHeader(
-      `<div class="empty">${failed ? 'Noch keine Projekt-Statistiken – der Collector läuft alle paar Minuten auf dem Server. Die Logs oben laufen unabhängig davon.' : 'Lädt …'}</div>`
-    );
-  }
-
-  function statusPill(up) {
-    if (up === null || up === undefined) return `<span class="dot unknown"></span>unbekannt`;
-    return up ? `<span class="dot up"></span>online` : `<span class="dot down"></span>down`;
-  }
-
-  function table(headers, rows, emptyText) {
-    if (!rows || !rows.length) return `<div class="empty">${emptyText || 'Keine Daten.'}</div>`;
-    const head = headers.map(h => `<th${h.num ? ' class="num"' : ''}>${h.label}</th>`).join('');
-    return `<table><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
-  }
-
-  // ── Container-Übersicht ───────────────────────────────────────────────────
-  function containersTable(containers) {
-    if (!containers || !containers.length) return '<div class="empty">Keine Container-Daten.</div>';
-    const rows = containers.map(c => {
-      const badge = c.health
-        ? `<span class="badge ${c.health}">${esc(c.health)}</span>`
-        : `<span class="badge">${c.running ? 'läuft' : esc(c.status)}</span>`;
-      const ports = (c.ports || []).length ? c.ports.join(', ') : '–';
-      const res = c.running && c.cpu_pct !== undefined
-        ? `${c.cpu_pct ?? '–'}% · ${c.mem_usage || '–'}`
-        : '–';
-      return `
-        <tr>
-          <td>${statusPill(c.running)}<span class="mono">${esc(c.name)}</span></td>
-          <td class="muted mono">${esc(c.id || '')}</td>
-          <td class="muted truncate" title="${esc(c.image)}">${esc(c.image)}</td>
-          <td>${badge}</td>
-          <td class="muted">${ports}</td>
-          <td class="muted">${res}</td>
-          <td class="muted">${c.started_at ? fmtRelative(c.started_at) : '–'}</td>
-          <td class="muted">${c.restart_count > 0 ? c.restart_count + '×' : '–'}</td>
-        </tr>`;
-    });
-    return table([
-      { label: 'Container' }, { label: 'ID' }, { label: 'Image' }, { label: 'Status' },
-      { label: 'Ports' }, { label: 'CPU · RAM' }, { label: 'Läuft seit' }, { label: 'Neustarts' },
-    ], rows);
-  }
-
-  function statuspageTable(services) {
-    if (!services || !services.length) return '<div class="empty">Keine Statuspage-Daten.</div>';
-    const rows = services.map(s => `
-      <tr>
-        <td>${statusPill(s.up)}<span class="mono">${esc(s.service)}</span></td>
-        <td class="muted num">${s.uptime_pct !== null ? s.uptime_pct + '%' : '–'}</td>
-        <td class="muted num">${s.latency_ms !== null ? s.latency_ms + ' ms' : '–'}</td>
-        <td class="muted num">${fmtNum(s.sample_count)}</td>
-        <td class="muted">${fmtDate(s.last_check)}</td>
-      </tr>`);
-    return table([
-      { label: 'Dienst' }, { label: 'Uptime', num: true }, { label: 'Latenz', num: true },
-      { label: 'Messungen', num: true }, { label: 'Letzte Messung' },
-    ], rows);
-  }
-
-  // ── Projekt-Detailkarten ──────────────────────────────────────────────────
-  function projectPanel(key, title, summaryHtml, bodyHtml) {
-    return `
-      <details class="project" data-key="${key}">
-        <summary>
-          <div>
-            <div class="proj-title">${title}</div>
-            <div class="proj-summary">${summaryHtml}</div>
-          </div>
-          <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
-        </summary>
-        <div class="proj-body">${bodyHtml}</div>
-      </details>`;
-  }
-
-  function filehosterPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.files)} Dateien · ${d.storage_mb} MB · ${fmtNum(d.total_downloads)} Downloads · ${fmtNum(d.api_tokens)} Tokens`;
-    const files = (d.recent_files || []).map(f => `
-      <tr>
-        <td class="truncate" title="${esc(f.orig_name)}">${esc(f.orig_name)}</td>
-        <td class="muted num">${fmtBytes(f.size)}</td>
-        <td class="muted num">${fmtNum(f.downloads)}</td>
-        <td><span class="badge ${f.is_public ? 'pub' : 'priv'}">${f.is_public ? 'öffentlich' : 'privat'}</span></td>
-        <td class="muted">${fmtDate(f.created_at)}</td>
-      </tr>`);
-    const users = (d.user_list || []).map(u => `
-      <tr>
-        <td>${esc(u.username)}</td>
-        <td class="muted num">${fmtNum(u.files)}</td>
-        <td class="muted num">${fmtBytes(u.storage_bytes)}</td>
-        <td class="muted num">${fmtNum(u.downloads)}</td>
-      </tr>`);
-    return projectPanel('filehoster', 'EselShot / Filehoster', summary, `
-      <div class="two-col">
-        <div>
-          <h3>Neueste Dateien</h3>
-          ${table([{label:'Name'},{label:'Größe',num:true},{label:'Downloads',num:true},{label:'Sichtbarkeit'},{label:'Hochgeladen'}], files)}
-        </div>
-        <div>
-          <h3>Nutzer</h3>
-          ${table([{label:'Nutzer'},{label:'Dateien',num:true},{label:'Speicher',num:true},{label:'Downloads',num:true}], users)}
-        </div>
-      </div>`);
-  }
-
-  function zitatboardPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.quotes)} Zitate · ${fmtNum(d.votes)} Votes · ${fmtNum(d.users)} Nutzer`;
-    const top = (d.top_quotes || []).map(q => `
-      <tr>
-        <td class="truncate" title="${esc(q.text)}">„${esc(q.text)}“${q.attributed_to ? ' — ' + esc(q.attributed_to) : ''}</td>
-        <td class="muted">${esc(q.submitted_by || '–')}</td>
-        <td class="muted num">${q.score > 0 ? '+' : ''}${fmtNum(q.score)}</td>
-      </tr>`);
-    const recent = (d.recent_quotes || []).map(q => `
-      <tr>
-        <td class="truncate" title="${esc(q.text)}">„${esc(q.text)}“${q.attributed_to ? ' — ' + esc(q.attributed_to) : ''}</td>
-        <td class="muted">${esc(q.submitted_by || '–')}</td>
-        <td class="muted">${fmtDate(q.created_at)}</td>
-      </tr>`);
-    return projectPanel('zitatboard', 'Zitat-Board', summary, `
-      <div class="two-col">
-        <div>
-          <h3>Beliebteste Zitate</h3>
-          ${table([{label:'Zitat'},{label:'Von'},{label:'Punkte',num:true}], top)}
-        </div>
-        <div>
-          <h3>Neueste Zitate</h3>
-          ${table([{label:'Zitat'},{label:'Von'},{label:'Datum'}], recent)}
-        </div>
-      </div>`);
-  }
-
-  function linkshortenerPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.links)} Links · ${fmtNum(d.total_clicks)} Klicks · ${fmtNum(d.users)} Nutzer`;
-    const top = (d.top_links || []).map(l => `
-      <tr>
-        <td class="mono">/${esc(l.slug)}</td>
-        <td class="muted truncate" title="${esc(l.url)}">${esc(l.url)}</td>
-        <td class="muted num">${fmtNum(l.clicks)}</td>
-        <td class="muted">${esc(l.created_by || '–')}</td>
-      </tr>`);
-    return projectPanel('linkshortener', 'Linkshortener', summary, `
-      <h3>Meistgeklickte Links</h3>
-      ${table([{label:'Slug'},{label:'Ziel'},{label:'Klicks',num:true},{label:'Erstellt von'}], top)}`);
-  }
-
-  function eseltokensPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.users)} Nutzer · ${fmtNum(d.total_balance)} Guthaben · ${fmtNum(d.giveaways)} Giveaways`;
-    const roles = (d.role_breakdown || []).map(r => `
-      <tr><td>${esc(r.role)}</td><td class="muted num">${fmtNum(r.count)}</td></tr>`);
-    const top = (d.top_balances || []).map(u => `
-      <tr>
-        <td>${esc(u.username)}</td>
-        <td class="muted">${esc(u.role)}</td>
-        <td class="muted num">${fmtNum(u.balance)}</td>
-        <td class="muted num">${fmtNum(u.xp)}</td>
-      </tr>`);
-    const tx = (d.transaction_types || []).map(t => `
-      <tr>
-        <td class="mono">${esc(t.type)}</td>
-        <td class="muted num">${fmtNum(t.count)}</td>
-        <td class="muted num">${fmtNum(t.total_amount)}</td>
-      </tr>`);
-    return projectPanel('eseltokens', 'EselTokens', summary, `
-      <div class="two-col">
-        <div>
-          <h3>Top-Guthaben</h3>
-          ${table([{label:'Nutzer'},{label:'Rolle'},{label:'Guthaben',num:true},{label:'XP',num:true}], top)}
-          <h3>Rollen</h3>
-          ${table([{label:'Rolle'},{label:'Anzahl',num:true}], roles)}
-        </div>
-        <div>
-          <h3>Transaktionsarten</h3>
-          ${table([{label:'Typ'},{label:'Anzahl',num:true},{label:'Summe',num:true}], tx)}
-        </div>
-      </div>`);
-  }
-
-  function fahrstuhlPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.command_executions)} Befehle · ${fmtNum(d.premium_guilds)} Premium-Server · ${fmtNum(d.premium_users)} Premium-Nutzer`;
-    const cmds = (d.top_commands || []).map(c => `
-      <tr>
-        <td class="mono">/${esc(c.command)}</td>
-        <td class="muted num">${fmtNum(c.count)}</td>
-        <td class="muted num">${c.failures > 0 ? fmtNum(c.failures) : '–'}</td>
-      </tr>`);
-    const errors = (d.recent_errors || []).map(e => `
-      <tr>
-        <td class="mono">/${esc(e.command)}</td>
-        <td class="muted truncate" title="${esc(e.error_message)}">${esc(e.error_message || '–')}</td>
-        <td class="muted">${fmtDate(e.timestamp)}</td>
-      </tr>`);
-    return projectPanel('fahrstuhl', 'Fahrstuhl', summary, `
-      <div class="two-col">
-        <div>
-          <h3>Meistgenutzte Befehle</h3>
-          ${table([{label:'Befehl'},{label:'Anzahl',num:true},{label:'Fehler',num:true}], cmds)}
-        </div>
-        <div>
-          <h3>Letzte Fehler</h3>
-          ${table([{label:'Befehl'},{label:'Meldung'},{label:'Datum'}], errors, 'Keine Fehler aufgezeichnet.')}
-        </div>
-      </div>`);
-  }
-
-  function musikbotPanel(d) {
-    if (!d) return '';
-    const summary = `${fmtNum(d.songs_played)} Songs gespielt · ${fmtNum(d.guilds)} Server`;
-    const top = (d.top_songs || []).map(s => `
-      <tr>
-        <td class="truncate" title="${esc(s.title)}">${esc(s.title)}</td>
-        <td class="muted">${esc(s.author || '–')}</td>
-        <td class="muted num">${fmtNum(s.play_count)}</td>
-      </tr>`);
-    const recent = (d.recent_plays || []).map(p => `
-      <tr>
-        <td class="truncate" title="${esc(p.title)}">${esc(p.title)}</td>
-        <td class="muted">${esc(p.author || '–')}</td>
-        <td class="muted">${fmtDate(p.played_at)}</td>
-      </tr>`);
-    return projectPanel('musikbot', 'Musikbot', summary, `
-      <div class="two-col">
-        <div>
-          <h3>Meistgespielte Songs</h3>
-          ${table([{label:'Titel'},{label:'Künstler'},{label:'Wiedergaben',num:true}], top)}
-        </div>
-        <div>
-          <h3>Zuletzt gespielt</h3>
-          ${table([{label:'Titel'},{label:'Künstler'},{label:'Datum'}], recent)}
-        </div>
-      </div>`);
-  }
-
-  function projectPanels(projects) {
-    const p = projects || {};
-    return [
-      filehosterPanel(p.filehoster),
-      zitatboardPanel(p.zitatboard),
-      linkshortenerPanel(p.linkshortener),
-      eseltokensPanel(p.eseltokens),
-      fahrstuhlPanel(p.fahrstuhl),
-      musikbotPanel(p.musikbot),
-    ].join('');
-  }
-
-  function summaryCards(stats) {
-    const running = (stats.containers || []).filter(c => c.running).length;
-    const total = (stats.containers || []).length;
-    const disk = stats.disk;
-    const diskCls = disk ? (disk.used_pct > 90 ? 'danger' : disk.used_pct > 75 ? 'warn' : '') : '';
-    return `
-      <div class="card">
-        <div class="label">Container</div>
-        <div class="value">${running} / ${total}</div>
-        <div class="sub">laufen</div>
-      </div>
-      ${disk ? `
-      <div class="card">
-        <div class="label">Festplatte</div>
-        <div class="value">${disk.used_pct}%</div>
-        <div class="sub">${disk.used_gb} GB von ${disk.total_gb} GB · ${disk.free_gb} GB frei</div>
-        <div class="diskbar"><div class="diskbar-fill ${diskCls}" style="width:${disk.used_pct}%"></div></div>
-      </div>` : ''}`;
-  }
-
-  function renderDashboard(stats) {
-    const staleWarning = (() => {
-      const genAge = Date.now() - new Date(stats.generated_at).getTime();
-      if (genAge > 30 * 60 * 1000) {
-        return `<div class="error-box">Daten sind ${fmtRelative(stats.generated_at)} alt – prüfen, ob der Collector-Cronjob noch läuft.</div>`;
-      }
-      return '';
-    })();
-
-    app.innerHTML = shellHeader(`
-      <div class="updated" style="margin:-14px 0 20px">Stats-Stand: ${fmtDate(stats.generated_at)} (${fmtRelative(stats.generated_at)})</div>
-
-      ${staleWarning}
-
-      <div class="grid">${summaryCards(stats)}</div>
-
-      <section>
-        <h2>Projekte <span class="count-pill">zum Aufklappen</span></h2>
-        ${projectPanels(stats.projects)}
-      </section>
-
-      <section>
-        <h2>Dienste <span class="count-pill">${(stats.containers||[]).length}</span></h2>
-        ${containersTable(stats.containers)}
-      </section>
-
-      <section>
-        <h2>Erreichbarkeit <span class="count-pill">statuspage.eselbande.com</span></h2>
-        ${statuspageTable(stats.statuspage)}
-      </section>
-    `);
-  }
-
-  // ── Live-Logs ─────────────────────────────────────────────────────────────
-  let logType = 'ALL';
-  let knownLogIds = new Set();
-  let logPollTimer = null;
-
-  function logColorStyle(color) {
-    if (!Number.isFinite(color)) return '';
-    const hex = '#' + (color >>> 0).toString(16).padStart(6, '0').slice(-6);
-    return `border-left-color:${hex}`;
-  }
-
-  const LOG_DESC_PREVIEW = 260;
-
-  function renderLogEntry(log, isNew) {
-    const fields = Array.isArray(log.fields) && log.fields.length
-      ? `<div class="log-entry-fields">${log.fields.map(f =>
-          `<span><b>${esc(f.name)}:</b> ${esc(f.value)}</span>`).join('')}</div>`
-      : '';
-    // Rohe Fehlerobjekte (z.B. Java-Stacktraces aus Lavalink) koennen
-    // mehrere tausend Zeichen lang sein - standardmaessig kuerzen statt die
-    // Liste unlesbar zu machen, mit Umschalter fuer den vollen Text.
-    let desc = '';
-    if (log.description) {
-      const full = escMd(log.description);
-      if (log.description.length > LOG_DESC_PREVIEW) {
-        const short = escMd(log.description.slice(0, LOG_DESC_PREVIEW)) + '…';
-        desc = `<div class="log-entry-desc log-entry-desc-short">${short}</div>` +
-               `<div class="log-entry-desc" hidden>${full}</div>` +
-               `<button class="log-toggle" type="button">mehr anzeigen</button>`;
-      } else {
-        desc = `<div class="log-entry-desc">${full}</div>`;
-      }
-    }
-    return `
-      <div class="log-entry${isNew ? ' is-new' : ''}" style="${logColorStyle(log.color)}" data-id="${log.id}">
-        <div class="log-entry-head">
-          <span class="log-entry-title">${esc(log.title || log.type)}</span>
-          <span class="log-entry-time" title="${esc(log.created_at)}">${fmtRelative(log.created_at)}</span>
-        </div>
-        ${desc}
-        ${fields}
-      </div>`;
-  }
-
-  // Ein Listener fuer alle Eintraege statt einer pro Button - funktioniert
-  // auch fuer Eintraege, die per Poll spaeter noch dazukommen.
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.log-toggle');
-    if (!btn) return;
-    const entry = btn.closest('.log-entry');
-    const [shortEl, fullEl] = entry.querySelectorAll('.log-entry-desc');
-    const expanded = !fullEl.hidden;
-    fullEl.hidden = expanded;
-    shortEl.hidden = !expanded;
-    btn.textContent = expanded ? 'mehr anzeigen' : 'weniger anzeigen';
-  });
-
-  async function loadLogTypes() {
-    const el = document.getElementById('log-filters');
-    if (!el) return;
+async function statistikLaden() {
     try {
-      const { types } = await fetch('/api/logs/types').then(r => r.json());
-      const total = types.reduce((sum, t) => sum + t.count, 0);
-      const btns = [{ type: 'ALL', count: total }, ...types];
-      el.innerHTML = btns.map(t => `
-        <button class="log-filter-btn${t.type === logType ? ' active' : ''}" data-type="${esc(t.type)}">
-          ${esc(t.type === 'ALL' ? 'Alle' : t.type)} <span class="n">${fmtNum(t.count)}</span>
-        </button>`).join('');
-      el.querySelectorAll('.log-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          logType = btn.dataset.type;
-          el.querySelectorAll('.log-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
-          knownLogIds = new Set();
-          loadLogs(true);
+        var neu = await fetch("/api/stats").then(function (r) { return r.ok ? r.json() : null; });
+        if (neu) { zustand.stats = neu; kennzahlenZeichnen(); if (zustand.blatt !== "protokoll") blattZeichnen(); }
+    } catch (e) { /* naechster Versuch in einer Minute */ }
+}
+
+function anmeldungZeigen() {
+    document.getElementById("app").innerHTML =
+        '<div class="anmeldung">' +
+        '<h1>Dashboard</h1>' +
+        '<p>Dieser Bereich ist privat. Bitte mit Discord anmelden.</p>' +
+        '<a href="/auth/login">Mit Discord anmelden</a>' +
+        '</div>';
+}
+
+// ── Geruest ──────────────────────────────────────────────────
+function geruestZeichnen(ich) {
+    var name = esc((ich && ich.user && (ich.user.global_name || ich.user.username)) || "");
+    document.getElementById("app").innerHTML =
+        '<header><div class="kopf">' +
+            '<div class="marke"><span>eselbande</span> Dashboard</div>' +
+            '<div class="kopf-rechts">' +
+                '<span><span class="puls"></span><span id="aktualisiert">läuft</span></span>' +
+                (name ? "<span>" + name + "</span>" : "") +
+                '<a class="knopf" href="/auth/logout">Abmelden</a>' +
+            '</div>' +
+        '</div></header>' +
+        '<div class="wrap">' +
+            '<div class="kennzahlen" id="kennzahlen"></div>' +
+            '<div class="reiter" id="reiter"></div>' +
+            '<div id="blatt"></div>' +
+        '</div>';
+
+    kennzahlenZeichnen();
+    reiterZeichnen();
+}
+
+function reiterZeichnen() {
+    var s = zustand.stats || {};
+    var reiter = [
+        { id: "uebersicht", text: "Übersicht" },
+        { id: "protokoll", text: "Protokoll" },
+        { id: "dienste", text: "Dienste", zahl: Object.keys(s.projects || {}).length }
+    ];
+    document.getElementById("reiter").innerHTML = reiter.map(function (r) {
+        return '<button data-blatt="' + r.id + '" aria-selected="' + (zustand.blatt === r.id) + '">' +
+            r.text + (r.zahl ? '<span class="zahl">' + r.zahl + "</span>" : "") + "</button>";
+    }).join("");
+
+    document.getElementById("reiter").addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-blatt]");
+        if (!b) return;
+        zustand.blatt = b.dataset.blatt;
+        Array.prototype.forEach.call(this.querySelectorAll("button"), function (x) {
+            x.setAttribute("aria-selected", String(x.dataset.blatt === zustand.blatt));
         });
-      });
-    } catch { /* Typen-Leiste ist ein Nice-to-have, kein Beinbruch bei Fehlern */ }
-  }
+        blattZeichnen();
+    });
+}
 
-  async function loadLogs(replace) {
-    const list = document.getElementById('logs-list');
-    const pill = document.getElementById('logs-count-pill');
-    if (!list) return;
+// ── Kennzahlen ───────────────────────────────────────────────
+function kennzahlenZeichnen() {
+    var s = zustand.stats;
+    var ziel = document.getElementById("kennzahlen");
+    if (!ziel) return;
+
+    var karten = [];
+
+    if (s && s.containers) {
+        var laufen = s.containers.filter(function (c) { return c.running; }).length;
+        var gesamt = s.containers.length;
+        var krank = s.containers.filter(function (c) { return c.running && c.health === "unhealthy"; }).length;
+        var stufe = krank ? "warn" : (laufen === gesamt ? "gut" : "schlecht");
+        karten.push({
+            stufe: stufe, titel: "Container",
+            wert: laufen + ' <small>/ ' + gesamt + "</small>",
+            zusatz: krank ? krank + " ungesund" : (laufen === gesamt ? "alle laufen" : (gesamt - laufen) + " gestoppt")
+        });
+    }
+
+    if (s && s.disk) {
+        var p = Number(s.disk.used_pct) || 0;
+        var st = p >= 90 ? "schlecht" : p >= 80 ? "warn" : "gut";
+        karten.push({
+            stufe: st, titel: "Speicher",
+            wert: p.toFixed(1) + " <small>%</small>",
+            zusatz: s.disk.free_gb + " GB frei von " + s.disk.total_gb + " GB",
+            balken: { pct: p, klasse: st === "gut" ? "" : st }
+        });
+    }
+
+    // Meldungen der letzten 24 Stunden. Bewusst aus der serverseitigen
+    // Zaehlung: die geladene Liste ist auf 200 Eintraege begrenzt und wuerde
+    // hier sonst einfach bei 200 stehenbleiben.
+    var zf = zustand.zusammenfassung;
+    if (zf) {
+        var nachTyp = {};
+        (zf.byType || []).forEach(function (t) { nachTyp[t.type] = t.count; });
+        var fehler = nachTyp.ERRORS || 0;
+        karten.push({
+            stufe: fehler > 50 ? "schlecht" : fehler > 0 ? "warn" : "gut",
+            titel: "Meldungen (24 Std.)",
+            wert: zahl(zf.total),
+            zusatz: fehler ? zahl(fehler) + " davon Fehler" : "keine Fehler"
+        });
+    }
+
+    if (s && s.statuspage && s.statuspage.length) {
+        var auf = s.statuspage.filter(function (x) { return x.up; }).length;
+        karten.push({
+            stufe: auf === s.statuspage.length ? "gut" : "warn",
+            titel: "Dienste erreichbar",
+            wert: auf + ' <small>/ ' + s.statuspage.length + "</small>",
+            zusatz: "laut Statuspage"
+        });
+    }
+
+    ziel.innerHTML = karten.map(function (k) {
+        return '<div class="kz ' + k.stufe + '">' +
+            '<div class="kz-titel">' + esc(k.titel) + "</div>" +
+            '<div class="kz-wert">' + k.wert + "</div>" +
+            '<div class="kz-zusatz">' + esc(k.zusatz) + "</div>" +
+            (k.balken ? '<div class="balken"><i class="' + k.balken.klasse + '" style="width:' +
+                Math.min(100, k.balken.pct) + '%"></i></div>' : "") +
+            "</div>";
+    }).join("");
+}
+
+// ── Blattwechsel ─────────────────────────────────────────────
+function blattZeichnen() {
+    var ziel = document.getElementById("blatt");
+    if (!ziel) return;
+    if (zustand.blatt === "protokoll") { ziel.innerHTML = protokollBlatt(); protokollVerdrahten(); protokollListe(); }
+    else if (zustand.blatt === "dienste") ziel.innerHTML = diensteBlatt();
+    else ziel.innerHTML = uebersichtBlatt();
+}
+
+// ── Übersicht ────────────────────────────────────────────────
+function uebersichtBlatt() {
+    var s = zustand.stats;
+    if (!s) return '<div class="karte"><div class="leer">Noch keine Daten gesammelt. Der Sammler läuft alle paar Minuten auf dem Server — das Protokoll funktioniert unabhängig davon.</div></div>';
+
+    var html = "";
+
+    // Container
+    var cs = (s.containers || []).slice().sort(function (a, b) {
+        if (a.running !== b.running) return a.running ? 1 : -1;   // Probleme nach oben
+        var ah = a.health === "unhealthy" ? 0 : 1, bh = b.health === "unhealthy" ? 0 : 1;
+        if (ah !== bh) return ah - bh;
+        return a.name.localeCompare(b.name);
+    });
+    html += '<div class="karte"><div class="karte-kopf"><h2>Container</h2>' +
+        '<span class="neben">' + cs.filter(function (c) { return c.running; }).length + " von " + cs.length + " laufen</span></div>" +
+        '<div class="karte-koerper"><div class="container-raster">' +
+        cs.map(function (c) {
+            var farbe = !c.running ? "rot" : c.health === "unhealthy" ? "gelb" : "gruen";
+            var kurz = c.name.replace(/-phase1$/, "");
+            var mem = c.mem_pct ? Math.round(Number(c.mem_pct)) + " %" : "";
+            return '<div class="cont">' +
+                '<span class="punkt ' + farbe + '"></span>' +
+                '<div style="min-width:0">' +
+                    '<div class="cont-name">' + esc(kurz) + "</div>" +
+                    '<div class="cont-meta">' + esc(c.running ? (c.health || "läuft") : c.status) +
+                    (c.restart_count ? " · " + c.restart_count + "× neu" : "") + "</div>" +
+                "</div>" +
+                '<div class="cont-rechts">' + (c.running ? "CPU " + (c.cpu_pct || "0") + " %<br>RAM " + mem : "") + "</div>" +
+            "</div>";
+        }).join("") + "</div></div></div>";
+
+    // Statuspage
+    if (s.statuspage && s.statuspage.length) {
+        var sp = s.statuspage.slice().sort(function (a, b) { return (a.up === b.up) ? a.service.localeCompare(b.service) : (a.up ? 1 : -1); });
+        html += '<div class="karte"><div class="karte-kopf"><h2>Erreichbarkeit</h2>' +
+            '<span class="neben">laut Statuspage</span></div><div class="tabelle-scroll"><table>' +
+            "<thead><tr><th>Dienst</th><th>Status</th><th class='num'>Verfügbarkeit</th><th class='num'>Antwortzeit</th><th>Zuletzt geprüft</th></tr></thead><tbody>" +
+            sp.map(function (x) {
+                return "<tr><td>" + esc(x.service) + "</td>" +
+                    '<td><span class="pille ' + (x.up ? "auf" : "ab") + '">' + (x.up ? "erreichbar" : "weg") + "</span></td>" +
+                    '<td class="num">' + (x.uptime_pct != null ? Number(x.uptime_pct).toFixed(1) + " %" : "–") + "</td>" +
+                    '<td class="num">' + (x.latency_ms != null ? x.latency_ms + " ms" : "–") + "</td>" +
+                    "<td>" + relativ(x.last_check) + "</td></tr>";
+            }).join("") + "</tbody></table></div></div>";
+    }
+
+    return html;
+}
+
+// ── Dienste ──────────────────────────────────────────────────
+function tabelle(kopf, zeilen, leerText) {
+    if (!zeilen || !zeilen.length) return '<div class="leer">' + esc(leerText || "Keine Daten.") + "</div>";
+    return '<div class="tabelle-scroll"><table><thead><tr>' +
+        kopf.map(function (h) { return "<th" + (h.num ? ' class="num"' : "") + ">" + esc(h.t || h) + "</th>"; }).join("") +
+        "</tr></thead><tbody>" +
+        zeilen.map(function (r) {
+            return "<tr>" + r.map(function (z, i) {
+                return "<td" + (kopf[i] && kopf[i].num ? ' class="num"' : "") + ">" + z + "</td>";
+            }).join("") + "</tr>";
+        }).join("") + "</tbody></table></div>";
+}
+
+function kennwert(label, wert) {
+    return '<div><div class="kz-titel">' + esc(label) + '</div><div style="font-size:1.3rem;font-weight:600">' + esc(wert) + "</div></div>";
+}
+
+function diensteBlatt() {
+    var p = (zustand.stats || {}).projects;
+    if (!p) return '<div class="karte"><div class="leer">Noch keine Projektdaten gesammelt.</div></div>';
+
+    var html = "";
+
+    function block(titel, kennzahlen, inhalt) {
+        return '<div class="karte"><div class="karte-kopf"><h2>' + esc(titel) + "</h2></div>" +
+            '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px">' + kennzahlen + "</div>" +
+            (inhalt || "") + "</div></div>";
+    }
+
+    if (p.musikbot) {
+        var m = p.musikbot;
+        html += block("Musikbot",
+            kennwert("Server", zahl(m.guilds)) + kennwert("Titel gespielt", zahl(m.songs_played)),
+            tabelle([{ t: "Titel" }, { t: "Interpret" }, { t: "Wiedergaben", num: true }],
+                (m.top_songs || []).slice(0, 8).map(function (s) {
+                    return [esc(s.title), esc(s.author), zahl(s.play_count)];
+                }), "Noch nichts gespielt."));
+    }
+
+    if (p.fahrstuhl) {
+        var f = p.fahrstuhl;
+        html += block("Fahrstuhl-Bot",
+            kennwert("Befehle gesamt", zahl(f.command_executions)) +
+            kennwert("Premium-Server", zahl(f.premium_guilds)) +
+            kennwert("Premium-Nutzer", zahl(f.premium_users)),
+            tabelle([{ t: "Befehl" }, { t: "Aufrufe", num: true }],
+                (f.top_commands || []).slice(0, 8).map(function (c) {
+                    return ["<code>/" + esc(c.command || c.name) + "</code>", zahl(c.count || c.executions)];
+                }), "Keine Befehlsdaten."));
+    }
+
+    if (p.eseltokens) {
+        var t = p.eseltokens;
+        html += block("EselTokens",
+            kennwert("Nutzer", zahl(t.users)) + kennwert("Guthaben gesamt", zahl(t.total_balance)) +
+            kennwert("XP gesamt", zahl(t.total_xp)) + kennwert("Verlosungen", zahl(t.giveaways)),
+            tabelle([{ t: "Nutzer" }, { t: "Guthaben", num: true }],
+                (t.top_balances || []).slice(0, 8).map(function (b) {
+                    return [esc(b.username || b.user_id), zahl(b.balance)];
+                }), "Keine Guthaben."));
+    }
+
+    if (p.zitatboard) {
+        var z = p.zitatboard;
+        html += block("Zitat-Board",
+            kennwert("Zitate", zahl(z.quotes)) + kennwert("Nutzer", zahl(z.users)) + kennwert("Stimmen", zahl(z.votes)),
+            tabelle([{ t: "Zitat" }, { t: "Stimmen", num: true }],
+                (z.top_quotes || []).slice(0, 6).map(function (q) {
+                    return [esc(String(q.text || q.quote || "").slice(0, 110)), zahl(q.votes || q.score)];
+                }), "Noch keine Zitate."));
+    }
+
+    if (p.filehoster) {
+        var fh = p.filehoster;
+        html += block("Filehoster",
+            kennwert("Dateien", zahl(fh.files)) + kennwert("Nutzer", zahl(fh.users)) +
+            kennwert("Belegt", (fh.storage_mb != null ? Number(fh.storage_mb).toFixed(1) + " MB" : "–")) +
+            kennwert("Downloads", zahl(fh.total_downloads)),
+            tabelle([{ t: "Datei" }, { t: "Größe", num: true }],
+                (fh.recent_files || []).slice(0, 6).map(function (x) {
+                    return [esc(x.filename || x.name), (x.size_mb != null ? Number(x.size_mb).toFixed(2) + " MB" : "–")];
+                }), "Keine Dateien."));
+    }
+
+    if (p.linkshortener) {
+        var l = p.linkshortener;
+        html += block("Linkshortener",
+            kennwert("Links", zahl(l.links)) + kennwert("Klicks", zahl(l.total_clicks)) + kennwert("Nutzer", zahl(l.users)),
+            tabelle([{ t: "Kürzel" }, { t: "Ziel" }, { t: "Klicks", num: true }],
+                (l.top_links || []).slice(0, 6).map(function (x) {
+                    return ["<code>" + esc(x.slug || x.code) + "</code>",
+                            esc(String(x.target || x.url || "").slice(0, 60)), zahl(x.clicks)];
+                }), "Keine Links."));
+    }
+
+    return html || '<div class="karte"><div class="leer">Keine Projektdaten.</div></div>';
+}
+
+// ── Protokoll ────────────────────────────────────────────────
+function protokollBlatt() {
+    return '<div class="karte">' +
+        '<div class="karte-kopf"><h2>Protokoll</h2><span class="neben" id="log-anzahl"></span></div>' +
+        '<div class="karte-koerper">' +
+            '<div class="filter" id="log-filter"></div>' +
+            '<div id="log-liste"><div class="leer">Lädt …</div></div>' +
+        "</div></div>";
+}
+
+function protokollVerdrahten() {
+    var f = document.getElementById("log-filter");
+    if (!f) return;
+
+    var knoepfe = '<button data-typ="" aria-pressed="' + (zustand.filter === "") + '">Alle</button>' +
+        zustand.typen.map(function (t) {
+            return '<button data-typ="' + esc(t.type) + '" aria-pressed="' + (zustand.filter === t.type) + '">' +
+                esc(t.type) + " <span class='zahl'>" + t.count + "</span></button>";
+        }).join("");
+    f.innerHTML = knoepfe + '<input class="suche" id="log-suche" type="search" placeholder="Durchsuchen …" value="' + esc(zustand.suche) + '">';
+
+    f.addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-typ]");
+        if (!b) return;
+        zustand.filter = b.dataset.typ;
+        Array.prototype.forEach.call(f.querySelectorAll("button[data-typ]"), function (x) {
+            x.setAttribute("aria-pressed", String(x.dataset.typ === zustand.filter));
+        });
+        protokollListe();
+    });
+
+    var suche = document.getElementById("log-suche");
+    var timer;
+    suche.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { zustand.suche = suche.value.trim().toLowerCase(); protokollListe(); }, 200);
+    });
+}
+
+async function protokollLaden(erst) {
     try {
-      const qs = new URLSearchParams({ limit: '100' });
-      if (logType !== 'ALL') qs.set('type', logType);
-      const { logs } = await fetch(`/api/logs?${qs}`).then(r => r.json());
+        var typen = await fetch("/api/logs/types").then(function (r) { return r.ok ? r.json() : []; });
+        zustand.typen = (Array.isArray(typen) ? typen : (typen.types || [])).filter(function (t) { return t && t.type; });
+    } catch (e) { /* Filter bleiben wie sie sind */ }
 
-      if (pill) pill.textContent = fmtNum(logs.length) + (logs.length === 100 ? '+' : '');
+    try {
+        zustand.zusammenfassung = await fetch("/api/logs/summary?hours=24")
+            .then(function (r) { return r.ok ? r.json() : null; });
+    } catch (e) { /* Kennzahl bleibt beim letzten Stand */ }
 
-      if (!logs.length) {
-        if (replace) list.innerHTML = '<div class="empty">Noch keine Logs in dieser Kategorie.</div>';
-        return;
-      }
+    try {
+        var antwort = await fetch("/api/logs?limit=200").then(function (r) { return r.ok ? r.json() : null; });
+        var liste = Array.isArray(antwort) ? antwort : (antwort && antwort.logs) || [];
+        zustand.logs = liste;
+    } catch (e) { /* naechster Durchlauf */ }
 
-      if (replace) {
-        knownLogIds = new Set(logs.map(l => l.id));
-        list.innerHTML = `<div class="log-list">${logs.map(l => renderLogEntry(l, false)).join('')}</div>`;
-        return;
-      }
+    var a = document.getElementById("aktualisiert");
+    if (a) a.textContent = "aktualisiert " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-      // Nur wirklich neue Eintraege vorne einfuegen, kein volles Neuzeichnen -
-      // sonst springt die Liste bei jedem Poll unter dem Cursor weg.
-      const fresh = logs.filter(l => !knownLogIds.has(l.id));
-      if (!fresh.length) return;
-      fresh.forEach(l => knownLogIds.add(l.id));
-      const container = list.querySelector('.log-list');
-      if (!container) { list.innerHTML = `<div class="log-list">${logs.map(l => renderLogEntry(l, false)).join('')}</div>`; return; }
-      container.insertAdjacentHTML('afterbegin', fresh.reverse().map(l => renderLogEntry(l, true)).join(''));
-    } catch { /* naechster Poll versucht es erneut */ }
-  }
+    kennzahlenZeichnen();
+    if (!erst && zustand.blatt === "protokoll") { protokollVerdrahten(); protokollListe(); }
+}
 
-  function initLogs() {
-    loadLogTypes();
-    loadLogs(true);
-    if (logPollTimer) clearInterval(logPollTimer);
-    logPollTimer = setInterval(() => { loadLogTypes(); loadLogs(false); }, 15_000);
-  }
+function protokollListe() {
+    var ziel = document.getElementById("log-liste");
+    if (!ziel) return;
 
-  init();
+    var liste = zustand.logs.filter(function (l) {
+        if (zustand.filter && l.type !== zustand.filter) return false;
+        if (zustand.suche) {
+            var heu = ((l.title || "") + " " + (l.description || "") + " " + (l.source || "")).toLowerCase();
+            if (heu.indexOf(zustand.suche) === -1) return false;
+        }
+        return true;
+    });
+
+    var z = document.getElementById("log-anzahl");
+    if (z) z.textContent = liste.length + " von " + zustand.logs.length + " Einträgen";
+
+    if (!liste.length) { ziel.innerHTML = '<div class="leer">Keine passenden Einträge.</div>'; return; }
+
+    ziel.innerHTML = liste.map(function (l) {
+        var text = String(l.description || "");
+        var lang = text.length > 300;
+        var kurz = lang ? text.slice(0, 300) + " …" : text;
+        return '<div class="eintrag">' +
+            '<div class="e-links">' +
+                '<span class="e-typ ' + esc(l.type) + '">' + esc(l.type) + "</span>" +
+                '<div class="e-zeit">' + uhrzeit(l.created_at) + "</div>" +
+            "</div>" +
+            '<div class="e-rechts">' +
+                (l.title ? '<div class="e-titel">' + escMd(l.title) + "</div>" : "") +
+                '<div class="e-text" data-kurz="' + esc(kurz) + '" data-lang="' + esc(text) + '">' + escMd(kurz) + "</div>" +
+                (lang ? '<button class="mehr" data-auf="0">mehr anzeigen</button>' : "") +
+                '<div class="e-quelle">' + esc(l.source || "") + "</div>" +
+            "</div>" +
+        "</div>";
+    }).join("");
+}
+
+// Ein einziger Zuhoerer statt einer je Eintrag - die Liste wird alle 15
+// Sekunden neu gezeichnet, einzelne Zuhoerer wuerden sich sonst ansammeln.
+document.addEventListener("click", function (e) {
+    var b = e.target.closest(".mehr");
+    if (!b) return;
+    var text = b.parentElement.querySelector(".e-text");
+    var auf = b.dataset.auf === "1";
+    text.innerHTML = escMd(auf ? text.dataset.kurz : text.dataset.lang);
+    b.dataset.auf = auf ? "0" : "1";
+    b.textContent = auf ? "mehr anzeigen" : "weniger anzeigen";
+});
+
+start();
+})();
 </script>
 </body>
 </html>
