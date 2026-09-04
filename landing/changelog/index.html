@@ -57,6 +57,13 @@
     // tag ist ein einzelnes Emoji, group fasst mehrere Eintraege desselben Tages zusammen.
     const ENTRIES = [
       {
+        date: "2026-09-05",
+        items: [
+          { tag: "🔒", title: "Shop: Race Condition bei Team-Code-Einlösung behoben", desc: "Sehr schnelles doppeltes Einreichen desselben Codes konnte in seltenen Fällen zu doppelter Freischaltung führen — jetzt ausgeschlossen." },
+          { tag: "🔒", title: "Konstant-zeitige Token-Vergleiche gehärtet", desc: "Interne API-Anfragen zwischen unseren Diensten vergleichen Zugangs-Token jetzt gegen Timing-Angriffe abgesichert." },
+        ],
+      },
+      {
         date: "2026-09-04",
         items: [
           { tag: "🛠️", title: "Fix: Team-Code-Einlösung für Eselbuilder Pro", desc: "Codes für Eselbuilder Pro ließen sich nicht einlösen ('Einlösen fehlgeschlagen') — behoben." },
