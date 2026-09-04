@@ -348,6 +348,9 @@
         .hc-cyan::before { background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(14,165,233,0.08)); }
         .hc-cyan:hover   { border-color: rgba(56,189,248,0.4); box-shadow: 0 24px 60px rgba(56,189,248,0.15); }
 
+        .hc-amber::before { background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.08)); }
+        .hc-amber:hover   { border-color: rgba(251,191,36,0.4); box-shadow: 0 24px 60px rgba(251,191,36,0.15); }
+
         .hc-glow {
             position: absolute;
             top: -60px; right: -60px;
@@ -359,6 +362,7 @@
         .hc-purple .hc-glow { background: #667eea; }
         .hc-pink   .hc-glow { background: #f093fb; }
         .hc-cyan   .hc-glow { background: #38bdf8; }
+        .hc-amber  .hc-glow { background: #fbbf24; }
 
         .hc-tag {
             display: inline-flex;
@@ -376,6 +380,7 @@
         .hc-purple .hc-tag { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.25); }
         .hc-pink   .hc-tag { background: rgba(240,147,251,0.15); color: #e879f9; border: 1px solid rgba(240,147,251,0.25); }
         .hc-cyan   .hc-tag { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25); }
+        .hc-amber  .hc-tag { background: rgba(251,191,36,0.15); color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
 
         .hc-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
 
@@ -425,6 +430,7 @@
         .hc-purple .hc-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .hc-pink   .hc-btn { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
         .hc-cyan   .hc-btn { background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: white; }
+        .hc-amber  .hc-btn { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1206; }
 
         /* ── Services grid ── */
         .services-grid {
@@ -586,6 +592,7 @@
             eselbande.com
         </a>
         <div class="nav-links">
+            <a class="nav-link" href="https://shop.eselbande.com">Shop</a>
             <a class="nav-link" href="https://go.eselbande.com">Links</a>
             <a class="nav-link" href="https://files.eselbande.com">Files</a>
             <a class="nav-link" href="https://quotes.eselbande.com">Zitate</a>
@@ -624,7 +631,7 @@
     <section id="services">
         <div class="section-label">Highlights</div>
         <div class="section-title">Das Herzstück der Bande</div>
-        <p class="section-sub">Drei große Projekte, die alles zusammenhalten.</p>
+        <p class="section-sub">Vier große Projekte, die alles zusammenhalten.</p>
 
         <div class="highlights">
             <a class="highlight-card hc-purple" href="/fahrstuhl/">
@@ -677,6 +684,21 @@
                 </div>
                 <span class="hc-btn">EselMusic öffnen →</span>
             </a>
+
+            <a class="highlight-card hc-amber" href="https://eselbuilder.eselbande.com">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">🤖 KI-Tool</span>
+                <span class="hc-icon">🤖</span>
+                <div class="hc-title">Eselbuilder</div>
+                <div class="hc-desc">KI-gestützte Server-Planung für Discord. Beschreibe deinen Server, Eselbuilder baut Rollen, Kanäle und Berechtigungen automatisch auf — oder optimiert, was schon da ist.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Server-Aufbau</span>
+                    <span class="hc-feature">Optimierung</span>
+                    <span class="hc-feature">Audit & Fix</span>
+                    <span class="hc-feature">Backups</span>
+                </div>
+                <span class="hc-btn">Eselbuilder öffnen →</span>
+            </a>
         </div>
 
         <div class="section-label">Alle Services</div>
@@ -684,6 +706,13 @@
         <p class="section-sub">Alles was die Eselbande am Laufen hält.</p>
 
         <div class="services-grid">
+            <a class="service-card" href="https://shop.eselbande.com">
+                <span class="service-icon">🛒</span>
+                <div>
+                    <div class="service-name">Shop</div>
+                    <div class="service-desc">Fahrstuhl Premium und Eselbuilder Pro kaufen. shop.eselbande.com</div>
+                </div>
+            </a>
             <a class="service-card" href="https://go.eselbande.com">
                 <span class="service-icon">🔗</span>
                 <div>
@@ -761,6 +790,8 @@
             <a class="footer-link" href="https://team.eselbande.com">Team</a>
             <a class="footer-link" href="/fahrstuhl/">Dashboard</a>
             <a class="footer-link" href="/eseltokens/">EselTokens</a>
+            <a class="footer-link" href="https://shop.eselbande.com">Shop</a>
+            <a class="footer-link" href="https://eselbuilder.eselbande.com">Eselbuilder</a>
         </div>
         <div class="footer-copy">© 2026 eselbande.com &nbsp;·&nbsp; created by Txxle &amp; Elite</div>
     </footer>
