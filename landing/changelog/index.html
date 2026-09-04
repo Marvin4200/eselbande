@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Changelog – Eselbande</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background:#0d0d1a; color:#e0e0e0; margin:0; padding:0; }
+  .container { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { color: #fff; border-bottom: 2px solid #5865F2; padding-bottom: 12px; }
+  .intro { color: #bbb; line-height: 1.7; margin-bottom: 8px; }
+  .meta { color: #555; font-size: 0.85em; margin: -4px 0 32px; }
+  a { color: #5865F2; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back { display: inline-block; margin-bottom: 24px; background: #1a1a2e; border: 1px solid #333;
+          border-radius: 6px; padding: 6px 14px; color: #aaa; font-size: 0.85em; }
+
+  .roadmap { background:#1a1a2e; border:1px solid #333; border-left:3px solid #5865F2;
+             border-radius:8px; padding:16px 18px; margin-bottom:40px; }
+  .roadmap h2 { margin:0 0 10px; color:#a0a8ff; font-size:1.05rem; }
+  .roadmap ul { margin:0; padding-left:20px; }
+  .roadmap li { line-height:1.8; color:#ccc; }
+  .roadmap .status { font-size:.75em; color:#888; }
+
+  .day { margin-bottom: 36px; }
+  .day-date { color: #a0a8ff; font-weight: 700; font-size: 0.95rem; margin-bottom: 14px;
+              border-bottom: 1px solid #23233a; padding-bottom: 8px; }
+  .entry { display: flex; gap: 12px; padding: 10px 0; }
+  .entry-tag { flex-shrink: 0; width: 34px; text-align: center; font-size: 1.15rem; }
+  .entry-body { flex: 1; }
+  .entry-title { color: #fff; font-weight: 600; margin: 0 0 3px; font-size: 0.95rem; }
+  .entry-desc { color: #999; font-size: 0.85rem; line-height: 1.6; margin: 0; }
+
+  .empty { color: #666; text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">← Zurück zu eselbande.com</a>
+  <h1>Changelog</h1>
+  <p class="intro">Was sich bei Fahrstuhl, Eselbuilder, dem Shop und den anderen Eselbande-Diensten
+    tut — neueste Änderungen zuerst.</p>
+  <p class="meta">Fragen oder Feedback? <a href="https://discord.gg/zfzDHKcWDx" target="_blank" rel="noopener">Support-Discord</a></p>
+
+  <div class="roadmap">
+    <h2>🔭 Was als Nächstes kommt</h2>
+    <ul>
+      <li>Umstellung des Shops auf echte Zahlungen (Production) <span class="status">— in Vorbereitung</span></li>
+    </ul>
+  </div>
+
+  <div id="log"></div>
+  <p class="empty" id="empty" hidden>Noch keine Einträge.</p>
+
+  <script>
+    // Neuen Eintrag hinzufuegen: oben in ENTRIES einfuegen, absteigend nach Datum sortiert.
+    // tag ist ein einzelnes Emoji, group fasst mehrere Eintraege desselben Tages zusammen.
+    const ENTRIES = [
+      {
+        date: "2026-09-04",
+        items: [
+          { tag: "🛒", title: "Neuer zentraler Shop: shop.eselbande.com", desc: "Fahrstuhl Premium und Eselbuilder Pro an einem Ort kaufen, Bezahlung ueber Paddle." },
+          { tag: "🔑", title: "Team-Zugangscodes", desc: "Codes fuers Team schalten Produkte kostenlos frei, z.B. fuer Gewinnspiele oder Tests." },
+          { tag: "🎫", title: "Ticket-Panel jetzt wirklich live", desc: "Staff-Online, Warteschlange und Bewertung aktualisieren sich automatisch bei jedem Ticket." },
+          { tag: "🧩", title: "Mehrere Ticket-Panels pro Server", desc: "Premium-Server koennen bis zu 3 Panels in verschiedenen Kanaelen einrichten, Pro unbegrenzt viele." },
+          { tag: "📄", title: "Einheitliche Nutzungsbedingungen & Datenschutz", desc: "Eine gemeinsame Version fuer alle Produkte statt mehrerer verstreuter Seiten." },
+        ],
+      },
+    ];
+
+    const log = document.getElementById("log");
+    const empty = document.getElementById("empty");
+    if (!ENTRIES.length) {
+      empty.hidden = false;
+    } else {
+      for (const day of ENTRIES) {
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+        const dateLabel = new Date(day.date + "T00:00:00").toLocaleDateString("de-DE", {
+          day: "numeric", month: "long", year: "numeric",
+        });
+        dayEl.innerHTML = `<div class="day-date">${dateLabel}</div>`;
+        for (const item of day.items) {
+          const entryEl = document.createElement("div");
+          entryEl.className = "entry";
+          entryEl.innerHTML = `
+            <div class="entry-tag">${item.tag}</div>
+            <div class="entry-body">
+              <p class="entry-title">${item.title}</p>
+              <p class="entry-desc">${item.desc}</p>
+            </div>`;
+          dayEl.appendChild(entryEl);
+        }
+        log.appendChild(dayEl);
+      }
+    }
+  </script>
+</div>
+</body>
+</html>
