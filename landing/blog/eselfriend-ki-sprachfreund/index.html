@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EselFriend: Wie ein KI-Freund im Sprachkanal wirklich funktioniert – Eselbande Blog</title>
+<meta name="description" content="EselFriend redet wirklich mit dir per Sprache-zu-Sprache, statt Text vorzulesen. Wie das technisch funktioniert, wo es hakt, und was wir daraus gelernt haben.">
+<link rel="canonical" href="https://eselbande.com/blog/eselfriend-ki-sprachfreund/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #080810; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08); --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; }
+  .container { max-width: 700px; margin: 0 auto; padding: 40px 20px 100px; }
+  .back { display: inline-block; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 6px 14px; color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .back:hover { color: var(--text); }
+  .meta { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  h1 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 1.5rem; color: #fff; }
+  h2 { font-size: 1.25rem; font-weight: 700; margin: 2.2rem 0 0.9rem; color: #fff; }
+  p { margin-bottom: 1.1rem; color: #cbd5e1; }
+  strong { color: #fff; }
+  a { color: var(--accent); }
+  ul { margin: 0 0 1.1rem 1.3rem; color: #cbd5e1; }
+  li { margin-bottom: 0.4rem; }
+  .callout { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+             border-radius: 10px; padding: 1rem 1.3rem; margin: 1.5rem 0; font-size: 0.95rem; color: #cbd5e1; }
+  .related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .related a { display: block; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/blog/" class="back">← Zurück zum Blog</a>
+  <div class="meta">6. September 2026 · Technik</div>
+  <h1>EselFriend: Wie ein KI-Freund im Sprachkanal wirklich funktioniert</h1>
+
+  <p>Die meisten "KI-Bots" auf Discord funktionieren nach demselben Muster: deine gesprochenen Worte werden per Spracherkennung zu Text, der Text geht an ein Sprachmodell, die Antwort des Modells wird per Text-zu-Sprache wieder vorgelesen. Funktioniert, klingt aber fast immer robotisch und hat spürbare Verzögerung – drei Umwege, drei Fehlerquellen.</p>
+
+  <p><strong>EselFriend macht das anders:</strong> Es läuft über eine echte Sprache-zu-Sprache-Verbindung (Google Geminis Live API). Kein Zwischenschritt über Text, ein einziger Round-Trip, spürbar niedrigere Latenz und eine natürlichere Stimme. Der Nachteil: Man bekommt eine fertige Blackbox, die sich in der Praxis anders verhält, als die Dokumentation vermuten lässt.</p>
+
+  <h2>Nur reagieren, wenn man wirklich gemeint ist</h2>
+  <p>Ein KI-Freund, der auf jedes Wort im Kanal reagiert, ist in einem belebten Sprachkanal mit mehreren Leuten schlicht nervig. EselFriend soll nur antworten, wenn er beim Namen angesprochen wird. Das Naheliegende wäre, die Spracherkennung nach seinem Namen zu durchsuchen – das Problem: Spracherkennung ist nie perfekt, und "Bob" wird nicht immer als "Bob" transkribiert.</p>
+  <p>Die robustere Lösung: Das Modell selbst entscheidet, ob es gemeint ist, und markiert das mit einem festen Wort im System-Prompt ("IGNORIEREN"), statt dass wir extern nach Namen suchen. Das Modell versteht Kontext besser, als eine Textsuche es je könnte.</p>
+
+  <div class="callout">Live-Bug, den wir erst durch echtes Nutzer-Feedback gefunden haben: Gemini kann einen Zug komplett ohne jede Ausgabe beenden – kein Ton, keine Transkription, nicht mal das erwartete "IGNORIEREN". Ohne eine Sonderbehandlung dafür blieb EselFriend dann einfach für immer "hängen", bis zum nächsten Anlass. Behoben mit einem Timeout, der den Zustand zurücksetzt, sobald ein Zug ohne jede Reaktion endet.</div>
+
+  <h2>Was noch dazugehört</h2>
+  <ul>
+    <li><strong>Erinnerungsvermögen:</strong> EselFriend merkt sich selbstständig Dinge aus dem Gespräch für später – ganz ohne, dass man ihn explizit darum bitten muss.</li>
+    <li><strong>Automatisches Begrüßen und Verlassen:</strong> Kommt jemand in den Kanal, in dem EselFriend sitzt, begrüßt er automatisch. Verlässt die Person den Kanal, geht EselFriend von selbst wieder.</li>
+    <li><strong>Sauberes Unterbrechen:</strong> Redet man EselFriend mitten in seiner Antwort dazwischen, bricht er die inzwischen veraltete Antwort sofort ab, statt sie zu Ende zu spielen.</li>
+    <li><strong>Server-Aktionen:</strong> Auf Zuruf kann EselFriend Kanäle erstellen oder umbenennen und Mitglieder verschieben. Kicken, Bannen und Timeout verlangen vorher eine Bestätigung per Knopfdruck im Chat – und funktionieren nur, wenn die anfragende Person die nötige Berechtigung selbst hat.</li>
+  </ul>
+
+  <h2>Kostenlos nutzbar, mit fairen Grenzen</h2>
+  <p>Jeder EselBuilder-Nutzer bekommt kostenlos 10 Sprach-Minuten pro Monat und 30 Nachrichten pro Tag im Textchat. Mit Eselbuilder Pro sind es 60 Minuten und 300 Nachrichten – genug, um EselFriend wirklich in den Alltag auf dem Server zu integrieren, statt ihn nur einmal auszuprobieren.</p>
+
+  <div class="related">
+    <strong style="color:#fff;">Weiterlesen:</strong>
+    <a href="/blog/fahrstuhl-aufspaltung/">Warum wir Fahrstuhl in zwei Bots aufgeteilt haben →</a>
+    <a href="/blog/">← Alle Blogbeiträge</a>
+  </div>
+</div>
+</body>
+</html>

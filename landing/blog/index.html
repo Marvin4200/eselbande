@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog – Eselbande</title>
+<meta name="description" content="Hintergründe, Entscheidungen und Technik hinter Fahrstuhl, EselModerator, EselBuilder, EselFriend, EselTokens und EselShot.">
+<link rel="canonical" href="https://eselbande.com/blog/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #080810; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08); --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .container { max-width: 760px; margin: 0 auto; padding: 40px 20px 100px; }
+  .back { display: inline-block; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 6px 14px; color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .back:hover { color: var(--text); }
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #c4b5fd 0%, #818cf8 40%, #f093fb 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .lede { color: var(--muted); margin-bottom: 2.5rem; }
+  .post { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+          padding: 1.6rem 1.8rem; margin-bottom: 1.2rem; text-decoration: none; color: var(--text); transition: border-color .2s, transform .2s; }
+  .post:hover { border-color: rgba(129,140,248,0.4); transform: translateY(-2px); }
+  .post-date { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .post-title { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .post-excerpt { color: #9aa4b8; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">← Zurück zu eselbande.com</a>
+  <h1>Blog</h1>
+  <p class="lede">Hintergründe, Entscheidungen und Technik hinter den Eselbande-Projekten – aus erster Hand.</p>
+
+  <a class="post" href="/blog/eselfriend-ki-sprachfreund/">
+    <div class="post-date">6. September 2026</div>
+    <div class="post-title">EselFriend: Wie ein KI-Freund im Sprachkanal wirklich funktioniert</div>
+    <div class="post-excerpt">Kein Text-zu-Sprache-Umweg, sondern echtes Sprache-zu-Sprache-Gespräch – und was dabei alles schiefgehen kann, das man vorher nicht auf dem Schirm hat.</div>
+  </a>
+
+  <a class="post" href="/blog/fahrstuhl-aufspaltung/">
+    <div class="post-date">4. September 2026</div>
+    <div class="post-title">Warum wir Fahrstuhl in zwei Bots aufgeteilt haben</div>
+    <div class="post-excerpt">Ein Allround-Bot konkurriert mit jedem einzelnen Feature gegen einen Spezialisten – und verliert. Die Geschichte einer unbequemen, aber richtigen Entscheidung.</div>
+  </a>
+
+  <a class="post" href="/blog/eselshot-eigener-hoster/">
+    <div class="post-date">28. August 2026</div>
+    <div class="post-title">EselShot: Warum wir einen eigenen Screenshot-Uploader gebaut haben</div>
+    <div class="post-excerpt">Für etwas so Simples wie "Screenshot machen und Link teilen" gibt's fertige Tools. Wir haben trotzdem unseren eigenen gebaut – aus genau einem Grund.</div>
+  </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EselShot: Warum wir einen eigenen Screenshot-Uploader gebaut haben – Eselbande Blog</title>
+<meta name="description" content="Für Screenshot-Uploads gibt es fertige Tools wie Lightshot. Warum wir trotzdem EselShot gebaut haben, wie es funktioniert, und wie das eingebaute Auto-Update abläuft.">
+<link rel="canonical" href="https://eselbande.com/blog/eselshot-eigener-hoster/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #080810; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08); --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; }
+  .container { max-width: 700px; margin: 0 auto; padding: 40px 20px 100px; }
+  .back { display: inline-block; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 6px 14px; color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .back:hover { color: var(--text); }
+  .meta { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  h1 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 1.5rem; color: #fff; }
+  h2 { font-size: 1.25rem; font-weight: 700; margin: 2.2rem 0 0.9rem; color: #fff; }
+  p { margin-bottom: 1.1rem; color: #cbd5e1; }
+  strong { color: #fff; }
+  a { color: var(--accent); }
+  ul { margin: 0 0 1.1rem 1.3rem; color: #cbd5e1; }
+  li { margin-bottom: 0.4rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); color: #cbd5e1; }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; }
+  .related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .related a { display: block; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/blog/" class="back">← Zurück zum Blog</a>
+  <div class="meta">28. August 2026 · Hinter den Kulissen</div>
+  <h1>EselShot: Warum wir einen eigenen Screenshot-Uploader gebaut haben</h1>
+
+  <p>Screenshot machen, Bereich markieren, hochladen, Link teilen – dafür gibt es längst etablierte Tools wie Lightshot oder ShareX. Wir haben trotzdem <strong>EselShot</strong> gebaut, unser eigenes Windows-Tool im selben Stil. Der Grund ist simpel: Bei Lightshot landet jeder Screenshot auf fremden Servern, mit fremden Nutzungsbedingungen, ohne dass wir irgendeinen Einfluss darauf haben, wie lange er dort bleibt. Für ein Werkzeug, das jeder in der Community täglich für alles Mögliche nutzt, wollten wir das lieber selbst kontrollieren.</p>
+
+  <h2>Wie es funktioniert</h2>
+  <p>Taste drücken (<code>Druck</code>), der Bildschirm friert ein, Bereich aufziehen, optional mit Pfeilen, Text oder Markierungen etwas einzeichnen, hochladen – der Link liegt danach direkt in der Zwischenablage. Technisch steckt keine externe Grafikbibliothek dahinter: Bildschirmaufnahme läuft über GDI, die Oberfläche über Tkinter, PNG-Kodierung direkt über zlib. Der fertige Screenshot landet auf <code>files.eselbande.com</code>, unserem eigenen File-Hoster.</p>
+
+  <h2>Warum der Update-Prozess uns wichtig war</h2>
+  <p>Ein Desktop-Tool, das niemand manuell neu herunterlädt, veraltet schnell. Deshalb hat EselShot einen eingebauten Update-Mechanismus: Der Tray-Client prüft automatisch alle sechs Stunden im Hintergrund und zusätzlich über einen Menüpunkt, ob eine neue Version bereit steht. Ist eine da, lädt EselShot sie herunter und ersetzt sich selbst – ganz ohne dass man die Website erneut besuchen muss.</p>
+  <p>Der Trick dabei: Windows sperrt die Datei einer laufenden .exe. Man kann sich nicht einfach selbst überschreiben, während man läuft. Die Lösung ist ein kleines Hilfsskript, das wartet, bis der Prozess wirklich beendet ist, dann die neue Version an dieselbe Stelle kopiert und das Programm automatisch neu startet.</p>
+
+  <table>
+    <tr><th>Taste</th><th>Wirkung</th></tr>
+    <tr><td><code>Druck</code></td><td>Bereich auswählen</td></tr>
+    <tr><td><code>Strg+Umschalt+F</code></td><td>Ganzer Bildschirm</td></tr>
+    <tr><td><code>Strg+Umschalt+W</code></td><td>Aktives Fenster</td></tr>
+    <tr><td><code>Enter</code> (im Overlay)</td><td>Hochladen</td></tr>
+    <tr><td><code>Strg+C</code> (im Overlay)</td><td>Ins Bild in die Zwischenablage</td></tr>
+  </table>
+
+  <p>EselShot ist komplett kostenlos, kein Python-Setup nötig – einfach die .exe von <a href="https://files.eselbande.com/eselshot">files.eselbande.com/eselshot</a> herunterladen und loslegen.</p>
+
+  <div class="related">
+    <strong style="color:#fff;">Weiterlesen:</strong>
+    <a href="/blog/eselfriend-ki-sprachfreund/">EselFriend: Wie ein KI-Freund im Sprachkanal wirklich funktioniert →</a>
+    <a href="/blog/">← Alle Blogbeiträge</a>
+  </div>
+</div>
+</body>
+</html>
