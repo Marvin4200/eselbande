@@ -438,6 +438,78 @@
         .hc-amber  .hc-btn { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1206; }
         .hc-green  .hc-btn { background: linear-gradient(135deg, #34d399, #10b981); color: #05231a; }
 
+        /* ── Ad slot (house ad by default, network-ready later) ── */
+        .ad-banner {
+            display: none;
+            align-items: center;
+            gap: 1.25rem;
+            border-radius: 20px;
+            padding: 1.5rem 1.75rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            text-decoration: none;
+            color: var(--text);
+            transition: border-color 0.2s, background 0.2s, transform 0.2s;
+            margin-bottom: 5rem;
+        }
+        .ad-banner.is-visible { display: flex; }
+        .ad-banner:hover {
+            border-color: rgba(102,126,234,0.35);
+            background: var(--surface2);
+            transform: translateY(-2px);
+        }
+        .ad-banner-icon {
+            font-size: 1.9rem;
+            flex-shrink: 0;
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(102,126,234,0.12);
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+        .ad-banner-body { flex: 1; min-width: 0; }
+        .ad-banner-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.55rem;
+            border-radius: 99px;
+            margin-bottom: 0.4rem;
+        }
+        .ad-banner-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+        .ad-banner-desc {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .ad-banner-cta {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.55rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+            .ad-banner { flex-wrap: wrap; padding: 1.25rem; }
+            .ad-banner-cta { width: 100%; justify-content: center; }
+        }
+
         /* ── Services grid ── */
         .services-grid {
             display: grid;
@@ -725,6 +797,16 @@
             </a>
         </div>
 
+        <a class="ad-banner" id="ad-landing-midcontent" target="_blank" rel="noopener noreferrer">
+            <span class="ad-banner-icon" id="ad-landing-midcontent-icon">✨</span>
+            <span class="ad-banner-body">
+                <span class="ad-banner-badge" id="ad-landing-midcontent-badge">Anzeige</span>
+                <div class="ad-banner-title" id="ad-landing-midcontent-title"></div>
+                <div class="ad-banner-desc" id="ad-landing-midcontent-desc"></div>
+            </span>
+            <span class="ad-banner-cta" id="ad-landing-midcontent-cta"></span>
+        </a>
+
         <div class="section-label">Alle Services</div>
         <div class="section-title">Tools & Seiten</div>
         <p class="section-sub">Alles was die Eselbande am Laufen hält.</p>
@@ -824,5 +906,73 @@
         <div class="footer-copy">© 2026 eselbande.com &nbsp;·&nbsp; created by Txxle &amp; Elite</div>
     </footer>
 
+    <script>
+    // ── Ad slot: house ad by default, ready to switch to a real ad network later.
+    // Reads from the first-party /eseltokens API (same-origin) — no third-party
+    // cookies, no consent banner needed. Fails silently (no box shown) if the
+    // slot is disabled or the request fails, so there's never an empty ad box.
+    (function () {
+        function renderHouseSlot(elId, slot) {
+            var el = document.getElementById(elId);
+            if (!el || !slot || !slot.enabled) return;
+            if (slot.mode === 'adsense' || slot.mode === 'custom') {
+                // Reserved for a real ad network — nothing to render until it's
+                // actually wired up (see /eseltokens/admin/ads).
+                return;
+            }
+            var house = slot.house;
+            if (!house || !house.title) return;
+
+            document.getElementById(elId + '-icon').textContent = house.imageEmoji || '✨';
+            document.getElementById(elId + '-badge').textContent = house.badgeText || 'Anzeige';
+            document.getElementById(elId + '-title').textContent = house.title;
+            document.getElementById(elId + '-desc').textContent = house.description || '';
+            var cta = document.getElementById(elId + '-cta');
+            cta.textContent = house.ctaText || 'Mehr erfahren';
+            el.href = house.linkUrl || '#';
+            el.classList.add('is-visible');
+
+            var tracked = false;
+            var trackImpression = function () {
+                if (tracked) return;
+                tracked = true;
+                fetch('/eseltokens/api/ads/event/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotKey: slot.key, type: 'impression', page: location.pathname }),
+                    keepalive: true
+                }).catch(function () {});
+            };
+            if ('IntersectionObserver' in window) {
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) { trackImpression(); io.disconnect(); }
+                    });
+                }, { threshold: 0.5 });
+                io.observe(el);
+            } else {
+                trackImpression();
+            }
+
+            el.addEventListener('click', function () {
+                fetch('/eseltokens/api/ads/event/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotKey: slot.key, type: 'click', page: location.pathname }),
+                    keepalive: true
+                }).catch(function () {});
+            });
+        }
+
+        function loadSlot(key, elId) {
+            fetch('/eseltokens/api/ads/slot/' + key + '/')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (slot) { renderHouseSlot(elId, slot); })
+                .catch(function () {});
+        }
+
+        loadSlot('landing-midcontent', 'ad-landing-midcontent');
+    })();
+    </script>
 </body>
 </html>
