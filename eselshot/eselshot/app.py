@@ -16,7 +16,7 @@ import webbrowser
 from datetime import datetime
 from tkinter import filedialog
 
-from . import config, pngenc, uploader, winapi
+from . import __version__, config, pngenc, updater, uploader, winapi
 from .editor import Editor
 from .notify import Toast
 from .settings import SettingsWindow
@@ -26,6 +26,11 @@ HK_REGION, HK_REGION_ALT, HK_FULL, HK_WINDOW = 1, 2, 3, 4
 
 MENU_REGION, MENU_FULL, MENU_WINDOW = 100, 101, 102
 MENU_FILE, MENU_MYFILES, MENU_SETTINGS, MENU_AUTOSTART, MENU_QUIT = 103, 104, 110, 112, 199
+MENU_CHECK_UPDATE, MENU_INSTALL_UPDATE = 120, 121
+
+# Wie oft im Hintergrund automatisch nach einer neuen Version gefragt wird,
+# solange EselShot im Tray laeuft (Programm laeuft oft tagelang durch).
+UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
 
 HOTKEY_LABELS = {
     HK_REGION: 'Druck',
@@ -51,6 +56,7 @@ class EselShot:
         self.busy = False
         self.tray = None
         self.pending_uploads = 0
+        self.update_info = None
 
     # -- Aufnahme --------------------------------------------------------------
     def capture(self, mode='region'):
@@ -173,6 +179,11 @@ class EselShot:
 
     # -- Tray ------------------------------------------------------------------
     def _menu_items(self):
+        update_item = (
+            (MENU_INSTALL_UPDATE, f'⬆ Update installieren (v{self.update_info["version"]})', False)
+            if self.update_info
+            else (MENU_CHECK_UPDATE, 'Nach Updates suchen …', False)
+        )
         return [
             (MENU_REGION, 'Bereich aufnehmen\tDruck', False),
             (MENU_FULL, 'Ganzer Bildschirm\tStrg+Umschalt+F', False),
@@ -183,6 +194,7 @@ class EselShot:
             None,
             (MENU_SETTINGS, 'Einstellungen …', False),
             (MENU_AUTOSTART, 'Mit Windows starten', config.autostart_enabled()),
+            update_item,
             None,
             (MENU_QUIT, 'Beenden', False),
         ]
@@ -231,11 +243,85 @@ class EselShot:
                 config.set_autostart(not config.autostart_enabled())
             except OSError as err:
                 self.toast.show('error', 'Autostart', str(err))
+        elif item == MENU_CHECK_UPDATE:
+            self._check_for_update(interactive=True)
+        elif item == MENU_INSTALL_UPDATE:
+            self._confirm_and_install_update()
         elif item == MENU_QUIT:
             self.quit()
 
     def _on_settings_saved(self, cfg):
         self.cfg = cfg
+
+    # -- Auto-Update -------------------------------------------------------
+    def _check_for_update(self, interactive=False):
+        """interactive=True (Menü-Klick): meldet auch 'schon aktuell'/Fehler.
+        interactive=False (automatisch im Hintergrund): meldet sich nur, wenn
+        wirklich ein Update da ist -- niemand will alle 6 Stunden eine
+        Benachrichtigung "alles beim Alten"."""
+        if not updater.is_frozen():
+            if interactive:
+                self.toast.show('info', 'Update-Prüfung',
+                                'Läuft aus dem Quellcode – Updates bitte manuell einspielen.')
+            return
+
+        def work():
+            try:
+                info = updater.check(self.cfg['base_url'])
+            except Exception:
+                info = None
+            self.root.after(0, lambda: self._update_check_done(info, interactive))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _update_check_done(self, info, interactive):
+        self.update_info = info
+        if info:
+            self.toast.show('info', 'Update verfügbar',
+                            f'Version {info["version"]} ist bereit – über das Tray-Menü installieren.',
+                            timeout=8000)
+        elif interactive:
+            self.toast.show('success', 'Du bist aktuell', f'EselShot v{__version__}')
+
+    def _confirm_and_install_update(self):
+        if not self.update_info:
+            return
+        version = self.update_info['version']
+        if not self._confirm_dialog(
+            f'Update auf Version {version} herunterladen und installieren?\n\n'
+            'EselShot lädt die neue Version herunter und startet danach automatisch neu.'
+        ):
+            return
+
+        self.toast.show('progress', 'Update wird heruntergeladen', f'Version {version}', timeout=0)
+        download_url = self.update_info['download_url']
+
+        def work():
+            try:
+                path = updater.download(download_url)
+            except updater.UpdateError as err:
+                self.root.after(0, lambda: self.toast.show('error', 'Update fehlgeschlagen', str(err)))
+                return
+            self.root.after(0, lambda: self._install_downloaded_update(path))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _install_downloaded_update(self, path):
+        self.toast.show('info', 'EselShot wird aktualisiert', 'Startet in Kürze neu …', timeout=0)
+        try:
+            updater.apply_and_restart(path)
+        except updater.UpdateError as err:
+            self.toast.show('error', 'Update fehlgeschlagen', str(err))
+            return
+        # Sofort beenden, sonst haelt dieser Prozess die .exe gesperrt und das
+        # wartende Hilfsskript kommt nie zum Kopieren.
+        self.root.after(300, self.quit)
+
+    def _confirm_dialog(self, message):
+        import ctypes
+        MB_YESNO, MB_ICONQUESTION, IDYES = 0x04, 0x20, 6
+        return ctypes.windll.user32.MessageBoxW(None, message, 'EselShot',
+                                                MB_YESNO | MB_ICONQUESTION) == IDYES
 
     def quit(self):
         if self.tray:
@@ -257,7 +343,12 @@ class EselShot:
 
         self._announce_start(hotkeys)
         self._poll_events()
+        self.root.after(5000, self._periodic_update_check)
         self.root.mainloop()
+
+    def _periodic_update_check(self):
+        self._check_for_update(interactive=False)
+        self.root.after(UPDATE_CHECK_INTERVAL_MS, self._periodic_update_check)
 
     def _announce_start(self, hotkeys):
         """Beim Start zeigen, welche Tasten wirklich belegt werden konnten.

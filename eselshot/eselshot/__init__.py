@@ -1,3 +1,3 @@
 """EselShot - Screenshot-Werkzeug für files.eselbande.com."""
 
-__version__ = '1.0.0'
+__version__ = '1.4.0'
