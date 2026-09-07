@@ -5,7 +5,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog
 
-from . import config, uploader
+from . import __version__, config, uploader
 
 BG = '#0f0f18'
 CARD = '#16162a'
@@ -45,6 +45,8 @@ class SettingsWindow:
                  font=('Segoe UI', 16, 'bold')).pack(side='left')
         tk.Label(head, text='files.eselbande.com', bg=BG, fg=MUTED,
                  font=('Segoe UI', 10)).pack(side='left', padx=(8, 0), pady=(6, 0))
+        tk.Label(head, text=f'v{__version__}', bg=BG, fg=MUTED,
+                 font=('Segoe UI', 9)).pack(side='right', pady=(6, 0))
 
         body = tk.Frame(win, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
         body.pack(fill='both', padx=22, pady=(8, 6))

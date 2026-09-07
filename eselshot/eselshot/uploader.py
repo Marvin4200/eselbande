@@ -44,18 +44,23 @@ def check_token(base_url, token):
     return _request(f'{base_url.rstrip("/")}/api/me', token, timeout=20)
 
 
-def upload(base_url, token, data, filename, mime='image/png'):
+def upload(base_url, token, data, filename, mime='image/png', public=True):
     """Datei hochladen, liefert die öffentliche URL."""
     if not token:
         raise UploadError('Kein Token hinterlegt - bitte zuerst einrichten.')
 
     boundary = f'----EselShot{uuid.uuid4().hex}'
+    public_field = (
+        f'--{boundary}\r\n'
+        f'Content-Disposition: form-data; name="public"\r\n\r\n'
+        f'{"1" if public else "0"}\r\n'
+    ).encode('utf-8')
     head = (
         f'--{boundary}\r\n'
         f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
         f'Content-Type: {mime}\r\n\r\n'
     ).encode('utf-8')
-    body = head + data + f'\r\n--{boundary}--\r\n'.encode('utf-8')
+    body = public_field + head + data + f'\r\n--{boundary}--\r\n'.encode('utf-8')
 
     result = _request(f'{base_url.rstrip("/")}/api/upload', token, data=body,
                       content_type=f'multipart/form-data; boundary={boundary}')

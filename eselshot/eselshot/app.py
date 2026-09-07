@@ -16,7 +16,7 @@ import webbrowser
 from datetime import datetime
 from tkinter import filedialog
 
-from . import config, pngenc, uploader, winapi
+from . import config, gifenc, pngenc, recorder, updater, uploader, winapi
 from .editor import Editor
 from .notify import Toast
 from .settings import SettingsWindow
@@ -25,7 +25,10 @@ from .tray import Tray
 HK_REGION, HK_REGION_ALT, HK_FULL, HK_WINDOW = 1, 2, 3, 4
 
 MENU_REGION, MENU_FULL, MENU_WINDOW = 100, 101, 102
-MENU_FILE, MENU_MYFILES, MENU_SETTINGS, MENU_AUTOSTART, MENU_QUIT = 103, 104, 110, 112, 199
+MENU_FILE, MENU_MYFILES, MENU_GIF, MENU_SETTINGS, MENU_AUTOSTART, MENU_QUIT = 103, 104, 105, 110, 112, 199
+
+GIF_FPS = 10
+GIF_MAX_SECS = 20
 
 HOTKEY_LABELS = {
     HK_REGION: 'Druck',
@@ -123,7 +126,8 @@ class EselShot:
         def work():
             try:
                 data = pngenc.encode(width, height, rgba)
-                url = uploader.upload(self.cfg['base_url'], self.cfg['token'], data, name)
+                url = uploader.upload(self.cfg['base_url'], self.cfg['token'], data, name,
+                                      public=self.cfg.get('public_upload', True))
             except (uploader.UploadError, OSError) as err:
                 message = str(err)
                 self.root.after(0, lambda: self.toast.show('error', 'Upload fehlgeschlagen', message))
@@ -171,12 +175,83 @@ class EselShot:
 
         self._start_upload(work)
 
+    # -- GIF-Aufnahme ----------------------------------------------------------
+    def capture_gif(self):
+        """Bereich wählen, aufnehmen, als GIF hochladen."""
+        if self.busy:
+            return
+        if not self.cfg.get('token'):
+            self.toast.show('error', 'Kein Token hinterlegt',
+                            'Einstellungen öffnen und Token eintragen.')
+            self.settings.open()
+            return
+
+        self.busy = True
+        self.toast.hide()
+        self.root.update()
+        time.sleep(0.12)
+
+        def on_region(action, rect, w, h):
+            self.busy = False
+            if action != 'region' or not rect:
+                return
+            self._record_gif(rect)
+
+        try:
+            Editor(self.root, on_region, self._on_capture_cancel).open(region_only=True)
+        except Exception as err:
+            self.busy = False
+            self.toast.show('error', 'Aufnahme fehlgeschlagen', str(err))
+
+    def _record_gif(self, rect):
+        self.busy = True
+
+        def failed(message):
+            self.busy = False
+            self.toast.show('error', 'GIF-Aufnahme', message, timeout=7000)
+
+        def done(frames, w, h, fps):
+            self.busy = False
+            self._encode_and_upload_gif(frames, w, h, fps)
+
+        recorder.GifRecorder(self.root, rect, fps=GIF_FPS, max_secs=GIF_MAX_SECS,
+                             on_done=done, on_error=failed).start()
+
+    def _encode_and_upload_gif(self, frames, w, h, fps):
+        self.toast.show('progress', 'GIF wird erstellt', f'{len(frames)} Bilder')
+        name = datetime.now().strftime('eselshot-%Y%m%d-%H%M%S.gif')
+
+        def work():
+            try:
+                data = gifenc.encode_indexed(frames, w, h, fps=fps)
+            except Exception as err:
+                message = str(err)
+                self.root.after(0, lambda: self.toast.show(
+                    'error', 'GIF-Erstellung fehlgeschlagen', message))
+                return
+            size = f'{len(data) / 1024 / 1024:.1f} MB'
+            self.root.after(0, lambda: self.toast.show(
+                'progress', 'GIF wird hochgeladen', f'{w} × {h}, {size}'))
+            try:
+                url = uploader.upload(self.cfg['base_url'], self.cfg['token'],
+                                      data, name, mime='image/gif',
+                                      public=self.cfg.get('public_upload', True))
+            except (uploader.UploadError, OSError) as err:
+                message = str(err)
+                self.root.after(0, lambda: self.toast.show(
+                    'error', 'Upload fehlgeschlagen', message))
+                return
+            self.root.after(0, lambda: self._upload_done(url))
+
+        self._start_upload(work)
+
     # -- Tray ------------------------------------------------------------------
     def _menu_items(self):
         return [
             (MENU_REGION, 'Bereich aufnehmen\tDruck', False),
             (MENU_FULL, 'Ganzer Bildschirm\tStrg+Umschalt+F', False),
             (MENU_WINDOW, 'Aktives Fenster\tStrg+Umschalt+W', False),
+            (MENU_GIF, 'GIF aufnehmen …', False),
             None,
             (MENU_FILE, 'Datei hochladen …', False),
             (MENU_MYFILES, 'Meine Dateien im Browser', False),
@@ -218,6 +293,8 @@ class EselShot:
             self.capture('full')
         elif item == MENU_WINDOW:
             self.capture('window')
+        elif item == MENU_GIF:
+            self.capture_gif()
         elif item == MENU_FILE:
             path = filedialog.askopenfilename(parent=self.root, title='Datei hochladen')
             if path:
@@ -257,6 +334,7 @@ class EselShot:
 
         self._announce_start(hotkeys)
         self._poll_events()
+        self.root.after(8000, self._check_update_bg)
         self.root.mainloop()
 
     def _announce_start(self, hotkeys):
@@ -286,6 +364,58 @@ class EselShot:
             self.toast.show('info', 'EselShot läuft',
                             'Bereichsauswahl über das Tray-Symbol – ihre Tasten sind belegt.',
                             timeout=7000)
+
+    def _check_update_bg(self):
+        """Update-Check im Hintergrund, 8 Sekunden nach Start."""
+        base_url = self.cfg.get('base_url', 'https://files.eselbande.com')
+
+        def work():
+            result = updater.check(base_url)
+            if result:
+                version, setup_url = result
+                self.root.after(0, lambda: self._offer_update(version, setup_url))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _offer_update(self, version, setup_url):
+        """Toast mit Update-Angebot anzeigen."""
+        from . import __version__
+        self.toast.show(
+            'info',
+            f'Update verfügbar ({version})',
+            f'Aktuelle Version: {__version__} – jetzt aktualisieren?',
+            timeout=0,          # bleibt bis geklickt
+            action_label='Aktualisieren',
+            action=lambda: self._do_update(setup_url),
+        )
+
+    def _do_update(self, setup_url):
+        """Download + Install im Hintergrund mit Fortschrittstoast."""
+        self.toast.show('info', 'Update wird geladen…', 'Bitte warten.', timeout=0)
+
+        def work():
+            try:
+                def progress(p):
+                    self.root.after(0, lambda: self.toast.show(
+                        'info', 'Update wird geladen…',
+                        f'{int(p * 100)} % heruntergeladen', timeout=0,
+                    ))
+                updater.download_and_install(setup_url, on_progress=progress)
+            except Exception as err:
+                message = str(err)
+                self.root.after(0, lambda: self.toast.show(
+                    'error', 'Update fehlgeschlagen', message, timeout=8000,
+                ))
+                return
+            # Der still gestartete Setup-Installer (/CLOSEAPPLICATIONS) beendet
+            # diesen Prozess selbst, sobald er die alte .exe freigeben muss,
+            # und startet EselShot danach neu (/RESTARTAPPLICATIONS) - hier ist
+            # nichts weiter zu tun.
+            self.root.after(0, lambda: self.toast.show(
+                'info', 'Update wird installiert…', 'EselShot startet gleich neu.', timeout=0,
+            ))
+
+        threading.Thread(target=work, daemon=True).start()
 
     def run_once(self, mode):
         """Einmalige Aufnahme ohne Tray - beendet sich danach selbst."""
@@ -323,26 +453,7 @@ def main(argv=None):
     parser.add_argument('--window', action='store_true', help='einmalig aktives Fenster aufnehmen')
     parser.add_argument('--file', metavar='PFAD', help='vorhandene Datei hochladen')
     parser.add_argument('--settings', action='store_true', help='nur die Einstellungen öffnen')
-    parser.add_argument('--install', action='store_true',
-                        help='installieren (Startmenü, Autostart, Deinstall-Eintrag)')
-    parser.add_argument('--uninstall', action='store_true',
-                        help='EselShot wieder entfernen')
-    parser.add_argument('--silent', action='store_true',
-                        help='ohne Rückfrage (nur zusammen mit --install/--uninstall)')
     args = parser.parse_args(argv)
-
-    if args.install:
-        from .installer import install, run_installer_ui
-        if args.silent:
-            install()
-        else:
-            run_installer_ui()
-        return 0
-    if args.uninstall:
-        from .installer import run_uninstaller_ui
-        run_uninstaller_ui(silent=args.silent)
-        return 0
-
 
     winapi.enable_dpi_awareness()
     app = EselShot()
@@ -358,6 +469,14 @@ def main(argv=None):
         return 0
     if args.region or args.full or args.window:
         app.run_once('full' if args.full else ('window' if args.window else 'region'))
+        return 0
+
+    # Nur der dauerhafte Tray-Modus braucht die Sperre - Autostart, Startmenü-
+    # Eintrag und Desktop-Verknüpfung landen sonst leicht bei mehreren
+    # Tray-Symbolen gleichzeitig, die sich alle für "das" EselShot halten.
+    # Still beenden statt nachzufragen: die schon laufende Instanz deckt
+    # bereits alles ab, und bei Autostart sähe ohnehin niemand einen Dialog.
+    if not winapi.acquire_single_instance_lock():
         return 0
 
     app.run_tray()

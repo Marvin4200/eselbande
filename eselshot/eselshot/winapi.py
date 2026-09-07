@@ -93,6 +93,40 @@ class BITMAPINFO(ctypes.Structure):
     _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', wintypes.DWORD * 3)]
 
 
+# -- Einzelinstanz -------------------------------------------------------------
+ERROR_ALREADY_EXISTS = 183
+_sig(kernel32.CreateMutexW, wintypes.HANDLE, ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
+
+_instance_mutex = None  # Referenz halten, sonst schließt Python das Handle wieder
+
+
+def acquire_single_instance_lock(name='Global\\EselShot_SingleInstance'):
+    """True, wenn dies die einzige laufende Kopie ist.
+
+    Ein benannter Mutex überlebt nur, solange der Prozess lebt - stürzt
+    EselShot ab statt sich sauber zu beenden, gibt Windows den Namen beim
+    Prozessende trotzdem automatisch frei. Ohne diese Sperre landet man bei
+    Autostart + Startmenü-Eintrag + Desktop-Verknüpfung leicht bei drei
+    Tray-Symbolen gleichzeitig, die sich alle für "das" EselShot halten.
+
+    Wichtig: den Fehlercode über ``ctypes.get_last_error()`` lesen, nicht
+    per erneutem ``kernel32.GetLastError()``-Aufruf. ``kernel32`` ist mit
+    ``use_last_error=True`` geladen - ctypes sichert den echten Fehlercode
+    direkt nach dem CreateMutexW-Aufruf in einen eigenen Thread-lokalen
+    Speicher. Ein zweiter echter API-Aufruf zwischendurch (und sei es nur
+    GetLastError selbst) kann den systemweiten Fehlerstatus überschrieben
+    haben, bevor man ihn ausliest - in der gebauten .exe passiert zwischen
+    beiden Aufrufen genug interne Aktivität, dass das zuverlässig fehlschlug
+    und die Sperre nie griff, obwohl derselbe Code als nacktes Python-Skript
+    funktionierte.
+    """
+    global _instance_mutex
+    _instance_mutex = kernel32.CreateMutexW(None, True, name)
+    if not _instance_mutex:
+        return True  # Mutex konnte nicht angelegt werden - im Zweifel nicht blockieren
+    return ctypes.get_last_error() != ERROR_ALREADY_EXISTS
+
+
 # -- DPI ---------------------------------------------------------------------
 def enable_dpi_awareness():
     """Physische statt skalierter Pixel - sonst stimmen die Koordinaten nicht."""

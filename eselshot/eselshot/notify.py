@@ -26,6 +26,8 @@ class Toast:
         self._hide_job = None
         self._anim_job = None
         self._url = None
+        self._action = None
+        self._btn = None
 
     def _build(self):
         win = tk.Toplevel(self.root)
@@ -49,6 +51,9 @@ class Toast:
                                 anchor='w', justify='left', wraplength=330)
         self.message.pack(anchor='w', pady=(2, 0))
 
+        self._btn = tk.Label(col, text='', bg=BG, fg=ACCENT,
+                             font=('Segoe UI', 9, 'underline'), anchor='w', cursor='hand2')
+
         for widget in (win, outer, col, self.icon, self.title, self.message):
             widget.bind('<Button-1>', self._on_click)
         self.win = win
@@ -58,13 +63,27 @@ class Toast:
             webbrowser.open(self._url)
         self.hide()
 
-    def show(self, kind, title, message='', url=None, timeout=4500):
+    def _on_action(self, _event=None):
+        if self._action:
+            self._action()
+        self.hide()
+
+    def show(self, kind, title, message='', url=None, timeout=4500,
+             action_label=None, action=None):
         if self.win is None:
             self._build()
         self._url = url
+        self._action = action
         self.icon.configure(text=ICONS.get(kind, ''), fg=COLORS.get(kind, ACCENT))
         self.title.configure(text=title)
         self.message.configure(text=message, fg=ACCENT if url else MUTED)
+
+        if action_label and action:
+            self._btn.configure(text=action_label)
+            self._btn.bind('<Button-1>', self._on_action)
+            self._btn.pack(anchor='w', pady=(4, 0))
+        elif self._btn:
+            self._btn.pack_forget()
 
         for job, attr in ((self._hide_job, '_hide_job'), (self._anim_job, '_anim_job')):
             if job:

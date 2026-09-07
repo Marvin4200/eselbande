@@ -32,7 +32,10 @@ TOOLS = [
     ('ellipse', '◯', 'Ellipse'),
     ('marker', '▬', 'Marker'),
     ('text', 'T', 'Text'),
+    ('blur', '⬛', 'Verpixeln (Mosaik)'),
 ]
+
+BLUR_BLOCK = 12   # Pixelgröße der Mosaikblöcke
 
 
 class Editor:
@@ -43,6 +46,7 @@ class Editor:
         self.on_finish = on_finish
         self.on_cancel = on_cancel or (lambda: None)
         self.win = None
+        self.region_only = False  # nur Bereich wählen, nichts aufnehmen
         self.tool = 'move'
         self.color = PALETTE[0]
         self.width_index = 1
@@ -53,10 +57,17 @@ class Editor:
         self._closed = False
 
     # -- Aufbau ---------------------------------------------------------------
-    def open(self, preset=None):
-        """preset: Rechteck in Bildschirmkoordinaten, oder None für freie Auswahl."""
+    def open(self, preset=None, region_only=False):
+        """preset: Rechteck in Bildschirmkoordinaten, oder None für freie Auswahl.
+
+        region_only: keine Zeichenwerkzeuge, kein Bild - der Aufrufer bekommt
+        nur das gewählte Rechteck in Bildschirmkoordinaten gemeldet. Für die
+        GIF-Aufnahme, die den Bereich danach selbst abfilmt.
+        """
+        self.region_only = region_only
         self.vx, self.vy, self.vw, self.vh = winapi.virtual_screen()
         frozen = winapi.grab(self.vx, self.vy, self.vw, self.vh)
+        self._base_rgba = (frozen, self.vw, self.vh)
 
         win = tk.Toplevel(self.root)
         win.withdraw()
@@ -126,13 +137,24 @@ class Editor:
         bar = tk.Frame(self.cv, bg=BAR_BG, highlightbackground=BORDER, highlightthickness=1)
         self.bar = bar
         self.tool_buttons = {}
+        self.swatches = []
+
+        if self.region_only:
+            self._bar_button(bar, '✕', 'Abbrechen (Esc)', self.cancel)
+            start = tk.Label(bar, text='  ●  Aufnahme starten  ', bg=ACCENT, fg='#0b0b14',
+                             font=('Segoe UI', 10, 'bold'), cursor='hand2')
+            start.pack(side='left', padx=(6, 8), pady=6)
+            start.bind('<Button-1>', lambda e: self.finish('region'))
+            start.bind('<Enter>', lambda e: start.configure(bg='#a5aefc'))
+            start.bind('<Leave>', lambda e: start.configure(bg=ACCENT))
+            self.bar_window = self.cv.create_window(0, 0, anchor='nw', window=bar, state='hidden')
+            return
 
         for name, glyph, tip in TOOLS:
             btn = self._bar_button(bar, glyph, tip, lambda n=name: self._set_tool(n))
             self.tool_buttons[name] = btn
 
         self._sep(bar)
-        self.swatches = []
         for color in PALETTE:
             sw = tk.Frame(bar, bg=color, width=16, height=16, highlightthickness=2,
                           highlightbackground=BAR_BG)
@@ -398,6 +420,13 @@ class Editor:
         if self.tool == 'text':
             self._open_text_entry(x, y)
             return
+        if self.tool == 'blur':
+            self._blur_seq = getattr(self, '_blur_seq', 0) + 1
+            self._blur_tag = f'blur{self._blur_seq}'
+            self._blur_cells = set()
+            self._drag = ('blur', (x, y), None)
+            self._blur_at(x, y)
+            return
         if self.tool == 'pen':
             item = self.cv.create_line(x, y, x, y, fill=self.color, width=width,
                                        capstyle='round', joinstyle='round', smooth=True)
@@ -417,7 +446,44 @@ class Editor:
             return
         self._drag = ('draw', (x, y), item)
 
+    def _blur_at(self, x, y):
+        """Einen Mosaikblock auf das Blockgitter setzen.
+
+        Die Leinwand deckt den virtuellen Bildschirm 1:1 ab, deshalb ist die
+        Leinwandkoordinate zugleich der Index in den eingefrorenen Screenshot -
+        hier darf nicht der Auswahlursprung abgezogen werden.
+        """
+        base, bw, bh = self._base_rgba
+        B = BLUR_BLOCK
+        bx = int(x) // B * B
+        by = int(y) // B * B
+        if bx < 0 or by < 0 or bx >= bw or by >= bh:
+            return
+        if (bx, by) in self._blur_cells:
+            return                      # Block liegt schon - nicht doppelt malen
+        self._blur_cells.add((bx, by))
+
+        r = g = b = n = 0
+        for py in range(by, min(by + B, bh)):
+            row = py * bw * 4
+            for px in range(bx, min(bx + B, bw)):
+                i = row + px * 4
+                r += base[i]
+                g += base[i + 1]
+                b += base[i + 2]
+                n += 1
+        if not n:
+            return
+        color = '#%02x%02x%02x' % (r // n, g // n, b // n)
+        # Alle Blöcke eines Zuges teilen sich ein Tag - Strg+Z nimmt damit den
+        # ganzen Strich zurück statt Block für Block.
+        self.cv.create_rectangle(bx, by, bx + B, by + B, fill=color, outline='',
+                                 tags=self._blur_tag)
+
     def _draw_motion(self, x, y):
+        if self.tool == 'blur':
+            self._blur_at(x, y)
+            return
         _, start, item = self._drag
         if self.tool in ('pen', 'marker'):
             coords = self.cv.coords(item)
@@ -427,6 +493,10 @@ class Editor:
             self.cv.coords(item, start[0], start[1], x, y)
 
     def _draw_release(self):
+        if self.tool == 'blur':
+            if self._blur_cells:
+                self.undo_stack.append(self._blur_tag)
+            return
         item = self._drag[2] if self._drag else None
         if item:
             self.undo_stack.append(item)
@@ -473,12 +543,20 @@ class Editor:
     def finish(self, action):
         if self._closed or not self.rect:
             return
-        self._commit_text()
+        if not self.region_only:
+            self._commit_text()
         x1, y1, x2, y2 = self.rect
         w, h = x2 - x1, y2 - y1
         if w < MIN_SIZE or h < MIN_SIZE:
             return
         self._closed = True
+
+        if self.region_only:
+            # Nichts aufnehmen - nur das Rechteck in Bildschirmkoordinaten melden.
+            rect = (self.vx + x1, self.vy + y1, w, h)
+            self._destroy()
+            self.on_finish('region', rect, w, h)
+            return
 
         # Bedienelemente ausblenden, damit sie nicht mit im Bild landen
         for item in [self.border, self.size_label, self.size_bg, self.bar_window] + self.handles:

@@ -87,8 +87,6 @@ python -m eselshot --full        # einmalig ganzer Bildschirm
 python -m eselshot --window      # einmalig aktives Fenster
 python -m eselshot --file X.png  # vorhandene Datei hochladen
 python -m eselshot --settings    # nur Einstellungen öffnen
-python -m eselshot --install     # in %USERPROFILE%\EselShot installieren
-python -m eselshot --uninstall   # sauber entfernen
 ```
 
 ## Dateien
@@ -104,7 +102,9 @@ python -m eselshot --uninstall   # sauber entfernen
 | `eselshot/settings.py` | Einstellungsfenster |
 | `eselshot/notify.py` | Benachrichtigung unten rechts |
 | `eselshot/config.py` | Konfiguration und Autostart |
-| `eselshot/installer.py` | Installation und Deinstallation im Nutzerprofil |
+| `eselshot/recorder.py` | GIF-Aufnahme eines Bildschirmbereichs |
+| `eselshot/gifenc.py` | GIF-Encoder ohne externe Abhängigkeiten |
+| `eselshot/updater.py` | Update-Check und stiller Installer-Download |
 | `eselshot/app.py` | Programmsteuerung |
 | `eselshot_launcher.py` | Einstiegspunkt für PyInstaller |
 | `build.py` | Baut `dist/EselShot.exe` |

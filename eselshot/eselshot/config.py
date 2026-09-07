@@ -12,6 +12,7 @@ DEFAULTS = {
     'open_browser': False,   # Link zusätzlich im Browser öffnen
     'save_dir': '',          # leer = Ordner beim Speichern jedes Mal abfragen
     'hotkey_region': True,   # Druck-Taste für Bereichsauswahl belegen
+    'public_upload': True,   # Screenshots öffentlich hochladen (False = nur du siehst sie)
 }
 
 
@@ -60,6 +61,14 @@ def _pythonw():
 
 
 def autostart_command():
+    """Befehl fürs Autostart-Register.
+
+    Aus einer gebauten .exe: sich selbst direkt mit ``--tray`` aufrufen -
+    ``sys.executable`` ist dort die exe, kein echter Python-Interpreter, der
+    ``-m eselshot`` verstehen würde. Aus dem Quellcode: über pythonw -m eselshot.
+    """
+    if getattr(sys, 'frozen', False):
+        return f'"{sys.executable}" --tray', os.path.dirname(sys.executable)
     package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return f'"{_pythonw()}" -m eselshot --tray', package_root
 
