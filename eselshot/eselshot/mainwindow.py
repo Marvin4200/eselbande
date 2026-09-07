@@ -6,12 +6,12 @@ versteckt es nur (siehe app.py), beendet wird ausschließlich über das
 Tray-Menü - genau wie bei anderen Tray-Programmen (Discord, Spotify, ...).
 """
 
+import os
 import time
 import tkinter as tk
 import webbrowser
-from tkinter import PhotoImage
 
-from . import __version__, history, icon, winapi
+from . import __version__, config, history, icon, winapi
 
 BG = '#0f0f18'
 CARD = '#16162a'
@@ -42,7 +42,6 @@ class MainWindow:
         self.root = root
         self.cfg = cfg
         self.app = app
-        self._icon_img = None
         self._built = False
 
     def _ensure_built(self):
@@ -57,6 +56,20 @@ class MainWindow:
             self._build()
             self._built = True
 
+    @staticmethod
+    def _cached_ico_path():
+        """Echtes Mehrgrößen-.ico mit Alphakanal erzeugen (einmalig, dann gecacht).
+
+        ``iconphoto`` mit roh aus RGBA gebautem PPM (frühere Version) kennt
+        keine Transparenz - die abgerundeten Ecken des Symbols erschienen
+        dadurch als hartes Schwarz statt weich in der Titelleiste/Taskleiste.
+        ``iconbitmap`` mit einer echten .ico-Datei rendert den Alphakanal
+        dagegen korrekt."""
+        path = os.path.join(config.config_dir(), 'eselshot.ico')
+        if not os.path.isfile(path):
+            icon.write_ico(path)
+        return path
+
     # -- Aufbau -----------------------------------------------------------------
     def _build(self):
         root = self.root
@@ -66,15 +79,7 @@ class MainWindow:
         root.minsize(360, 420)
 
         try:
-            rgba = icon.render_rgba(32)
-            # PhotoImage kann kein rohes RGBA - über PPM (Header + RGB) plus
-            # separater Alpha-Maske einlesen waere Aufwand; da das Symbol nur
-            # innerhalb eines abgerundeten Quadrats undurchsichtig ist und der
-            # Rest ohnehin BG-farben wirkt, genuegt ein einfacher RGB-Import.
-            ppm = b'P6\n32 32\n255\n' + bytes(
-                b for i in range(0, len(rgba), 4) for b in rgba[i:i + 3])
-            self._icon_img = PhotoImage(data=ppm, format='PPM')
-            root.iconphoto(True, self._icon_img)
+            root.iconbitmap(default=self._cached_ico_path())
         except Exception:
             pass
 
@@ -108,6 +113,10 @@ class MainWindow:
                                font=('Segoe UI', 9, 'underline'), cursor='hand2')
         open_folder.pack(side='right')
         open_folder.bind('<Button-1>', lambda e: webbrowser.open(self.cfg.get('base_url', '')))
+        self.clear_lbl = tk.Label(list_head, text='Verlauf leeren', bg=BG, fg=MUTED,
+                                  font=('Segoe UI', 9, 'underline'), cursor='hand2')
+        self.clear_lbl.pack(side='right', padx=(0, 14))
+        self.clear_lbl.bind('<Button-1>', lambda e: self._clear_history())
 
         list_wrap = tk.Frame(root, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
         list_wrap.pack(fill='both', expand=True, padx=18, pady=(6, 12))
@@ -127,10 +136,15 @@ class MainWindow:
             self._rows_window, width=e.width))
         self.canvas.bind_all('<MouseWheel>', self._on_wheel)
 
-        footer = tk.Label(root, text='Schließen legt EselShot in den Infobereich – '
-                                     'Beenden über das Tray-Menü.',
-                          bg=BG, fg=MUTED, font=('Segoe UI', 8), wraplength=400, justify='left')
+        footer = tk.Frame(root, bg=BG)
         footer.pack(fill='x', padx=18, pady=(0, 14))
+        tk.Label(footer, text='Schließen (X) legt EselShot nur in den Infobereich.',
+                 bg=BG, fg=MUTED, font=('Segoe UI', 8), wraplength=300,
+                 justify='left', anchor='w').pack(side='left', fill='x', expand=True)
+        quit_lbl = tk.Label(footer, text='Beenden', bg=BG, fg=MUTED,
+                            font=('Segoe UI', 8, 'underline'), cursor='hand2')
+        quit_lbl.pack(side='right')
+        quit_lbl.bind('<Button-1>', lambda e: self.app.quit())
 
         root.protocol('WM_DELETE_WINDOW', self.hide)
 
@@ -182,6 +196,13 @@ class MainWindow:
                  font=('Segoe UI', 8), anchor='w').pack(fill='x')
 
         url = entry.get('url', '')
+        entry_id = entry.get('id') or entry.get('ts')
+        del_lbl = tk.Label(inner, text='✕', bg=CARD, fg=MUTED, font=('Segoe UI', 9),
+                           cursor='hand2')
+        del_lbl.pack(side='right', padx=(8, 0))
+        del_lbl.bind('<Button-1>', lambda e, i=entry_id: self._delete(i))
+        del_lbl.bind('<Enter>', lambda e: del_lbl.configure(fg='#ef4444'))
+        del_lbl.bind('<Leave>', lambda e: del_lbl.configure(fg=MUTED))
         copy_lbl = tk.Label(inner, text='Kopieren', bg=CARD, fg=ACCENT,
                             font=('Segoe UI', 9), cursor='hand2')
         copy_lbl.pack(side='right', padx=(8, 0))
@@ -190,6 +211,20 @@ class MainWindow:
                             font=('Segoe UI', 9), cursor='hand2')
         open_lbl.pack(side='right')
         open_lbl.bind('<Button-1>', lambda e, u=url: webbrowser.open(u))
+
+    def _delete(self, entry_id):
+        history.remove(entry_id)
+        self.refresh()
+
+    def _clear_history(self):
+        if self.clear_lbl.cget('text') != 'Wirklich?':
+            self.clear_lbl.configure(text='Wirklich?', fg='#ef4444')
+            self.root.after(2500, lambda: self.clear_lbl.configure(
+                text='Verlauf leeren', fg=MUTED))
+            return
+        history.clear()
+        self.clear_lbl.configure(text='Verlauf leeren', fg=MUTED)
+        self.refresh()
 
     def _copy(self, url, label):
         if winapi.set_clipboard_text(url):
