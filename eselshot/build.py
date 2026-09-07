@@ -16,6 +16,18 @@ Voraussetzungen zum Bauen: ``pip install pyinstaller`` und Inno Setup 6
 (https://jrsoftware.org/isinfo.php, oder ``winget install JRSoftware.InnoSetup``).
 Wer EselShot nur benutzt, braucht davon nichts - das Ergebnis ist eigenstaendig.
 
+Code-Signing (optional, entfernt Windows SmartScreens "Unbekannter
+Herausgeber"-Warnung): ein Zertifikat kann dieses Skript nicht besorgen - das
+ist ein gekauftes/identitaetsgeprueftes OV- oder EV-Code-Signing-Zertifikat
+einer echten Zertifizierungsstelle (z.B. SSL.com, DigiCert, GlobalSign; grob
+80-400 EUR/Jahr). Liegt eins vor, per Umgebungsvariable setzen und build.py
+signiert automatisch beide Exen (PyInstaller-Ausgabe UND fertigen Installer):
+    ESELSHOT_CERT_PFX=C:/pfad/zertifikat.pfx
+    ESELSHOT_CERT_PASSWORD=...
+oder, falls das Zertifikat schon im Windows-Zertifikatsspeicher liegt:
+    ESELSHOT_CERT_THUMBPRINT=<40-stelliger Hex-Fingerabdruck>
+Ohne eine dieser Variablen wird ungesigniert gebaut wie bisher.
+
 Verwendung:
     python build.py
 """
@@ -71,6 +83,55 @@ def find_iscc():
     )
 
 
+def find_signtool():
+    """signtool.exe suchen - kommt mit dem Windows SDK, nicht mit Python."""
+    found = shutil.which('signtool.exe') or shutil.which('signtool')
+    if found:
+        return found
+    roots = [os.path.expandvars(r'%ProgramFiles(x86)%\Windows Kits\10\bin')]
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for ver in sorted(os.listdir(root), reverse=True):
+            for arch in ('x64', 'x86'):
+                candidate = os.path.join(root, ver, arch, 'signtool.exe')
+                if os.path.isfile(candidate):
+                    return candidate
+    return None
+
+
+def sign(path):
+    """Signiert ``path`` falls ein Zertifikat per Umgebungsvariable hinterlegt ist.
+
+    Ohne ESELSHOT_CERT_PFX/-THUMBPRINT ein stiller No-Op - Signieren ist
+    optional, siehe Modul-Docstring."""
+    pfx = os.environ.get('ESELSHOT_CERT_PFX')
+    thumbprint = os.environ.get('ESELSHOT_CERT_THUMBPRINT')
+    if not pfx and not thumbprint:
+        return False
+
+    signtool = find_signtool()
+    if not signtool:
+        raise RuntimeError(
+            'ESELSHOT_CERT_* gesetzt, aber signtool.exe nicht gefunden. '
+            'Windows SDK installieren (winget install Microsoft.WindowsSDK).'
+        )
+
+    cmd = [signtool, 'sign', '/fd', 'sha256', '/tr', 'http://timestamp.digicert.com', '/td', 'sha256']
+    if pfx:
+        cmd += ['/f', pfx]
+        password = os.environ.get('ESELSHOT_CERT_PASSWORD')
+        if password:
+            cmd += ['/p', password]
+    else:
+        cmd += ['/sha1', thumbprint]
+    cmd.append(path)
+
+    print(f'>> Signiere {os.path.basename(path)} …')
+    subprocess.run(cmd, check=True, cwd=HERE)
+    return True
+
+
 def build():
     clean()
     ico = build_icon()
@@ -97,6 +158,11 @@ def build():
     print('>> Baue EselShot mit PyInstaller …')
     subprocess.run(cmd, check=True, cwd=HERE)
 
+    # Die innere .exe signieren, bevor Inno Setup sie einpackt - sonst waere
+    # nur der Installer signiert, das ausgelieferte Programm selbst aber
+    # weiterhin "Unbekannter Herausgeber".
+    sign(os.path.join(HERE, 'dist', 'EselShot', 'EselShot.exe'))
+
     iscc = find_iscc()
     print('>> Baue Installer mit Inno Setup …')
     subprocess.run(
@@ -105,6 +171,8 @@ def build():
     )
 
     setup_exe = os.path.join(HERE, 'dist', f'EselShot-Setup-{version}.exe')
+    sign(setup_exe)
+
     size = os.path.getsize(setup_exe) if os.path.isfile(setup_exe) else 0
     print(f'\nfertig: {setup_exe}  ({size / 1024 / 1024:.1f} MB)')
     return setup_exe

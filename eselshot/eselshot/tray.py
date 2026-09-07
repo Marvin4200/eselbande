@@ -13,8 +13,8 @@ from ctypes import wintypes
 from .winapi import (LRESULT, MF_CHECKED, MF_SEPARATOR, MF_STRING, NIF_ICON, NIF_MESSAGE,
                      NIF_TIP, NIM_ADD, NIM_DELETE, TPM_NONOTIFY, TPM_RETURNCMD,
                      TPM_RIGHTBUTTON, WM_COMMAND, WM_DESTROY, WM_HOTKEY, WM_LBUTTONDBLCLK,
-                     WM_LBUTTONUP, WM_RBUTTONUP, WM_TRAY, WM_QUIT_APP, gdi32, kernel32,
-                     user32, _sig)
+                     WM_LBUTTONUP, WM_RBUTTONUP, WM_TRAY, WM_QUIT_APP, WM_SHOW_MAIN,
+                     gdi32, kernel32, user32, _sig)
 
 _sig(user32.CreatePopupMenu, wintypes.HMENU)
 _sig(user32.AppendMenuW, wintypes.BOOL, wintypes.HMENU, wintypes.UINT,
@@ -197,6 +197,9 @@ class Tray:
             return 0
         if msg == WM_COMMAND:
             self.on_event(('menu', int(wparam & 0xFFFF)))
+            return 0
+        if msg == WM_SHOW_MAIN:
+            self.on_event(('menu', 'show'))
             return 0
         if msg == WM_QUIT_APP:
             user32.DestroyWindow(hwnd)

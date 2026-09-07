@@ -16,8 +16,9 @@ import webbrowser
 from datetime import datetime
 from tkinter import filedialog
 
-from . import config, gifenc, pngenc, recorder, updater, uploader, winapi
+from . import config, gifenc, history, pngenc, recorder, updater, uploader, winapi
 from .editor import Editor
+from .mainwindow import MainWindow
 from .notify import Toast
 from .settings import SettingsWindow
 from .tray import Tray
@@ -25,7 +26,8 @@ from .tray import Tray
 HK_REGION, HK_REGION_ALT, HK_FULL, HK_WINDOW = 1, 2, 3, 4
 
 MENU_REGION, MENU_FULL, MENU_WINDOW = 100, 101, 102
-MENU_FILE, MENU_MYFILES, MENU_GIF, MENU_SETTINGS, MENU_AUTOSTART, MENU_QUIT = 103, 104, 105, 110, 112, 199
+MENU_SHOW, MENU_FILE, MENU_MYFILES, MENU_GIF, MENU_SETTINGS, MENU_AUTOSTART, MENU_QUIT = \
+    106, 103, 104, 105, 110, 112, 199
 
 GIF_FPS = 10
 GIF_MAX_SECS = 20
@@ -50,6 +52,7 @@ class EselShot:
         self.root.title('EselShot')
         self.toast = Toast(self.root)
         self.settings = SettingsWindow(self.root, self.cfg, on_save=self._on_settings_saved)
+        self.main_window = MainWindow(self.root, self.cfg, self)
         self.events = queue.Queue()
         self.busy = False
         self.tray = None
@@ -132,7 +135,7 @@ class EselShot:
                 message = str(err)
                 self.root.after(0, lambda: self.toast.show('error', 'Upload fehlgeschlagen', message))
                 return
-            self.root.after(0, lambda: self._upload_done(url))
+            self.root.after(0, lambda: self._upload_done(url, name, 'image'))
 
         self._start_upload(work)
 
@@ -150,12 +153,14 @@ class EselShot:
     def _upload_finished(self):
         self.pending_uploads = max(0, self.pending_uploads - 1)
 
-    def _upload_done(self, url):
+    def _upload_done(self, url, name='?', kind='image'):
         copied = winapi.set_clipboard_text(url) if self.cfg.get('copy_link', True) else False
         if self.cfg.get('open_browser'):
             webbrowser.open(url)
         title = 'Link kopiert' if copied else 'Hochgeladen'
         self.toast.show('success', title, url, url=url, timeout=6000)
+        history.add(name, url, kind)
+        self.main_window.refresh()
 
     def upload_existing_file(self, path):
         """Beliebige Datei hochladen (Menüpunkt bzw. --file)."""
@@ -164,6 +169,8 @@ class EselShot:
             return
         self.toast.show('progress', 'Wird hochgeladen', os.path.basename(path))
 
+        name = os.path.basename(path)
+
         def work():
             try:
                 url = uploader.upload_file(self.cfg['base_url'], self.cfg['token'], path)
@@ -171,7 +178,7 @@ class EselShot:
                 message = str(err)
                 self.root.after(0, lambda: self.toast.show('error', 'Upload fehlgeschlagen', message))
                 return
-            self.root.after(0, lambda: self._upload_done(url))
+            self.root.after(0, lambda: self._upload_done(url, name, 'file'))
 
         self._start_upload(work)
 
@@ -241,13 +248,15 @@ class EselShot:
                 self.root.after(0, lambda: self.toast.show(
                     'error', 'Upload fehlgeschlagen', message))
                 return
-            self.root.after(0, lambda: self._upload_done(url))
+            self.root.after(0, lambda: self._upload_done(url, name, 'gif'))
 
         self._start_upload(work)
 
     # -- Tray ------------------------------------------------------------------
     def _menu_items(self):
         return [
+            (MENU_SHOW, 'EselShot öffnen', False),
+            None,
             (MENU_REGION, 'Bereich aufnehmen\tDruck', False),
             (MENU_FULL, 'Ganzer Bildschirm\tStrg+Umschalt+F', False),
             (MENU_WINDOW, 'Aktives Fenster\tStrg+Umschalt+W', False),
@@ -287,7 +296,9 @@ class EselShot:
             self.capture('window')
 
     def _handle_menu(self, item):
-        if item in ('capture', MENU_REGION):
+        if item in ('show', MENU_SHOW):
+            self.main_window.show()
+        elif item in ('capture', MENU_REGION):
             self.capture('region')
         elif item == MENU_FULL:
             self.capture('full')
@@ -320,7 +331,7 @@ class EselShot:
         self.root.quit()
 
     # -- Start -----------------------------------------------------------------
-    def run_tray(self):
+    def run_tray(self, show_window=True):
         hotkeys = [
             (HK_REGION_ALT, winapi.MOD_CONTROL | winapi.MOD_SHIFT | winapi.MOD_NOREPEAT, ord('S')),
             (HK_FULL, winapi.MOD_CONTROL | winapi.MOD_SHIFT | winapi.MOD_NOREPEAT, ord('F')),
@@ -332,6 +343,8 @@ class EselShot:
         self.tray = Tray('EselShot – Druck für einen Screenshot',
                          self._on_tray_event, self._menu_items, hotkeys).start()
 
+        if show_window:
+            self.main_window.show()
         self._announce_start(hotkeys)
         self._poll_events()
         self.root.after(8000, self._check_update_bg)
@@ -474,12 +487,21 @@ def main(argv=None):
     # Nur der dauerhafte Tray-Modus braucht die Sperre - Autostart, Startmenü-
     # Eintrag und Desktop-Verknüpfung landen sonst leicht bei mehreren
     # Tray-Symbolen gleichzeitig, die sich alle für "das" EselShot halten.
-    # Still beenden statt nachzufragen: die schon laufende Instanz deckt
-    # bereits alles ab, und bei Autostart sähe ohnehin niemand einen Dialog.
     if not winapi.acquire_single_instance_lock():
+        # Schon eine Instanz aktiv: deren Fenster nach vorn holen statt
+        # stillschweigend nichts zu tun - ein zweiter Doppelklick auf die
+        # Verknüpfung soll sich wie "zeig mir EselShot" anfühlen, nicht wie
+        # ein Fehlschlag. Bei --tray (Autostart) gibt es ohnehin niemanden,
+        # der das sehen würde, also nur bei einem Doppelklick nach vorn holen.
+        if not args.tray:
+            winapi.activate_existing_instance()
         return 0
 
-    app.run_tray()
+    # --tray (Autostart) startet unsichtbar im Infobereich; ein normaler
+    # Start (Desktop-/Startmenü-Verknüpfung, Doppelklick auf die .exe) zeigt
+    # gleich das Hauptfenster - EselShot soll sich wie ein richtiges
+    # Programm anfühlen, nicht nur wie ein Tray-Icon.
+    app.run_tray(show_window=not args.tray)
     return 0
 
 

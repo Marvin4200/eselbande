@@ -5,6 +5,12 @@ Taste drücken, Bildschirm friert ein, Bereich aufziehen, optional etwas
 einzeichnen, **Hochladen** – der Link liegt sofort in der Zwischenablage und
 zeigt auf `files.eselbande.com`.
 
+Ein richtiges Programm, kein reines Tray-Tool: Start über Verknüpfung/Exe
+öffnet ein Hauptfenster (Taskleiste, Alt+Tab) mit Verlauf der letzten Uploads;
+Schließen (X) legt es nur in den Infobereich, beendet wird über das
+Tray-Menü. Ein zweiter Doppelklick auf die Verknüpfung holt das Fenster einer
+schon laufenden Instanz nach vorn, statt eine zweite zu starten.
+
 Zwei Wege, das Programm zu nutzen:
 
 | Weg | Wer |
@@ -54,6 +60,13 @@ die exe wird unter `/download/EselShot.exe` ausgeliefert.
 **Wenn du die exe aktualisieren willst:** `update-download.cmd` und den
 `filehoster`-Container neu starten. Fertig.
 
+**Code-Signing (optional):** ohne signiertes Zertifikat warnt Windows beim
+ersten Start mit SmartScreen ("Unbekannter Herausgeber"). Mit einem OV/EV-
+Code-Signing-Zertifikat (gekauft bei einer Zertifizierungsstelle, siehe
+Docstring in `build.py`) signiert `build.py` automatisch, sobald
+`ESELSHOT_CERT_PFX` + `ESELSHOT_CERT_PASSWORD` (oder `ESELSHOT_CERT_THUMBPRINT`
+für ein Zertifikat im Windows-Speicher) gesetzt sind.
+
 ## Bedienung
 
 | Taste | Wirkung |
@@ -81,7 +94,8 @@ Marker, Text – dazu sieben Farben und drei Strichstärken.
 ## Aus dem Quellcode starten
 
 ```bash
-python -m eselshot               # im Infobereich
+python -m eselshot               # Hauptfenster + Tray (normaler Start)
+python -m eselshot --tray        # nur Tray, kein Fenster (für Autostart)
 python -m eselshot --region      # einmalig Bereich aufnehmen
 python -m eselshot --full        # einmalig ganzer Bildschirm
 python -m eselshot --window      # einmalig aktives Fenster
@@ -105,6 +119,8 @@ python -m eselshot --settings    # nur Einstellungen öffnen
 | `eselshot/recorder.py` | GIF-Aufnahme eines Bildschirmbereichs |
 | `eselshot/gifenc.py` | GIF-Encoder ohne externe Abhängigkeiten |
 | `eselshot/updater.py` | Update-Check und stiller Installer-Download |
+| `eselshot/mainwindow.py` | Hauptfenster: Aufnahme-Buttons, Verlauf der letzten Uploads |
+| `eselshot/history.py` | Verlauf der letzten Uploads, persistiert in `%APPDATA%` |
 | `eselshot/app.py` | Programmsteuerung |
 | `eselshot_launcher.py` | Einstiegspunkt für PyInstaller |
 | `build.py` | Baut `dist/EselShot.exe` |

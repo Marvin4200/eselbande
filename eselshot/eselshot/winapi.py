@@ -36,6 +36,7 @@ WM_HOTKEY = 0x0312
 WM_LBUTTONUP, WM_RBUTTONUP, WM_LBUTTONDBLCLK = 0x0202, 0x0205, 0x0203
 WM_TRAY = WM_APP + 1
 WM_QUIT_APP = WM_APP + 2
+WM_SHOW_MAIN = WM_APP + 3
 
 NIM_ADD, NIM_MODIFY, NIM_DELETE = 0, 1, 2
 NIF_MESSAGE, NIF_ICON, NIF_TIP = 0x01, 0x02, 0x04
@@ -96,6 +97,9 @@ class BITMAPINFO(ctypes.Structure):
 # -- Einzelinstanz -------------------------------------------------------------
 ERROR_ALREADY_EXISTS = 183
 _sig(kernel32.CreateMutexW, wintypes.HANDLE, ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
+_sig(user32.FindWindowW, wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR)
+_sig(user32.PostMessageW, wintypes.BOOL, wintypes.HWND, wintypes.UINT,
+     wintypes.WPARAM, wintypes.LPARAM)
 
 _instance_mutex = None  # Referenz halten, sonst schließt Python das Handle wieder
 
@@ -125,6 +129,21 @@ def acquire_single_instance_lock(name='Global\\EselShot_SingleInstance'):
     if not _instance_mutex:
         return True  # Mutex konnte nicht angelegt werden - im Zweifel nicht blockieren
     return ctypes.get_last_error() != ERROR_ALREADY_EXISTS
+
+
+def activate_existing_instance():
+    """Bereits laufende Instanz bitten, ihr Hauptfenster zu zeigen.
+
+    Ein zweiter Doppelklick auf Desktop-/Startmenü-Verknüpfung soll das
+    Fenster der schon laufenden Instanz nach vorn holen statt stillschweigend
+    nichts zu tun - dafür reicht das Tray-Fenster (immer vorhanden, auch wenn
+    die andere Instanz gerade nur im Hintergrund läuft) per Klassenname zu
+    finden und ihr eine eigene Nachricht zu schicken."""
+    hwnd = user32.FindWindowW('EselShotTrayWindow', None)
+    if hwnd:
+        user32.PostMessageW(hwnd, WM_SHOW_MAIN, 0, 0)
+        return True
+    return False
 
 
 # -- DPI ---------------------------------------------------------------------
