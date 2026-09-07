@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warum wir Fahrstuhl in zwei Bots aufgeteilt haben – Eselbande Blog</title>
+<meta name="description" content="Wie Fahrstuhl vom Troll-Bot zum Allrounder wurde, warum das strategisch nicht mehr aufging, und wie die Aufspaltung in Fahrstuhl (Fun) und EselModerator (Rest) abgelaufen ist.">
+<link rel="canonical" href="https://eselbande.com/blog/fahrstuhl-aufspaltung/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #080810; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08); --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; }
+  .container { max-width: 700px; margin: 0 auto; padding: 40px 20px 100px; }
+  .back { display: inline-block; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 6px 14px; color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .back:hover { color: var(--text); }
+  .meta { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  h1 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 1.5rem; color: #fff; }
+  h2 { font-size: 1.25rem; font-weight: 700; margin: 2.2rem 0 0.9rem; color: #fff; }
+  p { margin-bottom: 1.1rem; color: #cbd5e1; }
+  strong { color: #fff; }
+  a { color: var(--accent); }
+  ul { margin: 0 0 1.1rem 1.3rem; color: #cbd5e1; }
+  li { margin-bottom: 0.4rem; }
+  .callout { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+             border-radius: 10px; padding: 1rem 1.3rem; margin: 1.5rem 0; font-size: 0.95rem; color: #cbd5e1; }
+  .related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .related a { display: block; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/blog/" class="back">← Zurück zum Blog</a>
+  <div class="meta">4. September 2026 · Hinter den Kulissen</div>
+  <h1>Warum wir Fahrstuhl in zwei Bots aufgeteilt haben</h1>
+
+  <p>Fahrstuhl hat als Troll-Bot angefangen: Elevator, Ghost, Mute, Mirror, Deafen – kleine Streiche im Sprachkanal, finanziert über eine eigene Shield-Wirtschaft. Auf einem einzelnen Server war das genau richtig. Mit der Zeit kamen aber immer mehr Server dazu, und mit ihnen Wünsche, die mit Trollen nichts mehr zu tun hatten: Moderation, AutoMod gegen Spam und Raids, ein Level-System, Reaction Roles, ein Ticket-System für den Support, Willkommensnachrichten, temporäre Voice-Kanäle, Server-Backups.</p>
+
+  <p>Wir haben all das gebaut. Am Ende war Fahrstuhl ein waschechter Allround-Bot mit eigenem Web-Dashboard – auf dem Papier ein Erfolg. In der Praxis ein strukturelles Problem.</p>
+
+  <h2>Das Problem mit "kann alles ein bisschen"</h2>
+  <p>Für jedes einzelne dieser Features gibt es längst einen Bot, der sich <strong>ausschließlich</strong> darauf konzentriert: MEE6 und Dyno für Moderation und Leveling, Carl-bot für Reaction Roles und AutoMod, Ticket Tool für den Support. Diese Bots haben Jahre an Entwicklungszeit in genau eine Sache gesteckt. Ein Bot, der zwölf Dinge mittelgut kann, konkurriert bei jedem einzelnen davon gegen einen Spezialisten – und das ist ein Wettbewerb, den man auf Dauer nicht gewinnt, egal wie viel man nachbaut.</p>
+
+  <p>Dazu kam ein zweites Problem: Die reinen Fun-Features (Fahrstuhls eigentliche Identität) gingen in der Feature-Liste unter. Wer wegen der Trolleffekte kam, musste sich durch ein Moderations-Dashboard klicken, um an sein Shield-Menü zu kommen.</p>
+
+  <div class="callout">Die Lösung war kein weiteres Feature, sondern ein Schnitt: <strong>Fahrstuhl wird in zwei eigenständige Bots aufgeteilt.</strong></div>
+
+  <h2>Fahrstuhl bleibt Fahrstuhl</h2>
+  <p>Der Fun-Bot blieb genau das: Elevator, Ghost, Mute, Mirror, Deafen, Presets, die Shield-Wirtschaft und die Rewards (Daily-, Voice- und Promo-Claims), über die man Shields verdient. Dazu ein eigenes Premium mit schnelleren Cooldowns und mehr Individualisierung. Kein Moderations-Ballast mehr.</p>
+
+  <h2>Alles andere übernimmt EselModerator</h2>
+  <p>Ein komplett neuer Bot – <strong>EselModerator</strong> – hat übernommen, was mit Server-Verwaltung zu tun hat:</p>
+  <ul>
+    <li>Moderation & AutoMod (Warnen, Timeout, Kick, Ban mit Fallhistorie, automatische Spam-/Invite-/Caps-Erkennung)</li>
+    <li>Leveling mit eigener Rangliste</li>
+    <li>Willkommensnachrichten & Reaction-Role-Panels</li>
+    <li>Tickets, inklusive mehrerer Panels pro Server</li>
+    <li>Temporäre Voice-Kanäle</li>
+    <li>Social Alerts, Freegames-Ankündigungen und Server-Backup</li>
+  </ul>
+  <p>EselModerator bekam dabei sein <strong>komplett eigenes, unabhängiges Premium-System</strong> – keine Kopplung an Fahrstuhls Shield-Wirtschaft, eigene Tier-Definitionen für Ticket-Limits, AutoMod-Regeln und mehr. Bestehende Server mussten nichts manuell migrieren: Configs, Tickets, Mod-Fälle und Level-Daten sind automatisch mit umgezogen, betroffene Fahrstuhl-Befehle zeigen seitdem einen Einladungs-Link zu EselModerator.</p>
+
+  <h2>War's das wert?</h2>
+  <p>Ja – auch wenn eine Aufspaltung sich im ersten Moment nach einem Rückschritt anfühlt (zwei Bots einladen statt einem, zwei Dashboards statt einem). Beide Bots sind seitdem klarer in dem, was sie tun und für wen sie gemacht sind. Und beide können sich weiterentwickeln, ohne sich gegenseitig im Weg zu stehen.</p>
+
+  <div class="related">
+    <strong style="color:#fff;">Weiterlesen:</strong>
+    <a href="/blog/eselfriend-ki-sprachfreund/">EselFriend: Wie ein KI-Freund im Sprachkanal wirklich funktioniert →</a>
+    <a href="/blog/">← Alle Blogbeiträge</a>
+  </div>
+</div>
+</body>
+</html>

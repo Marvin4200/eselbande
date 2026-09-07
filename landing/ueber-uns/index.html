@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Über uns – Eselbande</title>
+<meta name="description" content="Wie aus einem kleinen Troll-Bot unter Freunden die Eselbande wurde: Fahrstuhl, EselModerator, EselBuilder mit EselFreund, EselTokens, EselMusic und EselShot.">
+<link rel="canonical" href="https://eselbande.com/ueber-uns/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #080810; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8; --pink: #f093fb;
+  }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 20px 100px; }
+  .back { display: inline-block; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 6px 14px; color: var(--muted); font-size: 0.85em; text-decoration: none; }
+  .back:hover { color: var(--text); }
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: -1px; margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #c4b5fd 0%, #818cf8 40%, #f093fb 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .lede { color: var(--muted); font-size: 1.1rem; margin-bottom: 2.5rem; }
+  h2 { font-size: 1.4rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #fff; }
+  p { margin-bottom: 1.1rem; color: #cbd5e1; }
+  strong { color: #fff; }
+  a { color: var(--accent); }
+  .team { display: flex; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
+  .team-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.5rem; flex: 1; min-width: 200px; }
+  .team-card .name { font-weight: 700; color: #fff; margin-bottom: 0.2rem; }
+  .team-card .role { color: var(--muted); font-size: 0.85rem; }
+  .cta { margin-top: 3rem; padding: 2rem; border-radius: 20px; text-align: center;
+         background: linear-gradient(135deg, rgba(88,101,242,0.12), rgba(102,126,234,0.08)); border: 1px solid rgba(88,101,242,0.25); }
+  .cta a { display: inline-block; margin-top: 1rem; padding: 0.7rem 1.6rem; border-radius: 10px; background: #5865F2; color: #fff; text-decoration: none; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">← Zurück zu eselbande.com</a>
+  <h1>Über die Eselbande</h1>
+  <p class="lede">Wie aus einem Troll-Bot unter Freunden eine ganze Familie eigener Discord-Tools wurde.</p>
+
+  <p>Die Eselbande hat nicht als Firma oder Produkt angefangen, sondern als <strong>ein einziger Discord-Server unter Freunden</strong> und ein Bot namens Fahrstuhl, der anfangs genau eine Sache konnte: andere Leute im Sprachkanal mit Soundeffekten und kleinen Streichen ärgern. Elevator, Ghost, Mute, Mirror – Spielereien, die auf einem einzigen Server Spaß gemacht haben.</p>
+
+  <h2>Vom Troll-Bot zum Allrounder – und zurück</h2>
+  <p>Mit der Zeit kamen immer mehr Server dazu, und mit ihnen immer mehr Wünsche: Moderation, Auto-Mod gegen Spam und Raids, ein Level-System, Tickets für den Support, Reaction Roles, ein Willkommens-Bereich. Fahrstuhl wuchs zu einem Allround-Bot mit einem eigenen Dashboard – aber genau das wurde zum Problem. Bei jedem einzelnen dieser Features gibt es längst etablierte, hochspezialisierte Bots wie MEE6, Dyno oder Carl-bot, die sich auf nichts anderes konzentrieren. Ein Bot, der alles ein bisschen macht, gewinnt gegen die nicht.</p>
+  <p>Die Konsequenz war ein Schnitt, der sich richtig unbequem angefühlt hat, aber im Rückblick der wichtigste Schritt war: <strong>Fahrstuhl wurde in zwei eigenständige Bots aufgeteilt.</strong> Fahrstuhl selbst blieb reiner Fun-Bot mit seiner Shield-Wirtschaft. Alles andere – Moderation, AutoMod, Leveling, Tickets, Reaction Roles, Temp-Voice, Server-Backup und mehr – zog in einen komplett neuen Bot namens <strong>EselModerator</strong> um, mit eigenem Premium-System und eigenem Dashboard. (Die ganze Geschichte dazu gibt's im <a href="/blog/fahrstuhl-aufspaltung/">Blogbeitrag zur Aufspaltung</a>.)</p>
+
+  <h2>Mehr als nur Moderation</h2>
+  <p>Parallel dazu ist eine zweite Reihe von Projekten entstanden, die nichts mehr mit klassischer Server-Verwaltung zu tun haben. <strong>EselBuilder</strong> plant und baut Discord-Server per KI-Beschreibung – Rollen, Kanäle, Berechtigungen, alles automatisch. Darüber ist <strong>EselFriend</strong> gewachsen: ein persönlicher KI-Freund, mit dem man im Sprachkanal wirklich reden kann, nicht nur Text vorgelesen bekommt (mehr dazu im <a href="/blog/eselfriend-ki-sprachfreund/">Blogbeitrag zu EselFriend</a>). <strong>EselTokens</strong> ist die eigene Community-Wirtschaft der Eselbande geworden – ein Token-System mit Mini-Spielen und mittlerweile auch Giveaways. Dazu kommen <strong>EselMusic</strong> als eigener Musikbot und <strong>EselShot</strong>, ein selbst gehosteter Screenshot-Uploader im Stil von Lightshot, weil wir keine Lust hatten, für sowas Grundlegendes von einem Drittanbieter abhängig zu sein.</p>
+
+  <h2>Warum wir Dinge selbst hosten</h2>
+  <p>Ein roter Faden zieht sich durch fast jede Entscheidung hier: lieber selbst hosten und selbst verstehen, als eine fertige Lösung einzukaufen. Das gilt für den File-Hoster hinter EselShot genauso wie für die Infrastruktur hinter EselFriends Sprachgesprächen. Es bedeutet mehr Arbeit, aber auch, dass wir jederzeit erklären können, was mit euren Daten passiert – und dass wir jede Änderung öffentlich im <a href="/changelog/">Changelog</a> dokumentieren, statt sie stillschweigend auszurollen.</p>
+
+  <div class="team">
+    <div class="team-card"><div class="name">Txxle</div><div class="role">Gründer & Entwicklung</div></div>
+    <div class="team-card"><div class="name">Elite</div><div class="role">Team & Community</div></div>
+  </div>
+
+  <div class="cta">
+    <p style="margin:0; color:#fff; font-weight:700;">Willst du live dabei sein, wenn wieder was Neues gebaut wird?</p>
+    <a href="https://dc.eselbande.com">Discord beitreten</a>
+  </div>
+</div>
+</body>
+</html>

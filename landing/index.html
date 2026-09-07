@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eselbande.com</title>
+    <title>eselbande.com – Discord-Bots, Tools & Community</title>
+    <meta name="description" content="Die Eselbande: Fahrstuhl (Fun-Bot), EselModerator (Moderation & Automation), EselBuilder (KI-Server-Planung mit EselFreund), EselTokens (Community-Wirtschaft), EselMusic und EselShot – alles selbst gehostet, ein Discord-Server, eine Community.">
+    <meta property="og:title" content="eselbande.com – Discord-Bots, Tools & Community">
+    <meta property="og:description" content="Discord-Bot, Token-System, KI-Tools und mehr – alles an einem Ort, selbst gehostet von der Eselbande.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://eselbande.com">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://eselbande.com/">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -348,6 +355,12 @@
         .hc-cyan::before { background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(14,165,233,0.08)); }
         .hc-cyan:hover   { border-color: rgba(56,189,248,0.4); box-shadow: 0 24px 60px rgba(56,189,248,0.15); }
 
+        .hc-amber::before { background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.08)); }
+        .hc-amber:hover   { border-color: rgba(251,191,36,0.4); box-shadow: 0 24px 60px rgba(251,191,36,0.15); }
+
+        .hc-green::before { background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(16,185,129,0.08)); }
+        .hc-green:hover   { border-color: rgba(52,211,153,0.4); box-shadow: 0 24px 60px rgba(52,211,153,0.15); }
+
         .hc-glow {
             position: absolute;
             top: -60px; right: -60px;
@@ -359,6 +372,8 @@
         .hc-purple .hc-glow { background: #667eea; }
         .hc-pink   .hc-glow { background: #f093fb; }
         .hc-cyan   .hc-glow { background: #38bdf8; }
+        .hc-amber  .hc-glow { background: #fbbf24; }
+        .hc-green  .hc-glow { background: #34d399; }
 
         .hc-tag {
             display: inline-flex;
@@ -376,6 +391,8 @@
         .hc-purple .hc-tag { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.25); }
         .hc-pink   .hc-tag { background: rgba(240,147,251,0.15); color: #e879f9; border: 1px solid rgba(240,147,251,0.25); }
         .hc-cyan   .hc-tag { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25); }
+        .hc-amber  .hc-tag { background: rgba(251,191,36,0.15); color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
+        .hc-green  .hc-tag { background: rgba(52,211,153,0.15); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.25); }
 
         .hc-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
 
@@ -425,6 +442,80 @@
         .hc-purple .hc-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .hc-pink   .hc-btn { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
         .hc-cyan   .hc-btn { background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: white; }
+        .hc-amber  .hc-btn { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1206; }
+        .hc-green  .hc-btn { background: linear-gradient(135deg, #34d399, #10b981); color: #05231a; }
+
+        /* ── Ad slot (house ad by default, network-ready later) ── */
+        .ad-banner {
+            display: none;
+            align-items: center;
+            gap: 1.25rem;
+            border-radius: 20px;
+            padding: 1.5rem 1.75rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            text-decoration: none;
+            color: var(--text);
+            transition: border-color 0.2s, background 0.2s, transform 0.2s;
+            margin-bottom: 5rem;
+        }
+        .ad-banner.is-visible { display: flex; }
+        .ad-banner:hover {
+            border-color: rgba(102,126,234,0.35);
+            background: var(--surface2);
+            transform: translateY(-2px);
+        }
+        .ad-banner-icon {
+            font-size: 1.9rem;
+            flex-shrink: 0;
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(102,126,234,0.12);
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+        .ad-banner-body { flex: 1; min-width: 0; }
+        .ad-banner-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.55rem;
+            border-radius: 99px;
+            margin-bottom: 0.4rem;
+        }
+        .ad-banner-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+        .ad-banner-desc {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .ad-banner-cta {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.55rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+            .ad-banner { flex-wrap: wrap; padding: 1.25rem; }
+            .ad-banner-cta { width: 100%; justify-content: center; }
+        }
 
         /* ── Services grid ── */
         .services-grid {
@@ -574,6 +665,8 @@
         }
     </style>
     <script defer src="https://analytics.eselbande.com/script.js" data-website-id="eb86c33f-e300-4ef9-8bdd-08dfa3119826"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3020669305248789"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -586,10 +679,12 @@
             eselbande.com
         </a>
         <div class="nav-links">
+            <a class="nav-link" href="https://shop.eselbande.com">Shop</a>
             <a class="nav-link" href="https://go.eselbande.com">Links</a>
             <a class="nav-link" href="https://files.eselbande.com">Files</a>
             <a class="nav-link" href="https://quotes.eselbande.com">Zitate</a>
             <a class="nav-link" href="/eselmusic">EselMusic</a>
+            <a class="nav-link" href="/blog/">Blog</a>
             <a class="nav-link" href="https://team.eselbande.com">Team</a>
             <a class="nav-link" href="https://status.eselbande.com">Status</a>
             <a class="nav-discord" href="https://discord.gg/eselbande" target="_blank" rel="noopener">
@@ -624,7 +719,7 @@
     <section id="services">
         <div class="section-label">Highlights</div>
         <div class="section-title">Das Herzstück der Bande</div>
-        <p class="section-sub">Drei große Projekte, die alles zusammenhalten.</p>
+        <p class="section-sub">Fünf große Projekte, die alles zusammenhalten.</p>
 
         <div class="highlights">
             <a class="highlight-card hc-purple" href="/fahrstuhl/">
@@ -677,13 +772,63 @@
                 </div>
                 <span class="hc-btn">EselMusic öffnen →</span>
             </a>
+
+            <div class="highlight-card hc-amber">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">🤖 KI-Tool</span>
+                <span class="hc-icon">🤖</span>
+                <div class="hc-title">Eselbuilder</div>
+                <div class="hc-desc">KI-gestützte Server-Planung für Discord. Beschreibe deinen Server, Eselbuilder baut Rollen, Kanäle und Berechtigungen automatisch auf — oder optimiert, was schon da ist. Dazu /sound und dein eigener EselFreund per Sprachchat.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Server-Aufbau</span>
+                    <span class="hc-feature">Optimierung</span>
+                    <span class="hc-feature">Audit & Fix</span>
+                    <span class="hc-feature">Backups</span>
+                </div>
+                <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.4rem;">
+                    <a class="hc-btn" href="https://discord.com/oauth2/authorize?client_id=1544422663655653476&scope=bot+applications.commands&permissions=18752866872567" target="_blank" rel="noopener noreferrer">Bot einladen →</a>
+                    <a class="hc-btn" style="background:transparent; border:1px solid var(--border); color:var(--text);" href="https://eselbuilder.eselbande.com">Dashboard öffnen</a>
+                </div>
+            </div>
+
+            <a class="highlight-card hc-green" href="https://files.eselbande.com/eselshot">
+                <div class="hc-glow"></div>
+                <span class="hc-tag">📸 Desktop-Tool</span>
+                <span class="hc-icon">📸</span>
+                <div class="hc-title">EselShot</div>
+                <div class="hc-desc">Screenshot-Tool für Windows im Stil von Lightshot — Taste drücken, Bereich aufziehen, hochladen. Der Link liegt sofort in der Zwischenablage, gehostet auf unserem eigenen Server statt bei Drittanbietern.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Ein Tastendruck</span>
+                    <span class="hc-feature">Eigener Hoster</span>
+                    <span class="hc-feature">Sofort-Link</span>
+                    <span class="hc-feature">Kostenlos</span>
+                </div>
+                <span class="hc-btn">Für Windows herunterladen →</span>
+            </a>
         </div>
+
+        <a class="ad-banner" id="ad-landing-midcontent" target="_blank" rel="noopener noreferrer">
+            <span class="ad-banner-icon" id="ad-landing-midcontent-icon">✨</span>
+            <span class="ad-banner-body">
+                <span class="ad-banner-badge" id="ad-landing-midcontent-badge">Anzeige</span>
+                <div class="ad-banner-title" id="ad-landing-midcontent-title"></div>
+                <div class="ad-banner-desc" id="ad-landing-midcontent-desc"></div>
+            </span>
+            <span class="ad-banner-cta" id="ad-landing-midcontent-cta"></span>
+        </a>
 
         <div class="section-label">Alle Services</div>
         <div class="section-title">Tools & Seiten</div>
         <p class="section-sub">Alles was die Eselbande am Laufen hält.</p>
 
         <div class="services-grid">
+            <a class="service-card" href="https://shop.eselbande.com">
+                <span class="service-icon">🛒</span>
+                <div>
+                    <div class="service-name">Shop</div>
+                    <div class="service-desc">Fahrstuhl Premium und Eselbuilder Pro kaufen. shop.eselbande.com</div>
+                </div>
+            </a>
             <a class="service-card" href="https://go.eselbande.com">
                 <span class="service-icon">🔗</span>
                 <div>
@@ -758,12 +903,88 @@
             <a class="footer-link" href="https://dc.eselbande.com">Discord</a>
             <a class="footer-link" href="https://status.eselbande.com">Status</a>
             <a class="footer-link" href="/eselmusic">EselMusic</a>
+            <a class="footer-link" href="/blog/">Blog</a>
+            <a class="footer-link" href="/ueber-uns/">Über uns</a>
             <a class="footer-link" href="https://team.eselbande.com">Team</a>
             <a class="footer-link" href="/fahrstuhl/">Dashboard</a>
             <a class="footer-link" href="/eseltokens/">EselTokens</a>
+            <a class="footer-link" href="https://files.eselbande.com/eselshot">EselShot</a>
+            <a class="footer-link" href="https://shop.eselbande.com">Shop</a>
+            <a class="footer-link" href="https://eselbuilder.eselbande.com">Eselbuilder</a>
+            <a class="footer-link" href="/changelog/">Changelog</a>
+            <a class="footer-link" href="/terms/">Nutzungsbedingungen</a>
+            <a class="footer-link" href="/privacy/">Datenschutz</a>
         </div>
         <div class="footer-copy">© 2026 eselbande.com &nbsp;·&nbsp; created by Txxle &amp; Elite</div>
     </footer>
 
+    <script>
+    // ── Ad slot: house ad by default, ready to switch to a real ad network later.
+    // Reads from the first-party /eseltokens API (same-origin) — no third-party
+    // cookies, no consent banner needed. Fails silently (no box shown) if the
+    // slot is disabled or the request fails, so there's never an empty ad box.
+    (function () {
+        function renderHouseSlot(elId, slot) {
+            var el = document.getElementById(elId);
+            if (!el || !slot || !slot.enabled) return;
+            if (slot.mode === 'adsense' || slot.mode === 'custom') {
+                // Reserved for a real ad network — nothing to render until it's
+                // actually wired up (see /eseltokens/admin/ads).
+                return;
+            }
+            var house = slot.house;
+            if (!house || !house.title) return;
+
+            document.getElementById(elId + '-icon').textContent = house.imageEmoji || '✨';
+            document.getElementById(elId + '-badge').textContent = house.badgeText || 'Anzeige';
+            document.getElementById(elId + '-title').textContent = house.title;
+            document.getElementById(elId + '-desc').textContent = house.description || '';
+            var cta = document.getElementById(elId + '-cta');
+            cta.textContent = house.ctaText || 'Mehr erfahren';
+            el.href = house.linkUrl || '#';
+            el.classList.add('is-visible');
+
+            var tracked = false;
+            var trackImpression = function () {
+                if (tracked) return;
+                tracked = true;
+                fetch('/eseltokens/api/ads/event/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotKey: slot.key, type: 'impression', page: location.pathname }),
+                    keepalive: true
+                }).catch(function () {});
+            };
+            if ('IntersectionObserver' in window) {
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) { trackImpression(); io.disconnect(); }
+                    });
+                }, { threshold: 0.5 });
+                io.observe(el);
+            } else {
+                trackImpression();
+            }
+
+            el.addEventListener('click', function () {
+                fetch('/eseltokens/api/ads/event/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotKey: slot.key, type: 'click', page: location.pathname }),
+                    keepalive: true
+                }).catch(function () {});
+            });
+        }
+
+        function loadSlot(key, elId) {
+            fetch('/eseltokens/api/ads/slot/' + key + '/')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (slot) { renderHouseSlot(elId, slot); })
+                .catch(function () {});
+        }
+
+        loadSlot('landing-midcontent', 'ad-landing-midcontent');
+    })();
+    </script>
 </body>
 </html>

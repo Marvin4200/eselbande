@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Changelog – Eselbande</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background:#0d0d1a; color:#e0e0e0; margin:0; padding:0; }
+  .container { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { color: #fff; border-bottom: 2px solid #5865F2; padding-bottom: 12px; }
+  .intro { color: #bbb; line-height: 1.7; margin-bottom: 8px; }
+  .meta { color: #555; font-size: 0.85em; margin: -4px 0 32px; }
+  a { color: #5865F2; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back { display: inline-block; margin-bottom: 24px; background: #1a1a2e; border: 1px solid #333;
+          border-radius: 6px; padding: 6px 14px; color: #aaa; font-size: 0.85em; }
+
+  .roadmap { background:#1a1a2e; border:1px solid #333; border-left:3px solid #5865F2;
+             border-radius:8px; padding:16px 18px; margin-bottom:40px; }
+  .roadmap h2 { margin:0 0 10px; color:#a0a8ff; font-size:1.05rem; }
+  .roadmap ul { margin:0; padding-left:20px; }
+  .roadmap li { line-height:1.8; color:#ccc; }
+  .roadmap .status { font-size:.75em; color:#888; }
+
+  .day { margin-bottom: 36px; }
+  .day-date { color: #a0a8ff; font-weight: 700; font-size: 0.95rem; margin-bottom: 14px;
+              border-bottom: 1px solid #23233a; padding-bottom: 8px; }
+  .entry { display: flex; gap: 12px; padding: 10px 0; }
+  .entry-tag { flex-shrink: 0; width: 34px; text-align: center; font-size: 1.15rem; }
+  .entry-body { flex: 1; }
+  .entry-title { color: #fff; font-weight: 600; margin: 0 0 3px; font-size: 0.95rem; }
+  .entry-desc { color: #999; font-size: 0.85rem; line-height: 1.6; margin: 0; }
+
+  .empty { color: #666; text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">← Zurück zu eselbande.com</a>
+  <h1>Changelog</h1>
+  <p class="intro">Was sich bei Fahrstuhl, Eselbuilder, dem Shop und den anderen Eselbande-Diensten
+    tut — neueste Änderungen zuerst.</p>
+  <p class="meta">Fragen oder Feedback? <a href="https://discord.gg/zfzDHKcWDx" target="_blank" rel="noopener">Support-Discord</a></p>
+
+  <div class="roadmap">
+    <h2>🔭 Was als Nächstes kommt</h2>
+    <ul>
+      <li>Umstellung des Shops auf echte Zahlungen (Production) <span class="status">— in Vorbereitung</span></li>
+    </ul>
+  </div>
+
+  <div id="log"></div>
+  <p class="empty" id="empty" hidden>Noch keine Einträge.</p>
+
+  <script>
+    // Neuen Eintrag hinzufuegen: oben in ENTRIES einfuegen, absteigend nach Datum sortiert.
+    // tag ist ein einzelnes Emoji, group fasst mehrere Eintraege desselben Tages zusammen.
+    const ENTRIES = [
+      {
+        date: "2026-09-06",
+        items: [
+          { tag: "🧹", title: "Fahrstuhl-Dashboard: aufgeräumt", desc: "Moderation, Tickets, Welcome, Leveling, Reaction Roles, Social Alerts, Free Games, Temp Voice und Server-Backup sind schon länger zu EselModerator umgezogen — das Dashboard zeigte trotzdem noch die alten, nicht mehr funktionierenden Einstellungsseiten prominent an. Jetzt gibt es dafür nur noch einen klaren Hinweis mit Einladungs-Link zu EselModerator, statt einer Navigation voller toter Funktionen." },
+          { tag: "🤖", title: "EselFreund: sauberer Themenwechsel beim Dazwischenreden", desc: "Wenn man dem EselFreund mitten in seiner Antwort ins Wort fällt, bricht er die alte, schon veraltete Antwort jetzt sofort ab statt sie einfach zu Ende zu spielen. Außerdem reagiert er jetzt zuverlässig auf die allererste Ansprache, statt in seltenen Fällen stumm zu bleiben." },
+          { tag: "📢", title: "Anzeigen-Slots auf der Landingpage & bei EselTokens", desc: "Auf eselbande.com (zwischen den Highlights) und im EselTokens-Dashboard gibt es jetzt dezente, ins Design eingepasste Werbeflächen. Aktuell bewerben sie unsere eigenen Produkte wie Fahrstuhl Premium und Eselbuilder Pro — zentral an- und ausschaltbar über ein neues Admin-Panel, ganz ohne aufdringliche Popups oder Fake-Buttons." },
+        ],
+      },
+      {
+        date: "2026-09-05",
+        items: [
+          { tag: "🤖", title: "EselFreund: Server-Aktionen per Sprache oder Chat", desc: "Kann jetzt auf Bitte Text-Kanäle erstellen/umbenennen und Mitglieder in andere Sprachkanäle verschieben. Kicken, Bannen und Timeout sind ebenfalls möglich, verlangen aber vorher eine Bestätigung per Knopfdruck im Chat und funktionieren nur, wenn die anfragende Person die nötige Discord-Berechtigung dafür selbst besitzt." },
+          { tag: "🤖", title: "EselFreund: Ein Freund pro Server", desc: "Ein EselFreund gehört jetzt zum ganzen Server statt einer einzelnen Person — er kann ja ohnehin nicht in zwei Sprachkanälen gleichzeitig sein. Bestehende Server mit mehreren EselFreunden mussten sich für einen entscheiden." },
+          { tag: "🤖", title: "EselFreund: Namens-Erkennung, Begrüßung & Auto-Verlassen", desc: "Reagiert im Sprachkanal jetzt nur noch, wenn er mit seinem Namen angesprochen wird, begrüßt dich automatisch beim Beitreten und verlässt den Kanal von selbst, sobald du gehst." },
+          { tag: "🤖", title: "EselBuilder: EselFreund (/eselfriend)", desc: "Ein persönlicher AI-Freund pro Nutzer: schriftlich chatten oder live im Sprachkanal reden (echtes Sprache-zu-Sprache-Gespräch, keine Text-Vorlesung) — merkt sich dabei selbstständig wichtige Dinge über euch für spätere Gespräche. Kostenlos mit 10 Voice-Minuten/Monat und 30 Nachrichten/Tag, mit Eselbuilder Pro 60 Minuten/Monat und 300 Nachrichten/Tag." },
+          { tag: "🎵", title: "/sound: Sprache oder Sound-Effekt gezielt wählbar", desc: "Neue Option bei /sound: Sprache (männlich/weiblich) oder Sound-Effekt jetzt direkt auswählbar, statt es am Prompt-Text zu erraten. Sprache läuft über kostenlose Microsoft-Neural-Stimmen, Sound-Effekte weiterhin über die AI-Sound-Generierung." },
+          { tag: "🛒", title: "Shop: komplettes Redesign & Zahlung per PayPal", desc: "Neuer Look mit ausführlichen Produktseiten und vollständigen Feature-Listen pro Angebot, Bezahlung jetzt über PayPal statt Paddle. Eselbuilder Pro kostet 4,99 € im Monat." },
+          { tag: "🎵", title: "EselBuilder: AI Sound Generator (/sound, /aisounds)", desc: "Per Prompt einen kurzen AI-Sound erzeugen und direkt im Sprachkanal abspielen lassen — inklusive persönlicher Sound-Bibliothek zum erneuten Abspielen, Herunterladen oder Löschen." },
+          { tag: "🔒", title: "Shop: Race Condition bei Team-Code-Einlösung behoben", desc: "Sehr schnelles doppeltes Einreichen desselben Codes konnte in seltenen Fällen zu doppelter Freischaltung führen — jetzt ausgeschlossen." },
+          { tag: "🔒", title: "Konstant-zeitige Token-Vergleiche gehärtet", desc: "Interne API-Anfragen zwischen unseren Diensten vergleichen Zugangs-Token jetzt gegen Timing-Angriffe abgesichert." },
+        ],
+      },
+      {
+        date: "2026-09-04",
+        items: [
+          { tag: "🛠️", title: "Fix: Team-Code-Einlösung für Eselbuilder Pro", desc: "Codes für Eselbuilder Pro ließen sich nicht einlösen ('Einlösen fehlgeschlagen') — behoben." },
+          { tag: "🔒", title: "EselModerator-Dashboard: Zugriffsrechte gehärtet", desc: "Sicherheits-Update: Nur noch Server-Owner und Discord-Admins eines Servers können dessen EselModerator-Einstellungen im Dashboard einsehen und ändern." },
+          { tag: "🔗", title: "EselModerator-Dashboard: Footer mit Nutzungsbedingungen & Datenschutz", desc: "Kleine Aufräumarbeiten: Footer-Links und eine Server-Backup-Kachel auf der Übersichtsseite ergänzt." },
+          { tag: "🖥️", title: "Eigenes Dashboard für EselModerator", desc: "Neues Web-Panel unter eselmoderator.eselbande.com — Server auswählen, Module an/aus schalten und Moderation, AutoMod, Willkommen, Reaction-Roles, Leveling, Temp-Voice und Tickets bequem im Browser statt per Befehl konfigurieren." },
+          { tag: "✨", title: "EselModerator-Dashboard: komplettes Redesign", desc: "Neuer, moderner Look mit eigenem Design-System, animiertem Hintergrund und aufgeräumten Modul-Karten." },
+          { tag: "📡", title: "EselModerator: Social Alerts & Freegames", desc: "Benachrichtigungen für Twitch-Streams, YouTube-Videos und RSS-Feeds sowie automatische Ankündigungen kostenloser Spiele-Deals sind jetzt bei EselModerator statt Fahrstuhl." },
+          { tag: "🗂️", title: "EselModerator: Server-Backup & Restore", desc: "Sichert Rollen, Kanäle, Berechtigungen, Emojis und mehr und kann sie wiederherstellen — inklusive automatischem Zeitplan. Bestehende Backups wurden vollständig übernommen, nichts ist verloren gegangen." },
+          { tag: "🛒", title: "Neuer zentraler Shop: shop.eselbande.com", desc: "Fahrstuhl Premium und Eselbuilder Pro an einem Ort kaufen, Bezahlung ueber Paddle." },
+          { tag: "🔑", title: "Team-Zugangscodes", desc: "Codes fuers Team schalten Produkte kostenlos frei, z.B. fuer Gewinnspiele oder Tests." },
+          { tag: "🎫", title: "Ticket-Panel jetzt wirklich live", desc: "Staff-Online, Warteschlange und Bewertung aktualisieren sich automatisch bei jedem Ticket." },
+          { tag: "🧩", title: "Mehrere Ticket-Panels pro Server", desc: "Premium-Server koennen bis zu 3 Panels in verschiedenen Kanaelen einrichten, Pro unbegrenzt viele." },
+          { tag: "📄", title: "Einheitliche Nutzungsbedingungen & Datenschutz", desc: "Eine gemeinsame Version fuer alle Produkte statt mehrerer verstreuter Seiten." },
+          { tag: "🛠️", title: "Team-Codes: eigene Admins verwalten", desc: "Im Shop koennen jetzt weitere Admins fuers Team-Code-System per Discord-ID hinzugefuegt/entfernt werden, ganz ohne Deploy." },
+          { tag: "🤖", title: "Start von EselModerator", desc: "Grundgeruest fuer einen neuen, eigenstaendigen Bot steht -- Fahrstuhl wird kuenftig reiner Fun-Bot, EselModerator uebernimmt Moderation, AutoMod, Leveling, Tickets und mehr." },
+          { tag: "🛡️", title: "EselModerator: Moderation & AutoMod", desc: "Warnen/Timeout/Kick/Ban/Unban mit Fallhistorie, plus automatische Erkennung von Invites, Spam, Grossbuchstaben und verbotenen Begriffen." },
+          { tag: "👋", title: "EselModerator: Willkommen & Rollenmenues", desc: "Begruessungs-/Abschiedsnachrichten mit Autorolle, sowie Reaction-Role-Panels per Buttons oder Auswahlmenue." },
+          { tag: "🔊", title: "EselModerator: Temporaere Voice-Kanaele", desc: "Automatisch erstellte private Voice-Kanaele mit eigenen /voice-Befehlen (umbenennen, sperren, Limit, kicken, uebernehmen)." },
+          { tag: "📶", title: "Bots zeigen jetzt sinnvolle Status-Anzeigen", desc: "EselModerator und der Musik-Bot zeigten teils gar keinen oder nur einen leeren Discord-Status -- jetzt rotieren beide durch aussagekraeftige Anzeigen." },
+          { tag: "🎉", title: "Fahrstuhl ist jetzt zwei Bots: Fahrstuhl + EselModerator", desc: "Fahrstuhl bleibt der Fun-Bot (Elevator, Ghost, Shields, Rewards). Moderation, AutoMod, Welcome, Reaction-Roles, Leveling, Tickets und Temp-Voice laufen ab sofort ueber den neuen Bot EselModerator -- eure bisherigen Daten (Configs, Tickets, Mod-Faelle, Level) sind bereits mit umgezogen. Um diese Funktionen weiter zu nutzen, ladet EselModerator auf eurem Server ein: die betroffenen Fahrstuhl-Befehle zeigen dafuer jetzt einen Einladungs-Link." },
+        ],
+      },
+    ];
+
+    const log = document.getElementById("log");
+    const empty = document.getElementById("empty");
+    if (!ENTRIES.length) {
+      empty.hidden = false;
+    } else {
+      for (const day of ENTRIES) {
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+        const dateLabel = new Date(day.date + "T00:00:00").toLocaleDateString("de-DE", {
+          day: "numeric", month: "long", year: "numeric",
+        });
+        dayEl.innerHTML = `<div class="day-date">${dateLabel}</div>`;
+        for (const item of day.items) {
+          const entryEl = document.createElement("div");
+          entryEl.className = "entry";
+          entryEl.innerHTML = `
+            <div class="entry-tag">${item.tag}</div>
+            <div class="entry-body">
+              <p class="entry-title">${item.title}</p>
+              <p class="entry-desc">${item.desc}</p>
+            </div>`;
+          dayEl.appendChild(entryEl);
+        }
+        log.appendChild(dayEl);
+      }
+    }
+  </script>
+</div>
+</body>
+</html>
