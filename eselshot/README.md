@@ -85,11 +85,20 @@ Im Overlay:
 | `Strg+C` | ins Bild in die Zwischenablage |
 | `Strg+S` | als PNG speichern |
 | `Strg+Z` | letzte Zeichnung zurück |
+| `Strg+Y` / `Strg+Umschalt+Z` | zurückgenommene Zeichnung wiederherstellen |
+| `Strg+P` | Auswahl an den Bildschirm heften |
 | `Rechtsklick` | Auswahl verwerfen |
 | `Esc` | abbrechen |
 
 Werkzeuge in der Leiste: Verschieben, Stift, Linie, Pfeil, Rechteck, Ellipse,
-Marker, Text – dazu sieben Farben und drei Strichstärken.
+Marker, Text, nummerierter Schritt (für Schritt-für-Schritt-Anleitungen),
+Verpixeln – dazu sieben Palettenfarben plus freie Farbwahl über das
+`+`-Feld, und drei Strichstärken.
+
+**An den Bildschirm heften:** `📌`-Knopf oder `Strg+P` lässt die Auswahl als
+schwebendes, immer-oben-Fenster offen – zum Vergleichen zweier Fenster oder
+als sichtbare Referenz während der Arbeit. Ziehen zum Verschieben, Mausrad
+für die Deckkraft, Rechtsklick oder `Esc` zum Schließen.
 
 ## Aus dem Quellcode starten
 
@@ -111,6 +120,7 @@ python -m eselshot --settings    # nur Einstellungen öffnen
 | `eselshot/tray.py` | Tray-Symbol, Kontextmenü, globale Hotkeys |
 | `eselshot/icon.py` | Programmsymbol als RGBA und .ico |
 | `eselshot/editor.py` | Overlay: Einfrieren, Auswahl, Zeichenwerkzeuge, Export |
+| `eselshot/pin.py` | Screenshot als schwebendes Immer-oben-Fenster anheften |
 | `eselshot/pngenc.py` | PNG-Encoder auf Basis von zlib |
 | `eselshot/uploader.py` | Upload zum Filehoster per Bearer-Token |
 | `eselshot/settings.py` | Einstellungsfenster |
