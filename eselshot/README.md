@@ -30,12 +30,9 @@ Bildschirmaufnahme über GDI, Oberfläche über Tkinter, PNG-Kodierung über zli
 2. `EselShot.exe` doppelklicken. Windows warnt beim ersten Start („SmartScreen") –
    *Weitere Informationen → Trotzdem ausführen*. Der kleine Einrichter fragt nach
    Desktop-Verknüpfung, Autostart und Sofortstart.
-3. **Token holen:** auf <https://files.eselbande.com> mit Discord anmelden,
-   in der Karte *„🖥️ EselShot – API-Token"* auf **+ Neues Token** klicken,
-   Wert kopieren (nur einmal sichtbar).
-4. Rechtsklick aufs Tray-Symbol → *Einstellungen …*, Token einfügen,
-   *Verbindung testen*, *Speichern*.
-5. **Druck** drücken, Bereich aufziehen, **Hochladen** – Link in der Zwischenablage.
+3. Rechtsklick aufs Tray-Symbol → *Einstellungen …* → **Mit Discord anmelden**.
+   Browser öffnet sich, ein Klick bestätigt – kein Token zum Kopieren.
+4. **Druck** drücken, Bereich aufziehen, **Hochladen** – Link in der Zwischenablage.
 
 ## Für den Betreiber (dich)
 
@@ -123,6 +120,7 @@ python -m eselshot --settings    # nur Einstellungen öffnen
 | `eselshot/pin.py` | Screenshot als schwebendes Immer-oben-Fenster anheften |
 | `eselshot/pngenc.py` | PNG-Encoder auf Basis von zlib |
 | `eselshot/uploader.py` | Upload zum Filehoster per Bearer-Token |
+| `eselshot/pairing.py` | Login mit Discord (Code anfordern, Browser öffnen, Token abholen) |
 | `eselshot/settings.py` | Einstellungsfenster |
 | `eselshot/notify.py` | Benachrichtigung unten rechts |
 | `eselshot/config.py` | Konfiguration und Autostart |
@@ -152,8 +150,15 @@ Texte pixelgenau so im Bild, wie sie zu sehen waren – ganz ohne Grafikbiblioth
 Der Filehoster (`../filehoster`) hat dafür bekommen:
 
 - Tabelle `api_tokens` (nur der SHA-256-Hash wird gespeichert, nie das Token selbst)
-- `GET/POST/DELETE /api/tokens` – Verwaltung, nur mit Browser-Sitzung erreichbar,
-  damit ein Token keine weiteren Tokens erzeugen kann
+- `GET/DELETE /api/tokens` – Verwaltung ("Verbundene Geräte" im Dashboard),
+  nur mit Browser-Sitzung erreichbar
+- **Login-Pairing** (`eselshot/pairing.py` im Client): `POST
+  /api/eselshot/pair/start` (Code anfordern), `GET
+  /api/eselshot/pair/status` (Anzeige auf der Bestätigungsseite), `POST
+  /api/eselshot/pair/confirm` (nach Discord-Login, legt den Token an),
+  `GET /api/eselshot/pair/poll` (Client holt das fertige Token ab). Codes
+  leben nur 5 Minuten, rein im Speicher, jedes Token wird beim Abholen
+  sofort aus der Warteschlange entfernt.
 - `/api/upload`, `/api/files` und `/api/me` akzeptieren zusätzlich
   `Authorization: Bearer esel_…`
 - `GET /eselshot` – Landingpage mit Download-Button

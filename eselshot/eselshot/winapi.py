@@ -172,13 +172,23 @@ def enable_dark_titlebar(hwnd):
 
     Ohne das sitzt unter der dunklen Programmoberfläche eine helle System-
     Titelleiste - wirkt wie zwei unterschiedliche Programme übereinander.
+
+    ``hwnd`` ist hier ``widget.winfo_id()`` - das ist bei Tk unter Windows
+    NICHT das dekorierte Top-Level-Fenster, sondern nur dessen innere
+    Zeichenfläche (DwmSetWindowAttribute darauf liefert E_HANDLE/0x80070006).
+    Das eigentliche Fenster mit Titelleiste ist der Parent davon.
+
     Zwei Attribut-Nummern nötig: 20 ab dem 20H1-Update, 19 auf älteren
     Builds - beide kosten nichts, falsche Nummer liefert einfach S_FALSE."""
     try:
+        user32.GetParent.restype = wintypes.HWND
+        user32.GetParent.argtypes = (wintypes.HWND,)
+        top = user32.GetParent(wintypes.HWND(hwnd)) or hwnd
+
         dwm = ctypes.WinDLL('dwmapi')
         value = ctypes.c_int(1)
         for attr in (20, 19):  # DWMWA_USE_IMMERSIVE_DARK_MODE
-            if dwm.DwmSetWindowAttribute(wintypes.HWND(hwnd), attr,
+            if dwm.DwmSetWindowAttribute(wintypes.HWND(top), attr,
                                          ctypes.byref(value), ctypes.sizeof(value)) == 0:
                 return True
     except OSError:

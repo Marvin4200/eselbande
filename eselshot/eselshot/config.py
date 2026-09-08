@@ -8,6 +8,7 @@ APP_NAME = 'EselShot'
 DEFAULTS = {
     'base_url': 'https://files.eselbande.com',
     'token': '',
+    'account_name': '',     # Discord-Anzeigename, nur zur Anzeige "Verbunden als …"
     'copy_link': True,       # Link nach dem Upload in die Zwischenablage
     'open_browser': False,   # Link zusätzlich im Browser öffnen
     'save_dir': '',          # leer = Ordner beim Speichern jedes Mal abfragen
