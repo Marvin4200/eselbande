@@ -5,7 +5,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import filedialog
 
-from . import __version__, config, uploader
+from . import __version__, config, uploader, winapi
 
 BG = '#0f0f18'
 CARD = '#16162a'
@@ -38,6 +38,8 @@ class SettingsWindow:
         win.configure(bg=BG)
         win.resizable(False, False)
         win.protocol('WM_DELETE_WINDOW', self._close)
+        win.update_idletasks()
+        winapi.enable_dark_titlebar(win.winfo_id())
 
         head = tk.Frame(win, bg=BG)
         head.pack(fill='x', padx=22, pady=(20, 6))

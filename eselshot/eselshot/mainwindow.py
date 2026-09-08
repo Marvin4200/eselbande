@@ -82,6 +82,8 @@ class MainWindow:
             root.iconbitmap(default=self._cached_ico_path())
         except Exception:
             pass
+        root.update_idletasks()
+        winapi.enable_dark_titlebar(root.winfo_id())
 
         header = tk.Frame(root, bg=BG)
         header.pack(fill='x', padx=18, pady=(16, 8))

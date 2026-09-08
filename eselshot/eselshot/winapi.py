@@ -167,6 +167,25 @@ def enable_dpi_awareness():
         pass
 
 
+def enable_dark_titlebar(hwnd):
+    """Dunkle Titelleiste statt des hellen Windows-Standards (Win10 1809+/Win11).
+
+    Ohne das sitzt unter der dunklen Programmoberfläche eine helle System-
+    Titelleiste - wirkt wie zwei unterschiedliche Programme übereinander.
+    Zwei Attribut-Nummern nötig: 20 ab dem 20H1-Update, 19 auf älteren
+    Builds - beide kosten nichts, falsche Nummer liefert einfach S_FALSE."""
+    try:
+        dwm = ctypes.WinDLL('dwmapi')
+        value = ctypes.c_int(1)
+        for attr in (20, 19):  # DWMWA_USE_IMMERSIVE_DARK_MODE
+            if dwm.DwmSetWindowAttribute(wintypes.HWND(hwnd), attr,
+                                         ctypes.byref(value), ctypes.sizeof(value)) == 0:
+                return True
+    except OSError:
+        pass
+    return False
+
+
 def virtual_screen():
     """(x, y, breite, höhe) über alle Monitore hinweg."""
     return (user32.GetSystemMetrics(SM_XVIRTUALSCREEN),
