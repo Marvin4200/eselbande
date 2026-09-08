@@ -16,7 +16,7 @@ import webbrowser
 from datetime import datetime
 from tkinter import filedialog
 
-from . import config, gifenc, history, pngenc, recorder, updater, uploader, winapi
+from . import config, gifenc, history, pin, pngenc, recorder, updater, uploader, winapi
 from .editor import Editor
 from .mainwindow import MainWindow
 from .notify import Toast
@@ -57,6 +57,7 @@ class EselShot:
         self.busy = False
         self.tray = None
         self.pending_uploads = 0
+        self.pins = []
 
     # -- Aufnahme --------------------------------------------------------------
     def capture(self, mode='region'):
@@ -95,7 +96,15 @@ class EselShot:
             self._save_to_disk(rgba, width, height)
             return
 
+        if action == 'pin':
+            self._pin(rgba, width, height)
+            return
+
         self._upload(rgba, width, height)
+
+    def _pin(self, rgba, width, height):
+        win = pin.PinWindow(self.root, rgba, width, height, on_close=self.pins.remove)
+        self.pins.append(win)
 
     def _save_to_disk(self, rgba, width, height):
         name = timestamp_name()

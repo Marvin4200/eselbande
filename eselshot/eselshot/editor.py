@@ -8,6 +8,7 @@ dass eine Grafikbibliothek nötig wäre.
 
 import base64
 import tkinter as tk
+from tkinter import colorchooser
 
 from . import pngenc, winapi
 
@@ -32,6 +33,7 @@ TOOLS = [
     ('ellipse', '◯', 'Ellipse'),
     ('marker', '▬', 'Marker'),
     ('text', 'T', 'Text'),
+    ('step', '①', 'Nummerierter Schritt'),
     ('blur', '⬛', 'Verpixeln (Mosaik)'),
 ]
 
@@ -52,6 +54,8 @@ class Editor:
         self.width_index = 1
         self.rect = None          # (x1, y1, x2, y2) in Leinwand-Koordinaten
         self.undo_stack = []
+        self.redo_stack = []
+        self.step_counter = 0
         self._drag = None
         self._entry = None
         self._closed = False
@@ -121,6 +125,9 @@ class Editor:
         win.bind('<Control-c>', lambda e: self.finish('copy'))
         win.bind('<Control-s>', lambda e: self.finish('save'))
         win.bind('<Control-z>', lambda e: self.undo())
+        win.bind('<Control-y>', lambda e: self.redo())
+        win.bind('<Control-Shift-Z>', lambda e: self.redo())
+        win.bind('<Control-p>', lambda e: self.finish('pin'))
 
         win.deiconify()
         win.lift()
@@ -162,13 +169,20 @@ class Editor:
             sw.pack_propagate(False)
             sw.bind('<Button-1>', lambda e, c=color: self._set_color(c))
             self.swatches.append((color, sw))
+        self.custom_swatch = tk.Label(bar, text='+', bg=BAR_BG, fg=TEXT, width=2,
+                                      font=('Segoe UI', 10, 'bold'), cursor='hand2')
+        self.custom_swatch.pack(side='left', padx=(4, 2), pady=8)
+        self.custom_swatch.bind('<Button-1>', lambda e: self._pick_custom_color())
+        self._tooltip(self.custom_swatch, 'Eigene Farbe wählen')
 
         self.width_btn = self._bar_button(bar, '●', 'Strichstärke', self._cycle_width)
         self._sep(bar)
         self._bar_button(bar, '↶', 'Rückgängig (Strg+Z)', self.undo)
+        self._bar_button(bar, '↷', 'Wiederholen (Strg+Y)', self.redo)
         self._sep(bar)
         self._bar_button(bar, '💾', 'Speichern (Strg+S)', lambda: self.finish('save'))
         self._bar_button(bar, '📋', 'In Zwischenablage (Strg+C)', lambda: self.finish('copy'))
+        self._bar_button(bar, '📌', 'An den Bildschirm heften (Strg+P)', lambda: self.finish('pin'))
         self._bar_button(bar, '✕', 'Abbrechen (Esc)', self.cancel)
 
         upload = tk.Label(bar, text='  ⬆  Hochladen  ', bg=ACCENT, fg='#0b0b14',
@@ -226,6 +240,16 @@ class Editor:
         self.color = color
         for value, sw in self.swatches:
             sw.configure(highlightbackground='#ffffff' if value == color else BAR_BG)
+        is_custom = color not in PALETTE
+        self.custom_swatch.configure(bg=color if is_custom else BAR_BG,
+                                     text='' if is_custom else '+',
+                                     highlightbackground='#ffffff' if is_custom else BAR_BG,
+                                     highlightthickness=2 if is_custom else 0)
+
+    def _pick_custom_color(self):
+        _, hexval = colorchooser.askcolor(color=self.color, parent=self.win, title='Farbe wählen')
+        if hexval:
+            self._set_color(hexval)
 
     def _cycle_width(self):
         self.width_index = (self.width_index + 1) % len(WIDTHS)
@@ -254,7 +278,11 @@ class Editor:
         self.cv.itemconfigure(self.hint, state='normal')
         for item in self.undo_stack:
             self.cv.delete(item)
+        for item in self.redo_stack:
+            self.cv.delete(item)
         self.undo_stack.clear()
+        self.redo_stack.clear()
+        self.step_counter = 0
 
     def _refresh(self, show_bar=False):
         if not self.rect:
@@ -427,6 +455,10 @@ class Editor:
             self._drag = ('blur', (x, y), None)
             self._blur_at(x, y)
             return
+        if self.tool == 'step':
+            self._place_step(x, y)
+            self._drag = ('idle', None, None)
+            return
         if self.tool == 'pen':
             item = self.cv.create_line(x, y, x, y, fill=self.color, width=width,
                                        capstyle='round', joinstyle='round', smooth=True)
@@ -480,6 +512,18 @@ class Editor:
         self.cv.create_rectangle(bx, by, bx + B, by + B, fill=color, outline='',
                                  tags=self._blur_tag)
 
+    def _place_step(self, x, y):
+        """Nummerierten Kreis setzen - für Schritt-für-Schritt-Anleitungen."""
+        self.step_counter += 1
+        r = 11 + self.line_width * 2
+        tag = f'step{self.step_counter}'
+        self.cv.create_oval(x - r, y - r, x + r, y + r, fill=self.color, outline='#ffffff',
+                            width=2, tags=tag)
+        self.cv.create_text(x, y, text=str(self.step_counter), fill='#ffffff',
+                            font=('Segoe UI', 10 + self.width_index, 'bold'), tags=tag)
+        self.undo_stack.append(tag)
+        self.redo_stack.clear()
+
     def _draw_motion(self, x, y):
         if self.tool == 'blur':
             self._blur_at(x, y)
@@ -493,6 +537,7 @@ class Editor:
             self.cv.coords(item, start[0], start[1], x, y)
 
     def _draw_release(self):
+        self.redo_stack.clear()
         if self.tool == 'blur':
             if self._blur_cells:
                 self.undo_stack.append(self._blur_tag)
@@ -524,13 +569,24 @@ class Editor:
             item = self.cv.create_text(x + 4, y + 2, text=value, fill=color, anchor='nw',
                                        font=('Segoe UI', size, 'bold'))
             self.undo_stack.append(item)
+            self.redo_stack.clear()
 
     def undo(self):
         if self._entry:
             self._commit_text(cancel=True)
             return
-        if self.undo_stack:
-            self.cv.delete(self.undo_stack.pop())
+        if not self.undo_stack:
+            return
+        item = self.undo_stack.pop()
+        self.cv.itemconfigure(item, state='hidden')
+        self.redo_stack.append(item)
+
+    def redo(self):
+        if not self.redo_stack:
+            return
+        item = self.redo_stack.pop()
+        self.cv.itemconfigure(item, state='normal')
+        self.undo_stack.append(item)
 
     # -- Abschluss ------------------------------------------------------------
     def cancel(self):
