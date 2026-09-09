@@ -218,6 +218,30 @@ das schließen.
 **Der Pi hängt an einem USB-Stick.** Die sind weniger haltbar als SD-Karten oder
 SSDs. Wenn er ausfällt: Backups und Überwachung weg, die Dienste laufen weiter.
 
+**`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
+neu an** (bestätigt per `--dry-run` am 2026-09-09) — betrifft nicht nur
+`eselbande-bot` (siehe unten), sondern JEDEN Service in dieser Datei, auch
+`fahrstuhl-docker` selbst. Ein `--dry-run` davor zeigte: Netzwerk wird entfernt
+und neu erstellt, dabei werden `freegamesapi-phase1`, `musikbot-docker-phase1`,
+`redis-phase1` und `lavalink-docker-phase1` gestoppt/neu erstellt. Root Cause
+weiterhin ungeklärt (vermutlich Docker-Compose-Versions-/Netzwerk-Config-Hash-
+Problem). **Braucht ein eigenes Wartungsfenster**, siehe auch
+`eselbande-bot/README.md` Abschnitt 9c.
+
+**Fahrstuhl-Bot vergibt keine EselTokens für Voice-Zeit (offen seit
+2026-09-09).** `utils/voiceRewardBridge.js` scheitert mit `fetch failed` —
+Ursache: `ESELTOKENS_VOICE_REWARD_URL` in `fahrstuhl/.env` zeigte auf
+`http://127.0.0.1:3000/...`, was im `fahrstuhl-phase1`-Container auf sich
+selbst statt auf den `eseltokens-phase1`-Container zeigt. **Fix in der `.env`
+bereits eingetragen** (`http://eseltokens-phase1:3000/...`, altes Backup liegt
+als `.env.bak-voicereward-fix-<timestamp>` daneben), **aber noch nicht aktiv**
+— ein reiner `docker restart fahrstuhl-phase1` übernimmt die neue Env NICHT
+(Env wird nur bei Container-Erstellung eingebrannt), und ein echtes Recreate
+via `docker compose up -d fahrstuhl-docker` triggert den obigen
+`marvin_internal`-Bug. Braucht entweder das Wartungsfenster für den
+Netzwerk-Bug, oder einen gezielten `docker stop`+`rm`+`run` mit denselben
+Flags/Netzwerken wie der aktuelle Container (ohne `docker compose`).
+
 ---
 
 ## 8. Wenn eine Meldung kommt, die du nicht einordnen kannst
