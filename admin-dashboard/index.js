@@ -168,6 +168,40 @@ function requireOwner(req, res, next) {
     res.status(403).send('Kein Zugriff.');
 }
 
+// ── Zugriffsverwaltung ────────────────────────────────────────────────────────
+// Bislang durfte NUR OWNER_DISCORD_ID rein -- jetzt kann der Owner weitere Discord-Accounts mit
+// eingeschraenkten Rechten freischalten: "viewer" (nur lesen: Stats/Logs/Nutzer-Suche ansehen,
+// keine Aktionen) oder "admin" (alles ausser Zugriffsverwaltung selbst -- Container steuern,
+// Limits/Premium setzen). Der Owner selbst bleibt IMMER hart auf OWNER_DISCORD_ID verdrahtet
+// (kein DB-Eintrag noetig, kann nicht versehentlich sich selbst aussperren).
+logDb.exec(`
+CREATE TABLE IF NOT EXISTS dashboard_admins (
+    discord_id  TEXT PRIMARY KEY,
+    username    TEXT,
+    role        TEXT NOT NULL CHECK (role IN ('admin', 'viewer')),
+    added_by    TEXT NOT NULL,
+    added_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+`);
+
+const ROLE_LEVEL = { viewer: 1, admin: 2, owner: 3 };
+
+function getRole(discordId) {
+    if (discordId === OWNER_DISCORD_ID) return 'owner';
+    const row = logDb.prepare('SELECT role FROM dashboard_admins WHERE discord_id = ?').get(discordId);
+    return row ? row.role : null;
+}
+
+function requireRole(minRole) {
+    const minLevel = ROLE_LEVEL[minRole];
+    return (req, res, next) => {
+        const id = req.session.user && req.session.user.id;
+        const role = id ? getRole(id) : null;
+        if (role && ROLE_LEVEL[role] >= minLevel) { req.dashboardRole = role; return next(); }
+        res.status(403).json({ error: 'Kein Zugriff.' });
+    };
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 app.get('/auth/login', (req, res) => {
     const params = new URLSearchParams({
@@ -203,9 +237,13 @@ app.get('/auth/callback', authLimiter, async (req, res) => {
         if (!userRes.ok) throw new Error(`Discord user: ${userRes.status}`);
         const du = await userRes.json();
 
-        if (String(du.id) !== OWNER_DISCORD_ID) {
+        const role = getRole(String(du.id));
+        if (!role) {
             console.warn(`[AUTH] Zugriff verweigert für Discord-ID ${du.id} (${du.username})`);
             return res.status(403).send('Dieser Account hat keinen Zugriff auf admin.eselbande.com.');
+        }
+        if (role !== 'owner') {
+            logDb.prepare('UPDATE dashboard_admins SET username = ? WHERE discord_id = ?').run(du.username, String(du.id));
         }
 
         req.session.user = { id: String(du.id), username: du.username, avatar: du.avatar };
@@ -221,11 +259,39 @@ app.get('/auth/logout', (req, res) => {
 });
 
 app.get('/api/me', (req, res) => {
-    res.json({ loggedIn: !!(req.session.user && req.session.user.id === OWNER_DISCORD_ID), user: req.session.user || null });
+    const role = req.session.user ? getRole(req.session.user.id) : null;
+    res.json({ loggedIn: !!role, user: req.session.user || null, role });
+});
+
+// ── Zugriffsverwaltung (nur Owner) ──────────────────────────────────────────────
+app.get('/api/admins', requireOwner, (req, res) => {
+    const rows = logDb.prepare('SELECT discord_id, username, role, added_by, added_at FROM dashboard_admins ORDER BY added_at DESC').all();
+    res.json({ admins: rows });
+});
+
+app.post('/api/admins', requireOwner, (req, res) => {
+    const discordId = String((req.body || {}).discordId || '').trim();
+    const role = (req.body || {}).role === 'admin' ? 'admin' : 'viewer';
+    if (!/^\d{5,25}$/.test(discordId)) return res.status(400).json({ error: 'Ungültige Discord-ID.' });
+    if (discordId === OWNER_DISCORD_ID) return res.status(400).json({ error: 'Das bist du bereits (Owner).' });
+
+    // Username ist anfangs unbekannt (wir fragen dafuer keine Discord-API ab) -- wird beim
+    // ersten Login der Person automatisch nachgetragen, siehe /auth/callback.
+    logDb.prepare(
+        `INSERT INTO dashboard_admins (discord_id, username, role, added_by) VALUES (?, NULL, ?, ?)
+         ON CONFLICT(discord_id) DO UPDATE SET role = excluded.role`
+    ).run(discordId, role, req.session.user.id);
+
+    res.json({ success: true });
+});
+
+app.delete('/api/admins/:discordId', requireOwner, (req, res) => {
+    logDb.prepare('DELETE FROM dashboard_admins WHERE discord_id = ?').run(req.params.discordId);
+    res.json({ success: true });
 });
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
-app.get('/api/stats', requireOwner, (req, res) => {
+app.get('/api/stats', requireRole('viewer'), (req, res) => {
     try {
         const raw = fs.readFileSync(STATS_PATH, 'utf8');
         res.type('application/json').send(raw);
@@ -252,7 +318,7 @@ app.post('/api/logs/ingest', requireLogToken, (req, res) => {
     }
 });
 
-app.get('/api/logs', requireOwner, (req, res) => {
+app.get('/api/logs', requireRole('viewer'), (req, res) => {
     const type = String(req.query.type || '').toUpperCase().trim();
     const beforeId = Number(req.query.before) || null;
     const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 100));
@@ -281,7 +347,7 @@ app.get('/api/logs', requireOwner, (req, res) => {
 // Zaehlt die Meldungen des letzten Tages serverseitig. Die Liste unter
 // /api/logs ist bewusst auf 200 Eintraege begrenzt - eine Kennzahl daraus
 // waere bei mehr Verkehr schlicht falsch und wuerde bei genau 200 haengen.
-app.get('/api/logs/summary', requireOwner, (req, res) => {
+app.get('/api/logs/summary', requireRole('viewer'), (req, res) => {
     const stunden = Math.min(168, Math.max(1, Number(req.query.hours) || 24));
     const seit = new Date(Date.now() - stunden * 3600 * 1000).toISOString();
     try {
@@ -299,9 +365,413 @@ app.get('/api/logs/summary', requireOwner, (req, res) => {
     }
 });
 
-app.get('/api/logs/types', requireOwner, (req, res) => {
+app.get('/api/logs/types', requireRole('viewer'), (req, res) => {
     const rows = logDb.prepare('SELECT type, COUNT(*) AS count FROM logs GROUP BY type ORDER BY count DESC').all();
     res.json({ types: rows });
+});
+
+// ── Docker-Steuerung ──────────────────────────────────────────────────────────
+// admin-dashboard bekommt NIE den Docker-Socket selbst zu sehen -- Container-Steuerung (Start/
+// Stop/Restart/Logs) laeuft stattdessen ueber einen winzigen, separaten "docker-control"-Dienst,
+// der ausschliesslich diese drei Aktionen kennt (siehe ../docker-control/index.js) und als
+// einziger den Socket gemountet hat. So bleibt der Blast-Radius einer Schwachstelle in DIESEM
+// (deutlich groesseren, mehr Abhaengigkeiten habenden) Dashboard-Prozess auf seine eigenen Daten
+// beschraenkt, statt sofort vollen Host-Zugriff zu bedeuten.
+const DOCKER_CONTROL_BASE = process.env.DOCKER_CONTROL_BASE || 'http://docker-control:3031';
+const DOCKER_CONTROL_TOKEN = process.env.DOCKER_CONTROL_TOKEN || '';
+
+async function callDockerControl(path, opts = {}) {
+    if (!DOCKER_CONTROL_TOKEN) {
+        const err = new Error('DOCKER_CONTROL_TOKEN ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${DOCKER_CONTROL_BASE}${path}`, {
+        ...opts,
+        headers: { 'Authorization': `Bearer ${DOCKER_CONTROL_TOKEN}`, ...(opts.headers || {}) },
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.error || `docker-control antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return res;
+}
+
+app.get('/api/docker/containers', requireRole('viewer'), async (req, res) => {
+    try {
+        const upstream = await callDockerControl('/containers');
+        res.json(await upstream.json());
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+const DOCKER_ACTIONS = new Set(['start', 'stop', 'restart']);
+app.post('/api/docker/containers/:name/:action', requireRole('admin'), async (req, res) => {
+    if (!DOCKER_ACTIONS.has(req.params.action)) return res.status(400).json({ error: 'Ungültige Aktion.' });
+    try {
+        const upstream = await callDockerControl(`/containers/${encodeURIComponent(req.params.name)}/${req.params.action}`, { method: 'POST' });
+        res.json(await upstream.json());
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.get('/api/docker/containers/:name/logs', requireRole('viewer'), async (req, res) => {
+    const tail = Math.min(2000, Math.max(1, Number(req.query.tail) || 300));
+    try {
+        const upstream = await callDockerControl(`/containers/${encodeURIComponent(req.params.name)}/logs?tail=${tail}`);
+        res.type('text/plain').send(await upstream.text());
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// ── EselBuilder / EselFreund ─────────────────────────────────────────────────
+// Proxy zu eselbuilders internen, Bearer-Token-geschuetzten API-Routen (siehe
+// apps/web/src/app/api/internal/eselfriend/voice-limit/route.ts und .../ai-usage/route.ts) --
+// dasselbe "ein vertrauenswuerdiger interner Aufrufer" Muster wie shop.eselbande.com es fuer
+// Abo-Aktivierung schon nutzt. Laeuft ueber die oeffentliche HTTPS-Domain statt internem
+// Docker-DNS, weil eselbuilder-web in einem eigenen Compose-Netzwerk haengt, nicht in
+// marvin_internal.
+const ESELBUILDER_API_BASE = process.env.ESELBUILDER_API_BASE || 'https://eselbuilder.eselbande.com';
+const ESELBUILDER_ADMIN_TOKEN = process.env.ESELBUILDER_ADMIN_TOKEN || '';
+
+async function callEselbuilder(path, opts = {}) {
+    if (!ESELBUILDER_ADMIN_TOKEN) {
+        const err = new Error('ESELBUILDER_ADMIN_TOKEN ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${ESELBUILDER_API_BASE}${path}`, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${ESELBUILDER_ADMIN_TOKEN}`,
+            'Content-Type': 'application/json',
+            ...(opts.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(body.error || `eselbuilder antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return body;
+}
+
+app.get('/api/eselbuilder/ai-usage', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselbuilder('/api/internal/ai-usage');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.get('/api/eselbuilder/voice-limit', requireRole('viewer'), async (req, res) => {
+    const discordId = String(req.query.discordId || '').trim();
+    if (!discordId) return res.status(400).json({ error: 'discordId ist erforderlich.' });
+    try {
+        const data = await callEselbuilder(`/api/internal/eselfriend/voice-limit?discordId=${encodeURIComponent(discordId)}`);
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eselbuilder/voice-limit', requireRole('admin'), async (req, res) => {
+    const { discordId, minutesLimit } = req.body || {};
+    if (!discordId || typeof discordId !== 'string') {
+        return res.status(400).json({ error: 'discordId ist erforderlich.' });
+    }
+    if (minutesLimit !== null && typeof minutesLimit !== 'number') {
+        return res.status(400).json({ error: 'minutesLimit muss eine Zahl oder null sein.' });
+    }
+    try {
+        const data = await callEselbuilder('/api/internal/eselfriend/voice-limit', {
+            method: 'POST',
+            body: JSON.stringify({ discordId, minutesLimit }),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// ── Fahrstuhl ─────────────────────────────────────────────────────────────────
+// Fahrstuhl hat schon einen fertigen Premium-Lookup in seiner botAPI (GET /premium/user/:id),
+// genutzt vom PHP-Dashboard -- wir rufen ihn einfach mit demselben BOT_API_TOKEN mit, statt
+// etwas Neues zu bauen. Erreichbar per internem Docker-DNS, da beide Dienste in marvin_internal
+// haengen (anders als eselbuilder-web, das in einem eigenen Compose-Netzwerk laeuft).
+const FAHRSTUHL_API_BASE = process.env.FAHRSTUHL_API_BASE || 'http://fahrstuhl-docker:3002';
+const FAHRSTUHL_BOT_API_TOKEN = process.env.FAHRSTUHL_BOT_API_TOKEN || '';
+
+async function fahrstuhlPremiumUser(discordId) {
+    if (!FAHRSTUHL_BOT_API_TOKEN) return null;
+    try {
+        const res = await fetch(`${FAHRSTUHL_API_BASE}/premium/user/${encodeURIComponent(discordId)}`, {
+            headers: { 'Authorization': `Bearer ${FAHRSTUHL_BOT_API_TOKEN}` },
+        });
+        if (!res.ok) return null;
+        const body = await res.json();
+        return body.data || null;
+    } catch {
+        return null; // Fahrstuhl gerade nicht erreichbar -- der Rest der Suche soll trotzdem klappen
+    }
+}
+
+async function callFahrstuhl(path, opts = {}) {
+    if (!FAHRSTUHL_BOT_API_TOKEN) {
+        const err = new Error('FAHRSTUHL_BOT_API_TOKEN ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${FAHRSTUHL_API_BASE}${path}`, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${FAHRSTUHL_BOT_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            ...(opts.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(body.error || `fahrstuhl antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return body;
+}
+
+// ── EselModerator ─────────────────────────────────────────────────────────────
+// Gleiches Muster wie Fahrstuhl -- Premium ist dort ebenfalls user- statt guild-gebunden (die
+// Guild-Ebene faellt nur auf das Premium des Server-Owners zurueck). GET /premium/user/:id wurde
+// eigens fuer diese Nutzer-Suche ergaenzt (existierte vorher nicht, nur POST activate/deactivate).
+const ESELMODERATOR_API_BASE = process.env.ESELMODERATOR_API_BASE || 'http://eselmoderator:3003';
+const ESELMODERATOR_BOT_API_TOKEN = process.env.ESELMODERATOR_BOT_API_TOKEN || '';
+
+async function callEselmoderator(path, opts = {}) {
+    if (!ESELMODERATOR_BOT_API_TOKEN) {
+        const err = new Error('ESELMODERATOR_BOT_API_TOKEN ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${ESELMODERATOR_API_BASE}${path}`, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${ESELMODERATOR_BOT_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            ...(opts.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(body.error || `eselmoderator antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return body;
+}
+
+async function eselmoderatorPremiumUser(discordId) {
+    try {
+        const body = await callEselmoderator(`/premium/user/${encodeURIComponent(discordId)}`);
+        return body.data || null;
+    } catch {
+        return null; // eselmoderator gerade nicht erreichbar -- der Rest der Suche soll trotzdem klappen
+    }
+}
+
+app.post('/api/eselmoderator/premium', requireRole('admin'), async (req, res) => {
+    const { discordId, action, tier, daysValid } = req.body || {};
+    if (!discordId || typeof discordId !== 'string') return res.status(400).json({ error: 'discordId ist erforderlich.' });
+    try {
+        if (action === 'deactivate') {
+            const data = await callEselmoderator('/premium/deactivate', { method: 'POST', body: JSON.stringify({ userId: discordId }) });
+            return res.json(data);
+        }
+        if (action === 'activate') {
+            const data = await callEselmoderator('/premium/activate', {
+                method: 'POST',
+                body: JSON.stringify({ userId: discordId, tier: tier === 'pro' ? 'pro' : 'basic', daysValid: Number(daysValid) || 35, mode: 'set' }),
+            });
+            return res.json(data);
+        }
+        res.status(400).json({ error: 'Ungültige Aktion.' });
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// ── EselTokens (manuelle Gutschrift nach Zahlungseingang) ───────────────────────
+// Gleiches Muster wie Fahrstuhl/EselModerator oben: der Shop-Kauf laeuft aktuell manuell
+// (PayPal Friends&Family -> Discord-DM -> Team-Code, siehe shop/src/components/PayPalPurchaseBox.tsx).
+// Nachdem ein Zahlungseingang bestaetigt wurde, wird die Gutschrift hier von Hand ausgeloest,
+// statt einen weiteren Team-Code fuer eseltokens.com anzulegen -- die Route ruft direkt dieselbe
+// Integrations-Endpoint auf, die auch der Shop nach einem Kauf automatisch aufruft
+// (eseltokens/src/pages/api/integrations/shop/credit.js), damit beide Wege identisch verbuchen.
+const ESELTOKENS_API_BASE = process.env.ESELTOKENS_API_BASE || 'http://eseltokens-docker:3000';
+const SHOP_INTEGRATION_SECRET = process.env.SHOP_INTEGRATION_SECRET || '';
+
+async function callEselTokens(path, opts = {}) {
+    if (!SHOP_INTEGRATION_SECRET) {
+        const err = new Error('SHOP_INTEGRATION_SECRET ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${ESELTOKENS_API_BASE}${path}`, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${SHOP_INTEGRATION_SECRET}`,
+            'Content-Type': 'application/json',
+            ...(opts.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(body.error || `eseltokens antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return body;
+}
+
+app.post('/api/eseltokens/credit', requireRole('admin'), async (req, res) => {
+    const { discordId, username, amount, reason } = req.body || {};
+    if (!discordId || typeof discordId !== 'string') return res.status(400).json({ error: 'discordId ist erforderlich.' });
+    const cleanAmount = Number(amount);
+    if (!Number.isInteger(cleanAmount) || cleanAmount <= 0 || cleanAmount > 50000) {
+        return res.status(400).json({ error: 'amount muss zwischen 1 und 50000 liegen.' });
+    }
+    try {
+        const data = await callEselTokens('/api/integrations/shop/credit', {
+            method: 'POST',
+            body: JSON.stringify({ discordId, username, amount: cleanAmount, reason: reason || 'Manuelle Admin-Gutschrift' }),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// ── Shop-Bestellungen sperren/entsperren ────────────────────────────────────────
+// Sichere, lokale Notbremse statt einer echten Kuendigung beim Zahlungsanbieter: der Shop kann
+// aktuell selbst gar nicht aktiv bei Paddle/PayPal kuendigen (er reagiert nur auf deren Webhooks,
+// siehe shop/src/lib/fulfillment.js) -- eine echte Kuendigungs-API waere ein eigenes, groesseres
+// Vorhaben mit echtem Zahlungs-Risiko bei einem Fehler. Stattdessen wird hier direkt der
+// jeweilige Bot/App-seitige Premium-Status umgeschaltet (dieselben Aktionen, die sonst durch ein
+// echtes Zahlungs-Event ausgeloest wuerden) -- der Zugriff ist sofort weg, ohne die Zahlung
+// selbst anzufassen. Kuendigung beim Anbieter bleibt bewusst manuelle Owner-Aufgabe.
+app.post('/api/shop/lock-order', requireRole('admin'), async (req, res) => {
+    const { discordId, productKey, locked } = req.body || {};
+    if (!discordId || typeof discordId !== 'string') return res.status(400).json({ error: 'discordId ist erforderlich.' });
+    if (typeof locked !== 'boolean') return res.status(400).json({ error: 'locked muss true oder false sein.' });
+
+    try {
+        if (productKey === 'fahrstuhl_basic' || productKey === 'fahrstuhl_pro') {
+            if (locked) {
+                await callFahrstuhl('/premium/deactivate', { method: 'POST', body: JSON.stringify({ userId: discordId }) });
+            } else {
+                const tier = productKey === 'fahrstuhl_pro' ? 'pro' : 'basic';
+                await callFahrstuhl('/premium/activate', { method: 'POST', body: JSON.stringify({ userId: discordId, tier, daysValid: 35, mode: 'set' }) });
+            }
+            return res.json({ success: true });
+        }
+        if (productKey === 'eselbuilder_pro') {
+            const data = await callEselbuilder('/api/internal/subscription/lock', { method: 'POST', body: JSON.stringify({ discordId, locked }) });
+            return res.json(data);
+        }
+        if (productKey === 'eselmoderator_basic' || productKey === 'eselmoderator_pro') {
+            if (locked) {
+                await callEselmoderator('/premium/deactivate', { method: 'POST', body: JSON.stringify({ userId: discordId }) });
+            } else {
+                const tier = productKey === 'eselmoderator_pro' ? 'pro' : 'basic';
+                await callEselmoderator('/premium/activate', { method: 'POST', body: JSON.stringify({ userId: discordId, tier, daysValid: 35, mode: 'set' }) });
+            }
+            return res.json({ success: true });
+        }
+        res.status(400).json({ error: 'Unbekanntes Produkt: ' + productKey });
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// ── Nutzer-Suche ueber alle Produkte ────────────────────────────────────────────
+// shop.eselbande.com ist inzwischen die zentrale Kasse fuer alle Produkte (Fahrstuhl, Eselbuilder
+// Pro, EselModerator) -- seine SQLite-Datei read-only reinzumounten ist einfacher und robuster
+// als noch eine weitere interne API dafuer zu bauen, es sind eh nur simple SELECTs.
+const SHOP_DB_PATH = '/app/shop-readonly/shop.db';
+let shopDb = null;
+function getShopDb() {
+    if (shopDb) return shopDb;
+    try {
+        shopDb = new Database(SHOP_DB_PATH, { readonly: true, fileMustExist: true });
+        return shopDb;
+    } catch {
+        return null; // Mount fehlt (z.B. lokale Entwicklung ohne Volume) -- Suche laeuft trotzdem
+    }
+}
+
+// Discords eigene, oeffentliche User-API -- funktioniert mit JEDEM Bot-Token fuer JEDE
+// Discord-ID, unabhaengig davon, ob der Bot mit der Person einen Server teilt. Rein zur Anzeige
+// (aktueller Anzeigename + Avatar) in der Nutzer-Suche, keine Berechtigungs-Entscheidung haengt
+// daran -- deshalb reicht das Wiederverwenden von Fahrstuhls Bot-Token voellig aus.
+const DISCORD_LOOKUP_TOKEN = process.env.DISCORD_LOOKUP_TOKEN || '';
+async function discordUserLookup(discordId) {
+    if (!DISCORD_LOOKUP_TOKEN) return null;
+    try {
+        const res = await fetch(`https://discord.com/api/v10/users/${discordId}`, {
+            headers: { Authorization: `Bot ${DISCORD_LOOKUP_TOKEN}` },
+        });
+        if (!res.ok) return null;
+        const u = await res.json();
+        return {
+            id: u.id,
+            username: u.username,
+            globalName: u.global_name || null,
+            avatarUrl: u.avatar
+                ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.${u.avatar.startsWith('a_') ? 'gif' : 'png'}?size=64`
+                : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(u.id) >> 22n) % 6n)}.png`,
+        };
+    } catch {
+        return null; // Discord-API gerade nicht erreichbar -- der Rest der Suche soll trotzdem klappen
+    }
+}
+
+app.get('/api/whois', requireRole('viewer'), async (req, res) => {
+    const discordId = String(req.query.discordId || '').trim();
+    if (!/^\d{5,25}$/.test(discordId)) return res.status(400).json({ error: 'Ungültige Discord-ID.' });
+
+    const result = { discordId, discord: null, shop: null, fahrstuhl: null, eselbuilder: null, eselmoderator: null };
+
+    const db = getShopDb();
+    if (db) {
+        try {
+            const user = db.prepare('SELECT username, avatar, createdAt FROM users WHERE discordId = ?').get(discordId);
+            const orders = db.prepare(
+                'SELECT productKey, status, currentPeriodEnd, createdAt FROM orders WHERE discordId = ? ORDER BY createdAt DESC'
+            ).all(discordId);
+            result.shop = { user: user || null, orders };
+        } catch (err) {
+            result.shop = { error: err.message };
+        }
+    }
+
+    const [discord, fahrstuhl, eselbuilder, eselmoderator] = await Promise.all([
+        discordUserLookup(discordId),
+        fahrstuhlPremiumUser(discordId),
+        callEselbuilder(`/api/internal/eselfriend/voice-limit?discordId=${encodeURIComponent(discordId)}`).catch(() => null),
+        eselmoderatorPremiumUser(discordId),
+    ]);
+    result.discord = discord;
+    result.fahrstuhl = fahrstuhl;
+    result.eselbuilder = eselbuilder;
+    result.eselmoderator = eselmoderator;
+
+    res.json(result);
 });
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'admin-dashboard', uptime: process.uptime(), session_store: _sessionStoreType }));

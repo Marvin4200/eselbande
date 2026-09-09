@@ -32,33 +32,86 @@ body {
 }
 a { color: var(--blau); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.wrap { max-width: 1400px; margin: 0 auto; padding: 0 20px 64px; }
-
-/* ── Kopfleiste ─────────────────────────────────────────────── */
-header {
-    position: sticky; top: 0; z-index: 20;
-    background: rgba(13,17,23,.92);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--rand);
-}
-.kopf {
-    max-width: 1400px; margin: 0 auto; padding: 14px 20px;
-    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-}
-.marke { font-weight: 650; font-size: 1.05rem; letter-spacing: -.01em; }
-.marke span { color: var(--akzent); }
-.kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: .82rem; color: var(--gedaempft); }
-.puls { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gruen); margin-right: 6px; }
 .knopf {
     background: var(--karte); border: 1px solid var(--rand); color: var(--text);
     padding: 6px 12px; border-radius: 7px; font-size: .82rem; cursor: pointer;
     font-family: inherit;
 }
 .knopf:hover { background: var(--karte-hover); border-color: var(--rand-hell); }
+.puls { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gruen); margin-right: 6px; flex-shrink: 0; }
+
+/* ── Gesamt-Geruest: feste Seitenleiste + scrollbarer Inhalt ──── */
+.app-schale { display: flex; min-height: 100vh; }
+.sidebar {
+    width: 234px; flex-shrink: 0; background: var(--karte); border-right: 1px solid var(--rand);
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 30;
+}
+.sidebar-marke {
+    padding: 20px 20px 16px; font-weight: 650; font-size: 1.05rem; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--rand);
+}
+.sidebar-marke span { color: var(--akzent); }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
+.sidebar-gruppe { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--leise); padding: 14px 10px 6px; }
+.sidebar-gruppe:first-child { padding-top: 4px; }
+.sidebar-nav button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: none; border: none; color: var(--gedaempft); padding: 9px 10px; border-radius: 7px;
+    font-size: .87rem; cursor: pointer; font-family: inherit; margin-bottom: 2px;
+}
+.sidebar-nav button .ico { font-size: 1rem; width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-nav button .zahl {
+    margin-left: auto; background: var(--rand); color: var(--gedaempft); border-radius: 20px;
+    padding: 1px 7px; font-size: .7rem;
+}
+.sidebar-nav button:hover { background: var(--karte-hover); color: var(--text); }
+.sidebar-nav button[aria-current="true"] {
+    background: rgba(240,180,41,.12); color: var(--text); font-weight: 550;
+}
+.sidebar-nav button[aria-current="true"] .zahl { background: rgba(240,180,41,.22); color: var(--akzent); }
+.sidebar-fuss { border-top: 1px solid var(--rand); padding: 14px 16px; font-size: .8rem; color: var(--gedaempft); }
+.sidebar-fuss .zeile { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.sidebar-fuss .rolle {
+    font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; color: var(--leise);
+    background: var(--bg-alt); border: 1px solid var(--rand); border-radius: 5px; padding: 1px 6px;
+}
+
+.hauptbereich { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topleiste {
+    position: sticky; top: 0; z-index: 20; background: rgba(13,17,23,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rand); padding: 14px 28px; display: flex; align-items: center; gap: 12px;
+}
+.topleiste h1 { font-size: 1.05rem; font-weight: 620; }
+.topleiste .neben { margin-left: auto; font-size: .78rem; color: var(--gedaempft); }
+.menu-knopf { display: none; background: none; border: 1px solid var(--rand); color: var(--text);
+    border-radius: 7px; padding: 6px 10px; font-size: 1rem; cursor: pointer; }
+.inhalt-bereich { padding: 22px 28px 64px; }
+
+/* ── Startseite: Alarme ─────────────────────────────────────── */
+.alarme { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+.alarm {
+    display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-radius: 9px;
+    font-size: .87rem; border: 1px solid transparent;
+}
+.alarm.schlecht { background: rgba(248,81,73,.1); border-color: rgba(248,81,73,.3); color: #ffb4af; }
+.alarm.warn { background: rgba(210,153,34,.1); border-color: rgba(210,153,34,.3); color: #f0cd7a; }
+.alles-gut {
+    display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-radius: 9px;
+    font-size: .87rem; background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.25); color: #8fe0a3;
+    margin-bottom: 20px;
+}
+.start-raster { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 4px; }
+.schnellzugriff { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.schnellzugriff button {
+    background: var(--karte); border: 1px solid var(--rand); color: var(--text);
+    padding: 10px 16px; border-radius: 9px; font-size: .85rem; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 8px;
+}
+.schnellzugriff button:hover { border-color: var(--akzent); }
 
 /* ── Kennzahlen ─────────────────────────────────────────────── */
 .kennzahlen {
-    display: grid; gap: 14px; margin: 22px 0;
+    display: grid; gap: 14px; margin-bottom: 20px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }
 .kz {
@@ -82,19 +135,6 @@ header {
 .balken i.warn { background: var(--gelb); }
 .balken i.schlecht { background: var(--rot); }
 
-/* ── Reiter ─────────────────────────────────────────────────── */
-.reiter { display: flex; gap: 4px; border-bottom: 1px solid var(--rand); margin-bottom: 22px; overflow-x: auto; }
-.reiter button {
-    background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--gedaempft); padding: 10px 15px; font-size: .9rem; cursor: pointer;
-    font-family: inherit; white-space: nowrap; margin-bottom: -1px;
-}
-.reiter button:hover { color: var(--text); }
-.reiter button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 550; }
-.reiter .zahl {
-    background: var(--rand); color: var(--gedaempft); border-radius: 20px;
-    padding: 1px 7px; font-size: .72rem; margin-left: 6px;
-}
 .blatt[hidden] { display: none; }
 
 /* ── Karten & Raster ────────────────────────────────────────── */
@@ -124,6 +164,31 @@ header {
 .cont-name { font-size: .84rem; font-weight: 520; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cont-meta { font-size: .72rem; color: var(--leise); margin-top: 1px; }
 .cont-rechts { margin-left: auto; text-align: right; font-size: .72rem; color: var(--gedaempft); white-space: nowrap; }
+.cont-aktionen { display: flex; gap: 4px; flex-shrink: 0; }
+.cont-aktionen button {
+    background: var(--bg-alt); border: 1px solid var(--rand); color: var(--gedaempft);
+    border-radius: 5px; padding: 3px 7px; font-size: .78rem; cursor: pointer; font-family: inherit; line-height: 1.3;
+}
+.cont-aktionen button:hover { color: var(--text); border-color: var(--rand-hell); }
+.cont-aktionen button:disabled { opacity: .4; cursor: default; }
+
+/* ── Log-Ansicht ────────────────────────────────────────────── */
+.log-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.log-overlay[hidden] { display: none; }
+.log-box {
+    background: var(--karte); border: 1px solid var(--rand); border-radius: 10px;
+    width: 100%; max-width: 920px; max-height: 82vh; display: flex; flex-direction: column;
+}
+.log-kopf { padding: 12px 16px; border-bottom: 1px solid var(--rand); display: flex; align-items: center; gap: 10px; }
+.log-kopf strong { font-size: .9rem; }
+.log-inhalt {
+    margin: 0; padding: 14px 16px; overflow: auto; flex: 1;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .76rem; line-height: 1.55;
+    white-space: pre-wrap; word-break: break-word; color: var(--gedaempft);
+}
 
 /* ── Tabellen ───────────────────────────────────────────────── */
 table { width: 100%; border-collapse: collapse; font-size: .84rem; }
@@ -167,6 +232,7 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .e-typ.WATCHDOG, .e-typ.BOT-STATUS { background: rgba(163,113,247,.15); color: #bc8cff; }
 .e-typ.BACKUP, .e-typ.SPEICHER { background: rgba(63,185,80,.13); color: #56d364; }
 .e-typ.SICHERHEIT { background: rgba(248,81,73,.13); color: #ff8983; }
+.e-typ.PURCHASE { background: rgba(240,180,41,.16); color: var(--akzent); }
 .e-zeit { font-size: .7rem; color: var(--leise); margin-top: 4px; }
 .e-rechts { min-width: 0; flex: 1; }
 .e-titel { font-size: .87rem; font-weight: 550; margin-bottom: 2px; }
@@ -196,6 +262,17 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 }
 .anmeldung a:hover { background: #4752c4; text-decoration: none; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .78rem; }
+
+@media (max-width: 860px) {
+    .menu-knopf { display: inline-flex; align-items: center; justify-content: center; }
+    .sidebar {
+        position: fixed; left: 0; top: 0; transform: translateX(-100%);
+        transition: transform .18s ease; box-shadow: 0 0 0 100vmax rgba(0,0,0,0);
+    }
+    .sidebar.offen { transform: translateX(0); box-shadow: 0 0 0 100vmax rgba(0,0,0,.5); }
+    .topleiste { padding: 12px 16px; }
+    .inhalt-bereich { padding: 18px 16px 48px; }
+}
 @media (max-width: 640px) {
     .e-links { width: 84px; }
     .kz-wert { font-size: 1.5rem; }
@@ -205,6 +282,17 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 </head>
 <body>
 <div id="app"></div>
+<div class="log-overlay" id="log-overlay" hidden>
+    <div class="log-box">
+        <div class="log-kopf">
+            <strong id="log-titel"></strong>
+            <span class="neben" id="log-status" style="margin-left:6px"></span>
+            <button class="knopf" id="log-aktualisieren" style="margin-left:auto">Aktualisieren</button>
+            <button class="knopf" id="log-schliessen">Schließen</button>
+        </div>
+        <pre class="log-inhalt" id="log-inhalt">Lädt …</pre>
+    </div>
+</div>
 
 <script>
 (function () {
@@ -248,7 +336,9 @@ function uhrzeit(iso) {
           d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 }
 
-var zustand = { stats: null, logs: [], typen: [], zusammenfassung: null, filter: "", suche: "", blatt: "uebersicht" };
+var zustand = { stats: null, logs: [], typen: [], zusammenfassung: null, filter: "", suche: "", blatt: "start", rolle: null };
+
+function kannSchreiben() { return zustand.rolle === "owner" || zustand.rolle === "admin"; }
 
 // ── Einstieg ─────────────────────────────────────────────────
 async function start() {
@@ -257,6 +347,7 @@ async function start() {
     catch (e) { ich = {}; }
 
     if (!ich || !ich.loggedIn) { anmeldungZeigen(); return; }
+    zustand.rolle = ich.role;
 
     try {
         zustand.stats = await fetch("/api/stats").then(function (r) { return r.ok ? r.json() : null; });
@@ -276,7 +367,14 @@ async function start() {
 async function statistikLaden() {
     try {
         var neu = await fetch("/api/stats").then(function (r) { return r.ok ? r.json() : null; });
-        if (neu) { zustand.stats = neu; kennzahlenZeichnen(); if (zustand.blatt !== "protokoll") blattZeichnen(); }
+        // Neu zeichnen bei jedem Sammel-Durchlauf wuerde Formulareingaben auf anderen Seiten
+        // (z.B. eine gerade getippte Discord-ID) zunichtemachen -- nur die Startseite (zeigt
+        // direkt Stats/Alarme) und die Sidebar-Zaehler (Anzahl Produkte) haengen wirklich davon ab.
+        if (neu) {
+            zustand.stats = neu;
+            if (zustand.blatt === "start") blattZeichnen();
+            sidebarZeichnen();
+        }
     } catch (e) { /* naechster Versuch in einer Minute */ }
 }
 
@@ -290,46 +388,87 @@ function anmeldungZeigen() {
 }
 
 // ── Geruest ──────────────────────────────────────────────────
+var SEITEN_TITEL = {
+    start: "Start", nutzer: "Nutzer-Suche", infrastruktur: "Infrastruktur",
+    produkte: "Produkte", protokoll: "Protokoll", eselfriend: "EselFreund", zugriff: "Zugriff"
+};
+
 function geruestZeichnen(ich) {
     var name = esc((ich && ich.user && (ich.user.global_name || ich.user.username)) || "");
     document.getElementById("app").innerHTML =
-        '<header><div class="kopf">' +
-            '<div class="marke"><span>eselbande</span> Dashboard</div>' +
-            '<div class="kopf-rechts">' +
-                '<span><span class="puls"></span><span id="aktualisiert">läuft</span></span>' +
-                (name ? "<span>" + name + "</span>" : "") +
-                '<a class="knopf" href="/auth/logout">Abmelden</a>' +
-            '</div>' +
-        '</div></header>' +
-        '<div class="wrap">' +
-            '<div class="kennzahlen" id="kennzahlen"></div>' +
-            '<div class="reiter" id="reiter"></div>' +
-            '<div id="blatt"></div>' +
-        '</div>';
+        '<div class="app-schale">' +
+            '<aside class="sidebar" id="sidebar">' +
+                '<div class="sidebar-marke"><span>🐴</span> eselbande <span style="font-weight:400;color:var(--gedaempft);font-size:.85rem;margin-left:2px">Admin</span></div>' +
+                '<nav class="sidebar-nav" id="sidebar-nav"></nav>' +
+                '<div class="sidebar-fuss">' +
+                    '<div class="zeile">' +
+                        '<span class="puls"></span>' +
+                        '<span>' + (name || "angemeldet") + "</span>" +
+                        (zustand.rolle ? '<span class="rolle">' + esc(zustand.rolle) + "</span>" : "") +
+                    "</div>" +
+                    '<a class="knopf" href="/auth/logout" style="display:block;text-align:center">Abmelden</a>' +
+                "</div>" +
+            "</aside>" +
+            '<div class="hauptbereich">' +
+                '<div class="topleiste">' +
+                    '<button class="menu-knopf" id="menu-knopf" aria-label="Menü">☰</button>' +
+                    '<h1 id="seiten-titel">Start</h1>' +
+                    '<span class="neben" id="aktualisiert">läuft</span>' +
+                "</div>" +
+                '<div class="inhalt-bereich" id="blatt"></div>' +
+            "</div>" +
+        "</div>";
 
-    kennzahlenZeichnen();
-    reiterZeichnen();
+    sidebarZeichnen();
+
+    document.getElementById("menu-knopf").addEventListener("click", function () {
+        document.getElementById("sidebar").classList.toggle("offen");
+    });
+    document.getElementById("app").addEventListener("click", function (e) {
+        // Sidebar auf Mobil nach Auswahl automatisch schliessen.
+        if (e.target.closest("#sidebar-nav button")) document.getElementById("sidebar").classList.remove("offen");
+    });
 }
 
-function reiterZeichnen() {
+function sidebarZeichnen() {
     var s = zustand.stats || {};
-    var reiter = [
-        { id: "uebersicht", text: "Übersicht" },
-        { id: "protokoll", text: "Protokoll" },
-        { id: "dienste", text: "Dienste", zahl: Object.keys(s.projects || {}).length }
+    var alarmAnzahl = startAlarme().length;
+    var gruppen = [
+        { titel: null, punkte: [
+            { id: "start", text: "Start", ico: "🏠", zahl: alarmAnzahl || null, zahlWarn: true },
+            { id: "nutzer", text: "Nutzer-Suche", ico: "🔍" },
+        ] },
+        { titel: "System", punkte: [
+            { id: "infrastruktur", text: "Infrastruktur", ico: "🖥️" },
+            { id: "produkte", text: "Produkte", ico: "📊", zahl: Object.keys(s.projects || {}).length },
+            { id: "protokoll", text: "Protokoll", ico: "📜" },
+        ] },
+        { titel: "Bots", punkte: [
+            { id: "eselfriend", text: "EselFreund", ico: "🤖" },
+        ] },
     ];
-    document.getElementById("reiter").innerHTML = reiter.map(function (r) {
-        return '<button data-blatt="' + r.id + '" aria-selected="' + (zustand.blatt === r.id) + '">' +
-            r.text + (r.zahl ? '<span class="zahl">' + r.zahl + "</span>" : "") + "</button>";
+    if (zustand.rolle === "owner") {
+        gruppen.push({ titel: "Verwaltung", punkte: [{ id: "zugriff", text: "Zugriff", ico: "🔑" }] });
+    }
+
+    document.getElementById("sidebar-nav").innerHTML = gruppen.map(function (g) {
+        return (g.titel ? '<div class="sidebar-gruppe">' + esc(g.titel) + "</div>" : "") +
+            g.punkte.map(function (p) {
+                return '<button data-blatt="' + p.id + '" aria-current="' + (zustand.blatt === p.id) + '">' +
+                    '<span class="ico">' + p.ico + "</span><span>" + esc(p.text) + "</span>" +
+                    (p.zahl ? '<span class="zahl"' + (p.zahlWarn ? ' style="background:rgba(248,81,73,.22);color:#ff8983"' : "") + '>' + p.zahl + "</span>" : "") +
+                "</button>";
+            }).join("");
     }).join("");
 
-    document.getElementById("reiter").addEventListener("click", function (e) {
+    document.getElementById("sidebar-nav").addEventListener("click", function (e) {
         var b = e.target.closest("button[data-blatt]");
         if (!b) return;
         zustand.blatt = b.dataset.blatt;
         Array.prototype.forEach.call(this.querySelectorAll("button"), function (x) {
-            x.setAttribute("aria-selected", String(x.dataset.blatt === zustand.blatt));
+            x.setAttribute("aria-current", String(x.dataset.blatt === zustand.blatt));
         });
+        document.getElementById("seiten-titel").textContent = SEITEN_TITEL[zustand.blatt] || "";
         blattZeichnen();
     });
 }
@@ -407,8 +546,131 @@ function blattZeichnen() {
     var ziel = document.getElementById("blatt");
     if (!ziel) return;
     if (zustand.blatt === "protokoll") { ziel.innerHTML = protokollBlatt(); protokollVerdrahten(); protokollListe(); }
-    else if (zustand.blatt === "dienste") ziel.innerHTML = diensteBlatt();
-    else ziel.innerHTML = uebersichtBlatt();
+    else if (zustand.blatt === "produkte") ziel.innerHTML = diensteBlatt();
+    else if (zustand.blatt === "infrastruktur") ziel.innerHTML = uebersichtBlatt();
+    else if (zustand.blatt === "eselfriend") { ziel.innerHTML = eselfriendBlatt(); eselfriendVerdrahten(); eselfriendAiUsageLaden(); }
+    else if (zustand.blatt === "nutzer") { ziel.innerHTML = nutzerBlatt(); nutzerVerdrahten(); }
+    else if (zustand.blatt === "zugriff") { ziel.innerHTML = zugriffBlatt(); zugriffLaden(); }
+    else { ziel.innerHTML = startBlatt(); kennzahlenZeichnen(); startVerdrahten(); }
+}
+
+// ── Start ────────────────────────────────────────────────────
+function startAlarme() {
+    var s = zustand.stats;
+    var alarme = [];
+    if (s && s.containers) {
+        var gestoppt = s.containers.filter(function (c) { return !c.running; });
+        var ungesund = s.containers.filter(function (c) { return c.running && c.health === "unhealthy"; });
+        gestoppt.forEach(function (c) { alarme.push({ stufe: "schlecht", text: "Container " + c.name.replace(/-phase1$/, "") + " läuft nicht (" + c.status + ")." }); });
+        ungesund.forEach(function (c) { alarme.push({ stufe: "warn", text: "Container " + c.name.replace(/-phase1$/, "") + " ist ungesund." }); });
+        // Fruehwarnung: haeufige Neustarts sind oft ein Zeichen fuer einen Absturz-Loop, der sonst
+        // erst auffaellt, wenn man es zufaellig bemerkt.
+        s.containers.filter(function (c) { return c.running && Number(c.restart_count) >= 3; }).forEach(function (c) {
+            alarme.push({ stufe: "warn", text: "Container " + c.name.replace(/-phase1$/, "") + " wurde " + c.restart_count + "× neu gestartet — evtl. instabil." });
+        });
+    }
+    if (s && s.disk && Number(s.disk.used_pct) >= 80) {
+        alarme.push({ stufe: Number(s.disk.used_pct) >= 90 ? "schlecht" : "warn", text: "Speicher zu " + Number(s.disk.used_pct).toFixed(1) + " % voll (" + s.disk.free_gb + " GB frei)." });
+    }
+    if (s && s.statuspage) {
+        s.statuspage.filter(function (x) { return !x.up; }).forEach(function (x) {
+            alarme.push({ stufe: "schlecht", text: x.service + " ist laut Statuspage nicht erreichbar." });
+        });
+    }
+    var zf = zustand.zusammenfassung;
+    if (zf) {
+        var nachTyp = {};
+        (zf.byType || []).forEach(function (t) { nachTyp[t.type] = t.count; });
+        if ((nachTyp.ERRORS || 0) > 50) alarme.push({ stufe: "schlecht", text: zahl(nachTyp.ERRORS) + " Fehler in den letzten 24 Std. — deutlich mehr als üblich." });
+    }
+    return alarme;
+}
+
+function startBlatt() {
+    var alarme = startAlarme();
+    var html = '<div class="kennzahlen" id="kennzahlen"></div>';
+
+    html += alarme.length
+        ? '<div class="alarme">' + alarme.map(function (a) {
+              return '<div class="alarm ' + a.stufe + '">⚠️ ' + esc(a.text) + "</div>";
+          }).join("") + "</div>"
+        : '<div class="alles-gut">✅ Alles läuft — keine offenen Probleme erkannt.</div>';
+
+    html += '<div class="schnellzugriff">' +
+        '<button data-blatt-sprung="nutzer">🔍 Nutzer suchen</button>' +
+        '<button data-blatt-sprung="protokoll">📜 Protokoll ansehen</button>' +
+        '<button data-blatt-sprung="infrastruktur">🖥️ Infrastruktur</button>' +
+    "</div>";
+
+    html += '<div class="start-raster">';
+
+    html += '<div class="karte"><div class="karte-kopf"><h2>Letzte Aktivität</h2><span class="neben">' +
+        '<a href="#" data-blatt-sprung="protokoll">alles ansehen →</a></span></div><div class="karte-koerper">';
+    var letzte = zustand.logs.slice(0, 6);
+    html += letzte.length
+        ? letzte.map(function (l) {
+              return '<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(38,48,59,.5);font-size:.84rem">' +
+                  '<span class="e-typ ' + esc(l.type) + '" style="flex-shrink:0">' + esc(l.type) + "</span>" +
+                  '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escMd(l.title || l.description || "") + "</span>" +
+                  '<span style="flex-shrink:0;color:var(--leise);font-size:.76rem">' + relativ(l.created_at) + "</span>" +
+              "</div>";
+          }).join("")
+        : '<div class="leer">Noch keine Meldungen.</div>';
+    html += "</div></div>";
+
+    var p = (zustand.stats || {}).projects || {};
+
+    function produktKarte(titel, kennzahlen) {
+        return '<div class="karte"><div class="karte-kopf"><h2>' + esc(titel) + '</h2><span class="neben"><a href="#" data-blatt-sprung="produkte">Details →</a></span></div>' +
+            '<div class="karte-koerper"><div style="display:flex;gap:28px;flex-wrap:wrap">' + kennzahlen + "</div></div></div>";
+    }
+
+    if (p.shop) {
+        html += produktKarte("Shop",
+            kennwert("Aktive Abos", zahl(p.shop.active_subscriptions)) +
+            kennwert("Geschätzte MRR", p.shop.estimated_mrr_eur != null ? p.shop.estimated_mrr_eur.toFixed(2).replace(".", ",") + " €" : "–"));
+    }
+    if (p.fahrstuhl) {
+        html += produktKarte("Fahrstuhl",
+            kennwert("Premium-Server", zahl(p.fahrstuhl.premium_guilds)) +
+            kennwert("Premium-Nutzer", zahl(p.fahrstuhl.premium_users)) +
+            kennwert("Befehle gesamt", zahl(p.fahrstuhl.command_executions)));
+    }
+    if (p.eselmoderator) {
+        html += produktKarte("EselModerator",
+            kennwert("Server", zahl(p.eselmoderator.guilds)) +
+            kennwert("Tickets offen", zahl(p.eselmoderator.tickets_open)) +
+            kennwert("Mod-Fälle aktiv", zahl(p.eselmoderator.moderation_cases_active)));
+    }
+    if (p.eselbuilder) {
+        html += produktKarte("Eselbuilder",
+            kennwert("Aktive Abos", zahl(p.eselbuilder.active_subscriptions)) +
+            kennwert("Gemini-Tokens heute", zahl(p.eselbuilder.gemini_tokens_today)));
+    }
+    if (p.umami) {
+        html += produktKarte("Website",
+            kennwert("Aufrufe heute", zahl(p.umami.pageviews_today)) +
+            kennwert("Besucher (30 Tage)", zahl(p.umami.visitors_30d)));
+    }
+
+    html += "</div>";
+    return html;
+}
+
+function startVerdrahten() {
+    var ziel = document.getElementById("blatt");
+    ziel.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-blatt-sprung]");
+        if (!b) return;
+        e.preventDefault();
+        zustand.blatt = b.dataset.blattSprung;
+        document.getElementById("seiten-titel").textContent = SEITEN_TITEL[zustand.blatt] || "";
+        var navBtn = document.querySelector('#sidebar-nav button[data-blatt="' + zustand.blatt + '"]');
+        Array.prototype.forEach.call(document.querySelectorAll("#sidebar-nav button"), function (x) {
+            x.setAttribute("aria-current", String(x === navBtn));
+        });
+        blattZeichnen();
+    });
 }
 
 // ── Übersicht ────────────────────────────────────────────────
@@ -432,14 +694,25 @@ function uebersichtBlatt() {
             var farbe = !c.running ? "rot" : c.health === "unhealthy" ? "gelb" : "gruen";
             var kurz = c.name.replace(/-phase1$/, "");
             var mem = c.mem_pct ? Math.round(Number(c.mem_pct)) + " %" : "";
-            return '<div class="cont">' +
+            var titel = (c.image ? "Image: " + c.image + "\n" : "") +
+                (c.ports && c.ports.length ? "Ports: " + c.ports.join(", ") + "\n" : "") +
+                (c.created_at ? "Erstellt: " + uhrzeit(c.created_at) : "");
+            return '<div class="cont" title="' + esc(titel) + '">' +
                 '<span class="punkt ' + farbe + '"></span>' +
                 '<div style="min-width:0">' +
                     '<div class="cont-name">' + esc(kurz) + "</div>" +
                     '<div class="cont-meta">' + esc(c.running ? (c.health || "läuft") : c.status) +
+                    (c.running && c.started_at ? " · seit " + relativ(c.started_at) : "") +
                     (c.restart_count ? " · " + c.restart_count + "× neu" : "") + "</div>" +
                 "</div>" +
                 '<div class="cont-rechts">' + (c.running ? "CPU " + (c.cpu_pct || "0") + " %<br>RAM " + mem : "") + "</div>" +
+                '<div class="cont-aktionen">' +
+                    '<button data-docker-logs="' + esc(c.name) + '" title="Logs anzeigen">≡</button>' +
+                    (kannSchreiben() ? (c.running
+                        ? '<button data-docker-aktion="restart" data-docker-name="' + esc(c.name) + '" title="Neu starten">↻</button>' +
+                          '<button data-docker-aktion="stop" data-docker-name="' + esc(c.name) + '" title="Stoppen">■</button>'
+                        : '<button data-docker-aktion="start" data-docker-name="' + esc(c.name) + '" title="Starten">▶</button>') : "") +
+                "</div>" +
             "</div>";
         }).join("") + "</div></div></div>";
 
@@ -557,6 +830,70 @@ function diensteBlatt() {
                 }), "Keine Links."));
     }
 
+    if (p.eselbuilder) {
+        var eb = p.eselbuilder;
+        var el = eb.elevenlabs;
+        var elPct = (el && el.character_limit) ? Math.min(100, Math.round(100 * el.character_count / el.character_limit)) : null;
+        html += '<div class="karte"><div class="karte-kopf"><h2>Eselbuilder / AI-Sound-Generator</h2></div>' +
+            '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px">' +
+                kennwert("Aktive Abos", zahl(eb.active_subscriptions)) +
+                kennwert("AI-Sounds erstellt", zahl(eb.ai_sounds_total)) +
+                kennwert("Gemini-Tokens heute", zahl(eb.gemini_tokens_today)) +
+                kennwert("Gemini-Tokens (Monat)", zahl(eb.gemini_tokens_month)) +
+            "</div>" +
+            (el ? (
+                '<div class="kz-titel" style="margin-bottom:6px">ElevenLabs-Kontingent (' + esc(el.tier || "free") + ')</div>' +
+                '<div style="font-size:.85rem;color:var(--gedaempft);margin-bottom:6px">' +
+                    zahl(el.character_count) + " / " + zahl(el.character_limit) + " Zeichen" +
+                "</div>" +
+                '<div class="balken"><i class="' + (elPct >= 90 ? "schlecht" : elPct >= 70 ? "warn" : "") +
+                    '" style="width:' + (elPct || 0) + '%"></i></div>'
+            ) : '<div class="leer">ElevenLabs-Kontingent nicht verfügbar.</div>') +
+            "</div></div>";
+    }
+
+    if (p.eselmoderator) {
+        var em = p.eselmoderator;
+        html += block("EselModerator",
+            kennwert("Server", zahl(em.guilds)) +
+            kennwert("Tickets gesamt", zahl(em.tickets_total)) +
+            kennwert("Tickets offen", zahl(em.tickets_open)) +
+            kennwert("Mod-Faelle aktiv", zahl(em.moderation_cases_active)) +
+            kennwert("Backups", zahl(em.backups)),
+            tabelle([{ t: "Server-ID" }, { t: "Tickets", num: true }],
+                (em.top_ticket_guilds || []).map(function (g) {
+                    return ["<code>" + esc(g.guild_id) + "</code>", zahl(g.tickets)];
+                }), "Noch keine Tickets."));
+    }
+
+    if (p.shop) {
+        var sh = p.shop;
+        html += block("Shop",
+            kennwert("Aktive Abos", zahl(sh.active_subscriptions)) +
+            kennwert("Geschätzte MRR", (sh.estimated_mrr_eur != null ? sh.estimated_mrr_eur.toFixed(2).replace(".", ",") + " €" : "–")) +
+            kennwert("Codes eingelöst", zahl(sh.codes_redeemed_total)) +
+            kennwert("Codes aktiv", zahl(sh.active_redemption_codes)),
+            tabelle([{ t: "Produkt" }, { t: "Aktive Abos", num: true }],
+                (sh.by_product || []).map(function (r) {
+                    return [esc(r.product), zahl(r.active)];
+                }), "Keine aktiven Abos.") +
+            '<div class="e-quelle" style="margin-top:8px">MRR-Schätzung nur aus Produkten mit fest hinterlegtem Preis (EselModerator hat noch keinen Checkout-Preis).</div>');
+    }
+
+    if (p.umami) {
+        var um = p.umami;
+        html += block("Website-Analytics (Umami)",
+            kennwert("Aufrufe heute", zahl(um.pageviews_today)) +
+            kennwert("Aufrufe (7 Tage)", zahl(um.pageviews_7d)) +
+            kennwert("Aufrufe (30 Tage)", zahl(um.pageviews_30d)) +
+            kennwert("Besucher (30 Tage)", zahl(um.visitors_30d)),
+            tabelle([{ t: "Seite" }, { t: "Aufrufe (7 Tage)", num: true }],
+                (um.top_pages_7d || []).map(function (r) {
+                    return ["<code>" + esc(r.path) + "</code>", zahl(r.views)];
+                }), "Keine Aufrufe."));
+    }
+
     return html || '<div class="karte"><div class="leer">Keine Projektdaten.</div></div>';
 }
 
@@ -659,6 +996,526 @@ function protokollListe() {
         "</div>";
     }).join("");
 }
+
+// ── EselFreund ───────────────────────────────────────────────
+var efZustand = { fenster: "last24h", nutzung: null, ergebnis: null, discordId: "" };
+var EF_FENSTER = [
+    { id: "last24h", text: "24 Std." },
+    { id: "last7d", text: "7 Tage" },
+    { id: "last30d", text: "30 Tage" },
+    { id: "allTime", text: "Gesamt" }
+];
+
+function eselfriendBlatt() {
+    return '<div class="karte">' +
+        '<div class="karte-kopf"><h2>AI-Nutzung (Gemini)</h2><span class="neben">EselFreund-Sprachgespräche</span></div>' +
+        '<div class="karte-koerper">' +
+            '<div class="filter" id="ef-fenster"></div>' +
+            '<div id="ef-nutzung"><div class="leer">Lädt …</div></div>' +
+        "</div></div>" +
+        '<div class="karte">' +
+        '<div class="karte-kopf"><h2>Voice-Limit setzen</h2><span class="neben">pro Discord-Nutzer</span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">' +
+                '<input class="suche" id="ef-discord-id" type="text" placeholder="Discord-ID des Nutzers" style="margin-left:0;min-width:240px">' +
+                '<button class="knopf" id="ef-suchen">Suchen</button>' +
+            "</div>" +
+            '<div id="ef-ergebnis"><div class="leer">Discord-ID eingeben, um Kontingent und Override zu sehen.</div></div>' +
+        "</div></div>";
+}
+
+function eselfriendVerdrahten() {
+    var f = document.getElementById("ef-fenster");
+    f.innerHTML = EF_FENSTER.map(function (w) {
+        return '<button data-fenster="' + w.id + '" aria-pressed="' + (efZustand.fenster === w.id) + '">' + w.text + "</button>";
+    }).join("");
+    f.addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-fenster]");
+        if (!b) return;
+        efZustand.fenster = b.dataset.fenster;
+        Array.prototype.forEach.call(f.querySelectorAll("button"), function (x) {
+            x.setAttribute("aria-pressed", String(x.dataset.fenster === efZustand.fenster));
+        });
+        eselfriendNutzungZeichnen();
+    });
+
+    var suchen = document.getElementById("ef-suchen");
+    var eingabe = document.getElementById("ef-discord-id");
+    suchen.addEventListener("click", eselfriendVoiceSuchen);
+    eingabe.addEventListener("keydown", function (e) { if (e.key === "Enter") eselfriendVoiceSuchen(); });
+}
+
+async function eselfriendAiUsageLaden() {
+    try {
+        efZustand.nutzung = await fetch("/api/eselbuilder/ai-usage").then(function (r) { return r.ok ? r.json() : null; });
+    } catch (e) { efZustand.nutzung = null; }
+    eselfriendNutzungZeichnen();
+}
+
+function eselfriendNutzungZeichnen() {
+    var ziel = document.getElementById("ef-nutzung");
+    if (!ziel) return;
+    var n = efZustand.nutzung;
+    if (!n) { ziel.innerHTML = '<div class="leer">Konnte AI-Nutzung nicht laden (ist ADMIN_DASHBOARD_TOKEN auf beiden Seiten gesetzt?).</div>'; return; }
+
+    var w = n[efZustand.fenster];
+    if (!w || !w.events) { ziel.innerHTML = '<div class="leer">Keine Nutzung in diesem Zeitraum.</div>'; return; }
+
+    ziel.innerHTML =
+        '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px">' +
+            kennwert("Gespräche/Anfragen", zahl(w.events)) +
+            kennwert("Prompt-Tokens", zahl(w.promptTokens)) +
+            kennwert("Antwort-Tokens", zahl(w.completionTokens)) +
+            kennwert("Tokens gesamt", zahl(w.totalTokens)) +
+        "</div>" +
+        tabelle([{ t: "Provider" }, { t: "Modell" }, { t: "Anfragen", num: true }, { t: "Tokens gesamt", num: true }],
+            w.byProviderModel.map(function (r) {
+                return [esc(r.provider), esc(r.model), zahl(r.events), zahl(r.totalTokens)];
+            }));
+}
+
+async function eselfriendVoiceSuchen() {
+    var eingabe = document.getElementById("ef-discord-id");
+    var discordId = eingabe.value.trim();
+    var ziel = document.getElementById("ef-ergebnis");
+    if (!discordId) { ziel.innerHTML = '<div class="leer">Bitte eine Discord-ID eingeben.</div>'; return; }
+
+    ziel.innerHTML = '<div class="leer">Lädt …</div>';
+    try {
+        var res = await fetch("/api/eselbuilder/voice-limit?discordId=" + encodeURIComponent(discordId));
+        var daten = await res.json();
+        if (!res.ok) { ziel.innerHTML = '<div class="leer">' + esc(daten.error || "Nicht gefunden.") + "</div>"; return; }
+        efZustand.ergebnis = daten;
+        efZustand.discordId = discordId;
+        eselfriendErgebnisZeichnen();
+    } catch (e) {
+        ziel.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function eselfriendErgebnisZeichnen() {
+    var ziel = document.getElementById("ef-ergebnis");
+    var d = efZustand.ergebnis;
+    if (!ziel || !d) return;
+
+    var voiceMin = Math.floor(d.voiceUsedSeconds / 60) + " / " + Math.floor(d.voiceLimitSeconds / 60) + " Min.";
+    ziel.innerHTML =
+        '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px">' +
+            kennwert("Nutzer", d.username || d.discordId) +
+            kennwert("Tarif", d.premium ? "Eselbuilder Pro" : "Kostenlos") +
+            kennwert("Voice (Monat)", voiceMin) +
+            kennwert("Nachrichten (heute)", d.textUsedMessages + " / " + d.textLimitMessages) +
+            kennwert("Aktueller Override", d.voiceLimitOverrideMinutes != null ? d.voiceLimitOverrideMinutes + " Min." : "keiner") +
+        "</div>" +
+        (kannSchreiben() ?
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+                '<input class="suche" id="ef-neues-limit" type="number" min="0" step="1" placeholder="Neues Limit in Minuten" style="margin-left:0;min-width:220px">' +
+                '<button class="knopf" id="ef-limit-setzen">Setzen</button>' +
+                '<button class="knopf" id="ef-limit-entfernen">Override entfernen</button>' +
+            "</div>" +
+            '<div id="ef-limit-status" style="margin-top:10px;font-size:.82rem;color:var(--gedaempft)"></div>'
+        : "");
+
+    if (!kannSchreiben()) return;
+
+    document.getElementById("ef-limit-setzen").addEventListener("click", function () {
+        var eingabe = document.getElementById("ef-neues-limit");
+        var wert = Number(eingabe.value);
+        if (!eingabe.value || isNaN(wert) || wert < 0) {
+            document.getElementById("ef-limit-status").textContent = "Bitte eine gültige Zahl >= 0 eingeben.";
+            return;
+        }
+        eselfriendLimitSpeichern(Math.round(wert));
+    });
+    document.getElementById("ef-limit-entfernen").addEventListener("click", function () {
+        eselfriendLimitSpeichern(null);
+    });
+}
+
+async function eselfriendLimitSpeichern(minutesLimit) {
+    var status = document.getElementById("ef-limit-status");
+    status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/eselbuilder/voice-limit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ discordId: efZustand.discordId, minutesLimit: minutesLimit })
+        });
+        var daten = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        status.textContent = minutesLimit == null ? "Override entfernt." : "Limit auf " + minutesLimit + " Min. gesetzt.";
+        await eselfriendVoiceSuchen();
+    } catch (e) {
+        status.textContent = "Anfrage fehlgeschlagen.";
+    }
+}
+
+// ── Zugriffsverwaltung (nur Owner sichtbar) ───────────────────
+function zugriffBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Zugriff verwalten</h2>' +
+        '<span class="neben">wer außer dir noch rein darf</span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">' +
+                '<input class="suche" id="zg-discord-id" type="text" placeholder="Discord-ID" style="margin-left:0;min-width:220px">' +
+                '<select id="zg-rolle" class="suche" style="margin-left:0">' +
+                    '<option value="viewer">Viewer (nur lesen)</option>' +
+                    '<option value="admin">Admin (auch Aktionen)</option>' +
+                "</select>" +
+                '<button class="knopf" id="zg-hinzufuegen">Hinzufügen</button>' +
+            "</div>" +
+            '<div id="zg-liste"><div class="leer">Lädt …</div></div>' +
+        "</div></div>";
+}
+
+function zugriffVerdrahten() {
+    document.getElementById("zg-hinzufuegen").addEventListener("click", zugriffHinzufuegen);
+}
+
+async function zugriffLaden() {
+    zugriffVerdrahten();
+    var ziel = document.getElementById("zg-liste");
+    try {
+        var res = await fetch("/api/admins");
+        var daten = await res.json();
+        var admins = (daten && daten.admins) || [];
+        if (!admins.length) { ziel.innerHTML = '<div class="leer">Bisher nur du selbst (Owner).</div>'; return; }
+        ziel.innerHTML = tabelle([{ t: "Discord-ID" }, { t: "Name" }, { t: "Rolle" }, { t: "Hinzugefügt" }, { t: "" }],
+            admins.map(function (a) {
+                return [
+                    "<code>" + esc(a.discord_id) + "</code>",
+                    esc(a.username || "(noch nicht eingeloggt)"),
+                    a.role === "admin" ? "Admin" : "Viewer",
+                    relativ(a.added_at),
+                    '<button class="knopf" data-zg-entfernen="' + esc(a.discord_id) + '">Entfernen</button>'
+                ];
+            }));
+    } catch (e) {
+        ziel.innerHTML = '<div class="leer">Konnte Liste nicht laden.</div>';
+    }
+}
+
+async function zugriffHinzufuegen() {
+    var discordId = document.getElementById("zg-discord-id").value.trim();
+    var rolle = document.getElementById("zg-rolle").value;
+    if (!/^\d{5,25}$/.test(discordId)) { alert("Bitte eine gültige Discord-ID eingeben."); return; }
+    try {
+        var res = await fetch("/api/admins", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ discordId: discordId, role: rolle })
+        });
+        var daten = await res.json();
+        if (!res.ok) { alert("Fehler: " + (daten.error || res.status)); return; }
+        document.getElementById("zg-discord-id").value = "";
+        zugriffLaden();
+    } catch (e) {
+        alert("Anfrage fehlgeschlagen.");
+    }
+}
+
+document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-zg-entfernen]");
+    if (!b) return;
+    if (!confirm("Zugriff für " + b.dataset.zgEntfernen + " wirklich entfernen?")) return;
+    fetch("/api/admins/" + encodeURIComponent(b.dataset.zgEntfernen), { method: "DELETE" })
+        .then(function () { zugriffLaden(); });
+});
+
+// ── Nutzer-Suche ─────────────────────────────────────────────
+var nutzerZustand = { discordId: null };
+var PRODUKT_NAMEN = {
+    fahrstuhl_basic: "Fahrstuhl Premium", fahrstuhl_pro: "Fahrstuhl Premium Pro",
+    eselbuilder_pro: "Eselbuilder Pro",
+    eselmoderator_basic: "EselModerator Premium", eselmoderator_pro: "EselModerator Premium Pro"
+};
+
+function nutzerBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Nutzer-Suche</h2>' +
+        '<span class="neben">über Shop, Fahrstuhl und Eselbuilder</span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
+                '<input class="suche" id="nu-discord-id" type="text" placeholder="Discord-ID" style="margin-left:0;min-width:240px">' +
+                '<button class="knopf" id="nu-suchen">Suchen</button>' +
+            "</div>" +
+            '<div id="nu-ergebnis"><div class="leer">Discord-ID eingeben (z.B. aus einem Discord-Rechtsklick auf den Nutzer → ID kopieren).</div></div>' +
+        "</div></div>";
+}
+
+function nutzerVerdrahten() {
+    document.getElementById("nu-suchen").addEventListener("click", nutzerSuchen);
+    document.getElementById("nu-discord-id").addEventListener("keydown", function (e) { if (e.key === "Enter") nutzerSuchen(); });
+}
+
+async function nutzerSuchen() {
+    var discordId = document.getElementById("nu-discord-id").value.trim();
+    var ziel = document.getElementById("nu-ergebnis");
+    if (!/^\d{5,25}$/.test(discordId)) { ziel.innerHTML = '<div class="leer">Bitte eine gültige Discord-ID eingeben (nur Ziffern).</div>'; return; }
+
+    ziel.innerHTML = '<div class="leer">Lädt …</div>';
+    nutzerZustand.discordId = discordId;
+    try {
+        var res = await fetch("/api/whois?discordId=" + encodeURIComponent(discordId));
+        var daten = await res.json();
+        if (!res.ok) { ziel.innerHTML = '<div class="leer">' + esc(daten.error || "Fehler.") + "</div>"; return; }
+        ziel.innerHTML = nutzerErgebnisHtml(daten);
+    } catch (e) {
+        ziel.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+// Discord-IDs sind Snowflakes: die oberen Bits kodieren den Erstellungs-Zeitpunkt relativ zu
+// Discords eigener Epoche (2015-01-01) -- kein API-Aufruf noetig, laesst sich lokal berechnen.
+function discordKontoSeit(discordId) {
+    try {
+        var ms = Number((BigInt(discordId) >> 22n) + 1420070400000n);
+        return new Date(ms).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
+    } catch (e) { return null; }
+}
+
+function nutzerErgebnisHtml(d) {
+    var html = "";
+    var name = (d.discord && (d.discord.globalName || d.discord.username)) ||
+        (d.shop && d.shop.user && d.shop.user.username) || null;
+    var kontoSeit = discordKontoSeit(d.discordId);
+
+    html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">' +
+        (d.discord && d.discord.avatarUrl
+            ? '<img src="' + esc(d.discord.avatarUrl) + '" alt="" style="width:56px;height:56px;border-radius:50%;flex-shrink:0;background:var(--bg-alt)">'
+            : "") +
+        '<div style="display:flex;gap:32px;flex-wrap:wrap">' +
+            kennwert(name ? "Name" : "Discord-ID", name || d.discordId) +
+            (name ? kennwert("Discord-ID", d.discordId) : "") +
+            (d.discord && d.discord.username && d.discord.globalName ? kennwert("Nutzername", "@" + d.discord.username) : "") +
+            (kontoSeit ? kennwert("Discord-Konto seit", kontoSeit) : "") +
+        "</div>" +
+    "</div>";
+
+    // Shop
+    var SPERRBARE_PRODUKTE = ["fahrstuhl_basic", "fahrstuhl_pro", "eselbuilder_pro", "eselmoderator_basic", "eselmoderator_pro"];
+    html += '<div class="kz-titel" style="margin-bottom:8px">Shop-Bestellungen</div>';
+    if (d.shop && d.shop.orders && d.shop.orders.length) {
+        var kopf = [{ t: "Produkt" }, { t: "Status" }, { t: "Läuft bis" }, { t: "Erstellt" }];
+        if (kannSchreiben()) kopf.push({ t: "" });
+        html += tabelle(kopf,
+            d.shop.orders.map(function (o) {
+                var aktiv = o.status === "active";
+                var zeile = [
+                    esc(PRODUKT_NAMEN[o.productKey] || o.productKey),
+                    '<span class="pille ' + (aktiv ? "auf" : "ab") + '">' + esc(o.status) + "</span>",
+                    o.currentPeriodEnd ? uhrzeit(o.currentPeriodEnd) : "–",
+                    uhrzeit(o.createdAt)
+                ];
+                if (kannSchreiben()) {
+                    zeile.push(SPERRBARE_PRODUKTE.indexOf(o.productKey) === -1 ? "" :
+                        '<button class="knopf" data-shop-sperren="' + esc(o.productKey) + '" data-shop-locked="' + (aktiv ? "1" : "0") + '">' +
+                            (aktiv ? "Sperren" : "Entsperren") +
+                        "</button>");
+                }
+                return zeile;
+            }));
+        html += '<div id="nu-shop-status" style="margin-top:8px;font-size:.82rem;color:var(--gedaempft)"></div>';
+    } else {
+        html += '<div class="leer">Keine Bestellungen im Shop gefunden.</div>';
+    }
+
+    // Fahrstuhl
+    html += '<div class="kz-titel" style="margin:18px 0 8px">Fahrstuhl</div>';
+    if (d.fahrstuhl) {
+        html += '<div style="display:flex;gap:32px;flex-wrap:wrap">' +
+            kennwert("Premium", d.fahrstuhl.isPremium ? (d.fahrstuhl.isPro ? "Pro" : "Ja") : "Nein") +
+            (d.fahrstuhl.user && d.fahrstuhl.user.expires_at ? kennwert("Läuft ab", uhrzeit(d.fahrstuhl.user.expires_at)) : "") +
+        "</div>";
+    } else {
+        html += '<div class="leer">Kein Fahrstuhl-Premium oder Dienst nicht erreichbar.</div>';
+    }
+
+    // Eselbuilder / EselFreund
+    html += '<div class="kz-titel" style="margin:18px 0 8px">Eselbuilder / EselFreund</div>';
+    if (d.eselbuilder) {
+        var eb = d.eselbuilder;
+        html += '<div style="display:flex;gap:32px;flex-wrap:wrap">' +
+            kennwert("Tarif", eb.premium ? "Eselbuilder Pro" : "Kostenlos") +
+            kennwert("Voice (Monat)", Math.floor(eb.voiceUsedSeconds / 60) + " / " + Math.floor(eb.voiceLimitSeconds / 60) + " Min.") +
+            kennwert("Nachrichten (heute)", eb.textUsedMessages + " / " + eb.textLimitMessages) +
+            (eb.voiceLimitOverrideMinutes != null ? kennwert("Voice-Override", eb.voiceLimitOverrideMinutes + " Min.") : "") +
+        "</div>";
+    } else {
+        html += '<div class="leer">Kein Eselbuilder-Konto gefunden.</div>';
+    }
+
+    // EselModerator
+    html += '<div class="kz-titel" style="margin:18px 0 8px">EselModerator</div>';
+    if (d.eselmoderator) {
+        var em = d.eselmoderator;
+        html += '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px">' +
+            kennwert("Premium", em.isPremium ? (em.isPro ? "Pro" : "Ja") : "Nein") +
+            (em.user && em.user.expires_at ? kennwert("Läuft ab", uhrzeit(em.user.expires_at)) : "") +
+        "</div>";
+    } else {
+        html += '<div class="leer" style="margin-bottom:12px">Kein EselModerator-Premium.</div>';
+    }
+    if (kannSchreiben()) {
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+                '<select id="nu-em-tier" class="suche" style="margin-left:0">' +
+                    '<option value="basic">Basic</option><option value="pro">Pro</option>' +
+                "</select>" +
+                '<input class="suche" id="nu-em-tage" type="number" min="1" value="35" style="width:100px" title="Tage gueltig">' +
+                '<button class="knopf" data-em-aktion="activate">Setzen</button>' +
+                '<button class="knopf" data-em-aktion="deactivate">Entfernen</button>' +
+            "</div>" +
+            '<div id="nu-em-status" style="margin-top:8px;font-size:.82rem;color:var(--gedaempft)"></div>';
+    }
+
+    // EselTokens (manuelle Gutschrift, siehe README Abschnitt zur PayPal-Freunde&Familie-Zahlung)
+    html += '<div class="kz-titel" style="margin:18px 0 8px">EselTokens</div>';
+    if (kannSchreiben()) {
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+                '<input class="suche" id="nu-et-menge" type="number" min="1" max="50000" placeholder="Anzahl Tokens" style="width:160px">' +
+                '<button class="knopf" data-et-aktion="credit">Gutschreiben</button>' +
+            "</div>" +
+            '<div id="nu-et-status" style="margin-top:8px;font-size:.82rem;color:var(--gedaempft)"></div>';
+    }
+
+    return html;
+}
+
+async function eseltokensGutschreiben() {
+    var status = document.getElementById("nu-et-status");
+    var mengeInput = document.getElementById("nu-et-menge");
+    var menge = Number(mengeInput.value);
+    if (!menge || menge <= 0) { status.textContent = "Bitte eine gültige Anzahl eingeben."; return; }
+    status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/eseltokens/credit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                discordId: nutzerZustand.discordId,
+                username: nutzerZustand.username,
+                amount: menge,
+                reason: "Manuelle Admin-Gutschrift (PayPal)"
+            })
+        });
+        var daten = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        status.textContent = menge + " Tokens gutgeschrieben. Neuer Kontostand: " + daten.newBalance;
+        mengeInput.value = "";
+    } catch (e) {
+        status.textContent = "Anfrage fehlgeschlagen.";
+    }
+}
+
+async function eselmoderatorPremiumSetzen(aktion) {
+    var status = document.getElementById("nu-em-status");
+    status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/eselmoderator/premium", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                discordId: nutzerZustand.discordId,
+                action: aktion,
+                tier: document.getElementById("nu-em-tier").value,
+                daysValid: Number(document.getElementById("nu-em-tage").value) || 35
+            })
+        });
+        var daten = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        status.textContent = aktion === "deactivate" ? "Premium entfernt." : "Premium gesetzt.";
+        await nutzerSuchen();
+    } catch (e) {
+        status.textContent = "Anfrage fehlgeschlagen.";
+    }
+}
+
+async function shopSperren(productKey, warAktiv) {
+    var neuGesperrt = warAktiv; // "Sperren" geklickt -> war aktiv -> jetzt sperren (locked:true)
+    if (!confirm((neuGesperrt ? "Zugriff für " : "Zugriff wieder freigeben für ") + (PRODUKT_NAMEN[productKey] || productKey) + "?")) return;
+    var status = document.getElementById("nu-shop-status");
+    if (status) status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/shop/lock-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ discordId: nutzerZustand.discordId, productKey: productKey, locked: neuGesperrt })
+        });
+        var daten = await res.json();
+        if (!res.ok) { if (status) status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        await nutzerSuchen();
+    } catch (e) {
+        if (status) status.textContent = "Anfrage fehlgeschlagen.";
+    }
+}
+
+// ── Docker-Steuerung ─────────────────────────────────────────
+var logZustand = { name: null };
+
+function logModalOeffnen(name) {
+    logZustand.name = name;
+    document.getElementById("log-titel").textContent = name;
+    document.getElementById("log-status").textContent = "";
+    document.getElementById("log-inhalt").textContent = "Lädt …";
+    document.getElementById("log-overlay").hidden = false;
+    logModalLaden();
+}
+
+async function logModalLaden() {
+    var name = logZustand.name;
+    if (!name) return;
+    var status = document.getElementById("log-status");
+    var inhalt = document.getElementById("log-inhalt");
+    status.textContent = "lädt …";
+    try {
+        var res = await fetch("/api/docker/containers/" + encodeURIComponent(name) + "/logs?tail=400");
+        var text = await res.text();
+        if (!res.ok) { inhalt.textContent = "Fehler: " + text; status.textContent = ""; return; }
+        inhalt.textContent = text || "(keine Logs)";
+        inhalt.scrollTop = inhalt.scrollHeight;
+        status.textContent = "aktualisiert " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+        inhalt.textContent = "Anfrage fehlgeschlagen.";
+        status.textContent = "";
+    }
+}
+
+document.getElementById("log-schliessen").addEventListener("click", function () {
+    document.getElementById("log-overlay").hidden = true;
+    logZustand.name = null;
+});
+document.getElementById("log-aktualisieren").addEventListener("click", logModalLaden);
+document.getElementById("log-overlay").addEventListener("click", function (e) {
+    if (e.target.id === "log-overlay") { document.getElementById("log-overlay").hidden = true; logZustand.name = null; }
+});
+
+var DOCKER_AKTION_TEXT = { restart: "neu starten", stop: "stoppen", start: "starten" };
+async function dockerAktionAusfuehren(btn, name, aktion) {
+    if ((aktion === "stop" || aktion === "restart") && !confirm(name + " wirklich " + DOCKER_AKTION_TEXT[aktion] + "?")) return;
+    var alle = btn.parentElement.querySelectorAll("button");
+    Array.prototype.forEach.call(alle, function (b) { b.disabled = true; });
+    try {
+        var res = await fetch("/api/docker/containers/" + encodeURIComponent(name) + "/" + aktion, { method: "POST" });
+        var daten = await res.json().catch(function () { return {}; });
+        if (!res.ok) { alert("Fehler: " + (daten.error || res.status)); }
+        setTimeout(statistikLaden, 1500); // Container braucht kurz, bis der naechste Sammel-Durchlauf den neuen Status sieht
+    } catch (e) {
+        alert("Anfrage fehlgeschlagen.");
+    } finally {
+        Array.prototype.forEach.call(alle, function (b) { b.disabled = false; });
+    }
+}
+
+document.addEventListener("click", function (e) {
+    var logBtn = e.target.closest("[data-docker-logs]");
+    if (logBtn) { logModalOeffnen(logBtn.dataset.dockerLogs); return; }
+    var aktionBtn = e.target.closest("[data-docker-aktion]");
+    if (aktionBtn) { dockerAktionAusfuehren(aktionBtn, aktionBtn.dataset.dockerName, aktionBtn.dataset.dockerAktion); return; }
+    var emBtn = e.target.closest("[data-em-aktion]");
+    if (emBtn) { eselmoderatorPremiumSetzen(emBtn.dataset.emAktion); return; }
+    var etBtn = e.target.closest("[data-et-aktion]");
+    if (etBtn) { eseltokensGutschreiben(); return; }
+    var shopBtn = e.target.closest("[data-shop-sperren]");
+    if (shopBtn) { shopSperren(shopBtn.dataset.shopSperren, shopBtn.dataset.shopLocked === "1"); return; }
+});
 
 // Ein einziger Zuhoerer statt einer je Eintrag - die Liste wird alle 15
 // Sekunden neu gezeichnet, einzelne Zuhoerer wuerden sich sonst ansammeln.
