@@ -346,6 +346,9 @@
         .highlight-card:hover { transform: translateY(-6px); }
         .highlight-card:hover::before { opacity: 1; }
 
+        .hc-teal::before { background: linear-gradient(135deg, rgba(45,212,191,0.12), rgba(16,185,129,0.08)); }
+        .hc-teal:hover   { border-color: rgba(45,212,191,0.45); box-shadow: 0 24px 60px rgba(45,212,191,0.18); }
+
         .hc-purple::before { background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.08)); }
         .hc-purple:hover   { border-color: rgba(102,126,234,0.4); box-shadow: 0 24px 60px rgba(102,126,234,0.15); }
 
@@ -369,6 +372,7 @@
             filter: blur(60px);
             opacity: 0.25;
         }
+        .hc-teal   .hc-glow { background: #2dd4bf; }
         .hc-purple .hc-glow { background: #667eea; }
         .hc-pink   .hc-glow { background: #f093fb; }
         .hc-cyan   .hc-glow { background: #38bdf8; }
@@ -388,6 +392,7 @@
             margin-bottom: 1.5rem;
             width: fit-content;
         }
+        .hc-teal   .hc-tag { background: rgba(45,212,191,0.15); color: #5eead4; border: 1px solid rgba(45,212,191,0.3); }
         .hc-purple .hc-tag { background: rgba(102,126,234,0.15); color: #818cf8; border: 1px solid rgba(102,126,234,0.25); }
         .hc-pink   .hc-tag { background: rgba(240,147,251,0.15); color: #e879f9; border: 1px solid rgba(240,147,251,0.25); }
         .hc-cyan   .hc-tag { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25); }
@@ -439,6 +444,7 @@
             transition: filter 0.2s, transform 0.2s;
         }
         .highlight-card:hover .hc-btn { filter: brightness(1.12); transform: scale(1.03); }
+        .hc-teal   .hc-btn { background: linear-gradient(135deg, #2dd4bf, #10b981); color: #04231c; }
         .hc-purple .hc-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .hc-pink   .hc-btn { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
         .hc-cyan   .hc-btn { background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: white; }
@@ -727,9 +733,28 @@
     <section id="services">
         <div class="section-label">Highlights</div>
         <div class="section-title">Das Herzstück der Bande</div>
-        <p class="section-sub">Fünf große Projekte, die alles zusammenhalten.</p>
+        <p class="section-sub">Sechs große Projekte, die alles zusammenhalten.</p>
 
         <div class="highlights">
+            <a class="highlight-card hc-teal" href="https://world.eselbande.com" target="_blank" rel="noopener noreferrer">
+                <div class="hc-glow"></div>
+                <span class="hc-tag" style="display:inline-flex; align-items:center; gap:0.4rem;">
+                    <span style="width:6px; height:6px; background:#2dd4bf; border-radius:50%; box-shadow:0 0 8px rgba(45,212,191,0.7); animation:pulse 2s ease-in-out infinite;"></span>
+                    Neu · Community-Karte
+                </span>
+                <span class="hc-icon">🌍</span>
+                <div class="hc-title">EselWorld</div>
+                <div class="hc-desc">Jede Discord-Community bekommt eine eigene Stadt auf einer gemeinsamen Weltkarte, die durch Aktivität wächst. Entdecke neue Communities, schließe Bündnisse und klettere die Rangliste hoch.</div>
+                <div class="hc-features">
+                    <span class="hc-feature">Weltkarte</span>
+                    <span class="hc-feature">XP & Level</span>
+                    <span class="hc-feature">Bündnisse</span>
+                    <span class="hc-feature">Ranking</span>
+                    <span class="hc-feature">Profile</span>
+                </div>
+                <span class="hc-btn">EselWorld entdecken →</span>
+            </a>
+
             <a class="highlight-card hc-purple" href="/fahrstuhl/">
                 <div class="hc-glow"></div>
                 <span class="hc-tag">🚀 Discord Bot</span>
@@ -909,6 +934,7 @@
         <a class="footer-brand" href="https://eselbande.com">🫏 eselbande.com</a>
         <div class="footer-links">
             <a class="footer-link" href="https://dc.eselbande.com">Discord</a>
+            <a class="footer-link" href="https://world.eselbande.com">EselWorld</a>
             <a class="footer-link" href="https://status.eselbande.com">Status</a>
             <a class="footer-link" href="/eselmusic">EselMusic</a>
             <a class="footer-link" href="/blog/">Blog</a>
