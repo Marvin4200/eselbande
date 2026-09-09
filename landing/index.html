@@ -70,7 +70,7 @@
         /* ── Nav ── */
         .topnav {
             position: fixed;
-            top: 0; left: 0; right: 0;
+            top: 34px; left: 0; right: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -672,9 +672,12 @@
 
     <div class="bg-orbs"></div>
 
-    <!-- Ankuendigungsbanner: EselBande-Bot-Zusammenfuehrung (Testbetrieb) -->
-    <a href="/blog/eselbande-bot-zusammenfuehrung/" style="display:block; text-align:center; background:linear-gradient(135deg, rgba(129,140,248,0.18), rgba(240,147,251,0.14)); border-bottom:1px solid rgba(129,140,248,0.3); color:#e2e8f0; font-size:0.85rem; padding:9px 16px; text-decoration:none;">
-        🚧 Neu: EselModerator, EselMusic und Eselbuilder wachsen zu <strong>EselBande</strong> zusammen — inkl. eigenem Dashboard, aktuell im Testbetrieb. Mehr erfahren →
+    <!-- Ankuendigungsbanner: EselBande-Bot-Zusammenfuehrung (Testbetrieb).
+         position:fixed + eigene Hoehe (34px), damit er die ebenfalls fixed .topnav (siehe deren
+         top:34px weiter unten im CSS) nicht ueberlappt, statt im normalen Fluss unsichtbar
+         darunter zu verschwinden. -->
+    <a href="/blog/eselbande-bot-zusammenfuehrung/" style="display:flex; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; height:34px; z-index:101; text-align:center; background:linear-gradient(135deg, rgba(129,140,248,0.18), rgba(240,147,251,0.14)); border-bottom:1px solid rgba(129,140,248,0.3); color:#e2e8f0; font-size:0.8rem; padding:0 16px; text-decoration:none; backdrop-filter: blur(20px) saturate(1.4);">
+        🚧 Neu: EselModerator, EselMusic und Eselbuilder wachsen zu <strong>&nbsp;EselBande&nbsp;</strong> zusammen — inkl. eigenem Dashboard, aktuell im Testbetrieb. Mehr erfahren →
     </a>
 
     <!-- Nav -->
