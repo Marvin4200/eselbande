@@ -228,6 +228,20 @@ Legacy-Datenübernahme gefahren (`scripts/migrate-legacy-data.ts` in
 Mod-Cases, Tickets (18) und Server-Backups (11, inkl. Sections) sind jetzt in
 der neuen `eselbande`-Schema-DB. `eselbande-bot-phase1`s Speicherlimit wurde
 dafür dauerhaft von 512m auf 1024m erhöht (Host hat 9GB+ frei, kein Problem).
+
+**Bugfix (2026-09-11): `docker stop` bringt einen stillgelegten Bot nicht
+dauerhaft weg, wenn er noch als `depends_on` in `docker-compose.yml` steht.**
+`fahrstuhl-docker` hatte `musikbot-docker: condition: service_healthy` noch im
+`depends_on`-Block (Leftover von vor der Zusammenlegung). Ein simples `docker
+compose up -d shop` (oder jeder andere Service in derselben Compose-Datei) hat
+dadurch `musikbot-docker-phase1` automatisch mitgestartet, obwohl er laut
+Abschnitt oben stillgelegt sein sollte. Fix: die `musikbot-docker`-Abhängigkeit
+aus `fahrstuhl-docker`s `depends_on` entfernt (Backup vor der Änderung:
+`docker-compose.yml.bak-remove-musikbot-depends-<timestamp>`). **Bei jedem
+zukünftigen Stilllegen eines Bots/Service: nicht nur `docker stop`, sondern
+auch alle `depends_on`-Referenzen in `docker-compose.yml` durchsuchen
+(`grep -n "<name>:" docker-compose.yml`) und entfernen — sonst kommt er beim
+nächsten `docker compose up` von irgendeinem anderen Service wieder hoch.**
 **Nicht migriert (bewusst, siehe Skript-Kommentar):** `AiSound`/`SoundUser` —
 für `/sound` gibt es keine Vorgängerdaten. **Weiterhin ungetestet in echtem
 Gebrauch:** `/sound`, `/aisounds`, `/ticket`, `/serverbackup`, TempVoice — die
