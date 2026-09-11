@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eselbande.com – Discord-Bots, Tools & Community</title>
-    <meta name="description" content="Die Eselbande: Fahrstuhl (Fun-Bot), EselModerator (Moderation & Automation), EselBuilder (KI-Server-Planung mit EselFreund), EselTokens (Community-Wirtschaft), EselMusic und EselShot – alles selbst gehostet, ein Discord-Server, eine Community.">
+    <meta name="description" content="Die Eselbande: Fahrstuhl (Fun-Bot), EselBande-Bot (Moderation, Musik, Sound & EselFriend), EselWorld (Community-Karte), EselTokens (Community-Wirtschaft) und EselShot – alles selbst gehostet, ein Discord-Server, eine Community.">
     <meta property="og:title" content="eselbande.com – Discord-Bots, Tools & Community">
     <meta property="og:description" content="Discord-Bot, Token-System, KI-Tools und mehr – alles an einem Ort, selbst gehostet von der Eselbande.">
     <meta property="og:type" content="website">
@@ -678,12 +678,12 @@
 
     <div class="bg-orbs"></div>
 
-    <!-- Ankuendigungsbanner: EselBande-Bot-Zusammenfuehrung (Testbetrieb).
-         position:fixed + eigene Hoehe (34px), damit er die ebenfalls fixed .topnav (siehe deren
-         top:34px weiter unten im CSS) nicht ueberlappt, statt im normalen Fluss unsichtbar
-         darunter zu verschwinden. -->
+    <!-- Ankuendigungsbanner: EselBande-Bot-Zusammenfuehrung ist abgeschlossen (2026-09-11) --
+         EselModerator, EselMusic und Eselbuilder-Bot sind offline, alles laeuft jetzt ueber
+         EselBande-Bot. position:fixed + eigene Hoehe (34px), damit er die ebenfalls fixed
+         .topnav (siehe deren top:34px weiter unten im CSS) nicht ueberlappt. -->
     <a href="/blog/eselbande-bot-zusammenfuehrung/" style="display:flex; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; height:34px; z-index:101; text-align:center; background:linear-gradient(135deg, rgba(129,140,248,0.18), rgba(240,147,251,0.14)); border-bottom:1px solid rgba(129,140,248,0.3); color:#e2e8f0; font-size:0.8rem; padding:0 16px; text-decoration:none; backdrop-filter: blur(20px) saturate(1.4);">
-        🚧 Neu: EselModerator, EselMusic und Eselbuilder wachsen zu <strong>&nbsp;EselBande&nbsp;</strong> zusammen — inkl. eigenem Dashboard, aktuell im Testbetrieb. Mehr erfahren →
+        ✅ EselModerator, EselMusic und Eselbuilder sind jetzt Teil von <strong>&nbsp;EselBande&nbsp;</strong> — ein Bot für alles. Mehr erfahren →
     </a>
 
     <!-- Nav -->
@@ -697,7 +697,7 @@
             <a class="nav-link" href="https://go.eselbande.com">Links</a>
             <a class="nav-link" href="https://files.eselbande.com">Files</a>
             <a class="nav-link" href="https://quotes.eselbande.com">Zitate</a>
-            <a class="nav-link" href="/eselmusic">EselMusic</a>
+            <a class="nav-link" href="https://dashboard.eselbande.com">Dashboard</a>
             <a class="nav-link" href="/blog/">Blog</a>
             <a class="nav-link" href="https://team.eselbande.com">Team</a>
             <a class="nav-link" href="https://status.eselbande.com">Status</a>
@@ -733,7 +733,7 @@
     <section id="services">
         <div class="section-label">Highlights</div>
         <div class="section-title">Das Herzstück der Bande</div>
-        <p class="section-sub">Sechs große Projekte, die alles zusammenhalten.</p>
+        <p class="section-sub">Fünf große Projekte, die alles zusammenhalten.</p>
 
         <div class="highlights">
             <a class="highlight-card hc-teal" href="https://world.eselbande.com" target="_blank" rel="noopener noreferrer">
@@ -789,38 +789,23 @@
                 <span class="hc-btn">Jetzt spielen →</span>
             </a>
 
-            <a class="highlight-card hc-cyan" href="/eselmusic">
-                <div class="hc-glow"></div>
-                <span class="hc-tag">🎵 Musikbot</span>
-                <span class="hc-icon">🎵</span>
-                <div class="hc-title">EselMusic</div>
-                <div class="hc-desc">Der Musikbot der Eselbande. Lavalink, 24/7-Modus, AutoMix, Queue, Loop, DJ-Rollen, Lyrics, Now Playing und Discord-Logging — alles für deine Community.</div>
-                <div class="hc-features">
-                    <span class="hc-feature">Lavalink</span>
-                    <span class="hc-feature">24/7 Modus</span>
-                    <span class="hc-feature">AutoMix</span>
-                    <span class="hc-feature">Queue</span>
-                    <span class="hc-feature">DJ-Rollen</span>
-                    <span class="hc-feature">Logging</span>
-                </div>
-                <span class="hc-btn">EselMusic öffnen →</span>
-            </a>
-
             <div class="highlight-card hc-amber">
                 <div class="hc-glow"></div>
-                <span class="hc-tag">🤖 KI-Tool</span>
+                <span class="hc-tag">🤖 Discord Bot</span>
                 <span class="hc-icon">🤖</span>
-                <div class="hc-title">Eselbuilder</div>
-                <div class="hc-desc">KI-gestützte Server-Planung für Discord. Beschreibe deinen Server, Eselbuilder baut Rollen, Kanäle und Berechtigungen automatisch auf — oder optimiert, was schon da ist. Dazu /sound und dein eigener EselFreund per Sprachchat.</div>
+                <div class="hc-title">EselBande-Bot</div>
+                <div class="hc-desc">Moderation, Musik, Sound und ein persönlicher KI-Begleiter (EselFriend) — alles in einem Bot. Hervorgegangen aus der Zusammenführung von EselModerator, EselMusic und Eselbuilder.</div>
                 <div class="hc-features">
-                    <span class="hc-feature">Server-Aufbau</span>
-                    <span class="hc-feature">Optimierung</span>
-                    <span class="hc-feature">Audit & Fix</span>
-                    <span class="hc-feature">Backups</span>
+                    <span class="hc-feature">Moderation</span>
+                    <span class="hc-feature">Musik</span>
+                    <span class="hc-feature">Sound & AI-Sounds</span>
+                    <span class="hc-feature">EselFriend</span>
+                    <span class="hc-feature">Tickets</span>
+                    <span class="hc-feature">Server-Backup</span>
                 </div>
                 <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.4rem;">
-                    <a class="hc-btn" href="https://discord.com/oauth2/authorize?client_id=1544422663655653476&scope=bot+applications.commands&permissions=18752866872567" target="_blank" rel="noopener noreferrer">Bot einladen →</a>
-                    <a class="hc-btn" style="background:transparent; border:1px solid var(--border); color:var(--text);" href="https://eselbuilder.eselbande.com">Dashboard öffnen</a>
+                    <a class="hc-btn" href="https://discord.com/oauth2/authorize?client_id=1547116831792177162&permissions=8&scope=bot%20applications.commands" target="_blank" rel="noopener noreferrer">Bot einladen →</a>
+                    <a class="hc-btn" style="background:transparent; border:1px solid var(--border); color:var(--text);" href="https://dashboard.eselbande.com">Dashboard öffnen</a>
                 </div>
             </div>
 
@@ -904,11 +889,11 @@
                     <div class="service-desc">Live-Uptime aller Services. status.eselbande.com</div>
                 </div>
             </a>
-            <a class="service-card" href="/eselmusic">
-                <span class="service-icon">🎵</span>
+            <a class="service-card" href="https://dashboard.eselbande.com">
+                <span class="service-icon">📊</span>
                 <div>
-                    <div class="service-name">EselMusic</div>
-                    <div class="service-desc">Moderner Discord Musikbot mit Lavalink, AutoMix und 24/7 Mode.</div>
+                    <div class="service-name">EselBande-Dashboard</div>
+                    <div class="service-desc">Moderation, Musik & mehr im Browser konfigurieren.</div>
                 </div>
             </a>
         </div>
@@ -936,15 +921,14 @@
             <a class="footer-link" href="https://dc.eselbande.com">Discord</a>
             <a class="footer-link" href="https://world.eselbande.com">EselWorld</a>
             <a class="footer-link" href="https://status.eselbande.com">Status</a>
-            <a class="footer-link" href="/eselmusic">EselMusic</a>
+            <a class="footer-link" href="https://dashboard.eselbande.com">EselBande-Dashboard</a>
             <a class="footer-link" href="/blog/">Blog</a>
             <a class="footer-link" href="/ueber-uns/">Über uns</a>
             <a class="footer-link" href="https://team.eselbande.com">Team</a>
-            <a class="footer-link" href="/fahrstuhl/">Dashboard</a>
+            <a class="footer-link" href="/fahrstuhl/">Fahrstuhl-Dashboard</a>
             <a class="footer-link" href="/eseltokens/">EselTokens</a>
             <a class="footer-link" href="https://files.eselbande.com/eselshot">EselShot</a>
             <a class="footer-link" href="https://shop.eselbande.com">Shop</a>
-            <a class="footer-link" href="https://eselbuilder.eselbande.com">Eselbuilder</a>
             <a class="footer-link" href="/changelog/">Changelog</a>
             <a class="footer-link" href="/terms/">Nutzungsbedingungen</a>
             <a class="footer-link" href="/privacy/">Datenschutz</a>
