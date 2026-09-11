@@ -235,6 +235,28 @@ alten Bots liefen bislang als Fallback, jetzt nicht mehr. Landingpage
 entsprechend aktualisiert (kein "Testbetrieb" mehr, EselMusic/Eselbuilder-
 Karten durch eine gemeinsame "EselBande-Bot"-Karte ersetzt).
 
+**Altlasten-Sweep nach der Bot-Stilllegung (2026-09-11):** `/eselmusic`-Seite
+und tote `/musikbot/api/*`-Proxys entfernt (nginx-Redirect),
+`eselmoderator.eselbande.com` leitet jetzt auf `dashboard.eselbande.com` um
+(zeigte vorher auf den gestoppten Dashboard-Container), Datenschutzerklärung
++ Statuspage-Eintrag aktualisiert. **admin-dashboard hängt jetzt zusätzlich
+am `eselbande_internal`-Netzwerk** (externe Referenz in
+`fahrstuhl/docker-compose.yml`, analog zu `eselbande-bot`s eigener
+`eselbuilder_net`-Anbindung) — vorher konnte es `eselbande-bot-phase1` gar
+nicht erreichen. Die alte, user-zentrierte EselModerator-Premium-Vergabe im
+Admin-Dashboard (Nutzer-Suche) wurde durch ein eigenständiges, guild-
+zentriertes "Guild Premium"-Panel ersetzt (ruft `eselbande-bot`s
+`/api/mod/premium/*`-Routen), passend zur Guild-only-Entscheidung aus
+Abschnitt 9e des Bot-Merge-READMEs. **Bewusst nicht angefasst:**
+`shop/lock-order` für `eselmoderator_basic/pro` zeigt weiterhin auf den
+toten Container — ob/wie automatische Käufe künftig einer Guild statt einem
+Nutzer zugeordnet werden, ist dieselbe offene Frage wie beim
+Eselbuilder-SaaS-Migrationsplan, nicht spontan lösbar. **Bekannter
+Nebeneffekt:** Das Start-Dashboard zeigt jetzt dauerhaft 4 "Container läuft
+nicht"-Warnungen für die bewusst gestoppten alten Bots — das ist Rauschen,
+kein echtes Problem, aber die Alarmierung unterscheidet nicht zwischen
+"kaputt" und "absichtlich gestoppt".
+
 ~~`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
 neu an`~~ **BEHOBEN (2026-09-11).** Root Cause gefunden: Die Netzwerk-Definition
 in der Compose-Datei hatte nur `name: marvin_internal`, ohne `external: true`
