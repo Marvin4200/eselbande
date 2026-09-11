@@ -257,6 +257,24 @@ nicht"-Warnungen für die bewusst gestoppten alten Bots — das ist Rauschen,
 kein echtes Problem, aber die Alarmierung unterscheidet nicht zwischen
 "kaputt" und "absichtlich gestoppt".
 
+**Changelog-Social-Posting (Phase 3) fertiggestellt — Discord-Teil live
+(2026-09-11).** War seit Session 4 "code-fertig deployed, aber nicht
+funktionsfähig" (siehe altes Abschnitt 9d im Bot-Merge-README). Host-Hook
+(`/home/marvin/.changelog-post-commit-hook.sh`, jetzt per Symlink auch die
+echte `.git/hooks/post-commit` — vorher zwei staendig auseinanderlaufende
+Kopien!) postet jetzt an `eselbande-bot` statt an den stillgelegten
+`eselbuilder-bot` (Host-Port 3119 statt 3023). `CHANGELOG_INTERNAL_TOKEN`
++ `CHANGELOG_DRAFT_CHANNEL_ID` + `CHANGELOG_ANNOUNCE_CHANNEL_ID` 1:1 aus
+`eselbuilder/.env` uebernommen (gleicher Discord-Server/-Kanaele). Fehlschlug
+zunaechst, weil `eselbande-bot` (anderer Bot-User als `eselbuilder-bot`) dem
+Server mit dem Entwurfs-Kanal gar nicht beigetreten war -- per Einladungslink
+nachgeholt. End-to-end getestet (echter Draft mit Discord/X/Reddit-Buttons
+kam im Kanal an). **X/Reddit-Zugangsdaten bewusst noch NICHT uebernommen**
+(Nutzerentscheidung 2026-09-11: erstmal nur Discord-Freigabe, Social-Media
+folgt in einer spaeteren Session) -- die Buttons dafuer sind im Draft
+sichtbar, tun aber nichts, bis `TWITTER_*`/`REDDIT_*` in `eselbande-bot/.env`
+gesetzt sind.
+
 ~~`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
 neu an`~~ **BEHOBEN (2026-09-11).** Root Cause gefunden: Die Netzwerk-Definition
 in der Compose-Datei hatte nur `name: marvin_internal`, ohne `external: true`
