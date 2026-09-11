@@ -390,7 +390,8 @@ function anmeldungZeigen() {
 // ── Geruest ──────────────────────────────────────────────────
 var SEITEN_TITEL = {
     start: "Start", nutzer: "Nutzer-Suche", infrastruktur: "Infrastruktur",
-    produkte: "Produkte", protokoll: "Protokoll", eselfriend: "EselFreund", zugriff: "Zugriff"
+    produkte: "Produkte", protokoll: "Protokoll", eselfriend: "EselFreund", zugriff: "Zugriff",
+    eseltokens: "EselTokens-Nutzer"
 };
 
 function geruestZeichnen(ich) {
@@ -445,6 +446,9 @@ function sidebarZeichnen() {
         ] },
         { titel: "Bots", punkte: [
             { id: "eselfriend", text: "EselFreund", ico: "🤖" },
+        ] },
+        { titel: "EselTokens", punkte: [
+            { id: "eseltokens", text: "Alle Nutzer", ico: "🪙" },
         ] },
     ];
     if (zustand.rolle === "owner") {
@@ -551,6 +555,7 @@ function blattZeichnen() {
     else if (zustand.blatt === "eselfriend") { ziel.innerHTML = eselfriendBlatt(); eselfriendVerdrahten(); eselfriendAiUsageLaden(); }
     else if (zustand.blatt === "nutzer") { ziel.innerHTML = nutzerBlatt(); nutzerVerdrahten(); }
     else if (zustand.blatt === "zugriff") { ziel.innerHTML = zugriffBlatt(); zugriffLaden(); }
+    else if (zustand.blatt === "eseltokens") { ziel.innerHTML = eseltokensBlatt(); eseltokensLaden(); }
     else { ziel.innerHTML = startBlatt(); kennzahlenZeichnen(); startVerdrahten(); }
 }
 
@@ -1229,7 +1234,94 @@ var PRODUKT_NAMEN = {
     eselmoderator_basic: "EselModerator Premium", eselmoderator_pro: "EselModerator Premium Pro"
 };
 
+// -- EselTokens: alle Nutzer -----------------------------------------------
+// Uebertragen aus eseltokens.com/admin (eigene Login-Session dort) hierher, damit Token-Vergabe,
+// Rollen und XP am selben Ort verwaltet werden wie alles andere Administrative.
+var eseltokensZustand = { nutzer: [] };
+
+function eseltokensBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>EselTokens — alle Nutzer</h2>' +
+        '<span class="neben" id="et-anzahl"></span></div>' +
+        '<div class="karte-koerper" id="et-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div>";
+}
+
+function eseltokensRolleFarbe(rolle) {
+    return { admin: "background:rgba(168,85,247,.18);color:#c9a6ff", moderator: "background:rgba(88,166,255,.18);color:#8ec2ff",
+        member: "background:rgba(63,185,80,.18);color:#7ee2a8", pending: "background:rgba(139,148,158,.18);color:#c9d1d9" }[rolle] || "";
+}
+
+async function eseltokensLaden() {
+    var inhalt = document.getElementById("et-inhalt");
+    try {
+        var res = await fetch("/api/eseltokens/users");
+        var daten = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(daten.error || res.status) + "</div>"; return; }
+        eseltokensZustand.nutzer = Array.isArray(daten) ? daten : [];
+        document.getElementById("et-anzahl").textContent = eseltokensZustand.nutzer.length + " Nutzer";
+        eseltokensRendern();
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function eseltokensRendern() {
+    var inhalt = document.getElementById("et-inhalt");
+    var schreiben = kannSchreiben();
+    var rows = eseltokensZustand.nutzer.map(function (u) {
+        var rolleZelle = schreiben
+            ? '<select class="suche" data-et-rolle="' + u.id + '" style="' + eseltokensRolleFarbe(u.role) + '">' +
+                ["pending", "member", "moderator", "admin"].map(function (r) {
+                    return '<option value="' + r + '"' + (r === u.role ? " selected" : "") + ">" + r + "</option>";
+                }).join("") + "</select>"
+            : '<span class="pille" style="' + eseltokensRolleFarbe(u.role) + '">' + esc(u.role) + "</span>";
+        var balanceZelle = schreiben
+            ? '<input class="suche num" type="number" min="0" style="width:110px;text-align:right" data-et-balance="' + u.id + '" value="' + u.balance + '">'
+            : String(u.balance);
+        var xpZelle = schreiben
+            ? '<input class="suche num" type="number" min="0" style="width:90px;text-align:right" data-et-xp="' + u.id + '" value="' + (u.xp || 0) + '">'
+            : String(u.xp || 0);
+        var speichernZelle = schreiben
+            ? '<button class="knopf" data-et-speichern="' + u.id + '">Speichern</button><span data-et-status="' + u.id + '" style="margin-left:6px;font-size:.78rem;color:var(--gedaempft)"></span>'
+            : "";
+        return [esc(u.username), esc(u.discordId), rolleZelle, balanceZelle, xpZelle, speichernZelle];
+    });
+    inhalt.innerHTML = tabelle(
+        [{ t: "Name" }, { t: "Discord-ID" }, { t: "Rolle" }, { t: "Tokens", num: true }, { t: "XP", num: true }, { t: "Aktion" }],
+        rows,
+        "Keine Nutzer vorhanden."
+    );
+
+    if (!schreiben) return;
+    inhalt.querySelectorAll("[data-et-speichern]").forEach(function (btn) {
+        btn.addEventListener("click", function () { eseltokensSpeichern(Number(btn.getAttribute("data-et-speichern"))); });
+    });
+}
+
+async function eseltokensSpeichern(id) {
+    var status = document.querySelector('[data-et-status="' + id + '"]');
+    var rolleEl = document.querySelector('[data-et-rolle="' + id + '"]');
+    var balanceEl = document.querySelector('[data-et-balance="' + id + '"]');
+    var xpEl = document.querySelector('[data-et-xp="' + id + '"]');
+    var body = { role: rolleEl.value, balance: Number(balanceEl.value), xp: Number(xpEl.value) };
+    status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/eseltokens/users/" + id, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        var daten = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        status.textContent = "Gespeichert ✓";
+        setTimeout(function () { if (status) status.textContent = ""; }, 2500);
+    } catch (e) {
+        status.textContent = "Fehlgeschlagen.";
+    }
+}
+
 function nutzerBlatt() {
+
     return '<div class="karte"><div class="karte-kopf"><h2>Nutzer-Suche</h2>' +
         '<span class="neben">über Shop, Fahrstuhl und Eselbuilder</span></div>' +
         '<div class="karte-koerper">' +

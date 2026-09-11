@@ -622,7 +622,8 @@ async function callEselTokens(path, opts = {}) {
         err.status = 503;
         throw err;
     }
-    const res = await fetch(`${ESELTOKENS_API_BASE}${path}`, {
+    const fullPath = path.endsWith('/') ? path : `${path}/`;
+    const res = await fetch(`${ESELTOKENS_API_BASE}${fullPath}`, {
         ...opts,
         headers: {
             'Authorization': `Bearer ${SHOP_INTEGRATION_SECRET}`,
@@ -638,6 +639,36 @@ async function callEselTokens(path, opts = {}) {
     }
     return body;
 }
+
+// -- Volle Nutzerliste (Rolle/Guthaben/XP), uebertragen aus eseltokens.com/admin --
+// eseltokens/admin zeigte das bisher direkt (eigene Session), aber getrennt von jeder anderen
+// Admin-Aktion. Konsolidiert hierher, damit es nur noch EINEN Ort fuer Admin-Aufgaben gibt.
+app.get('/api/eseltokens/users', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselTokens('/api/integrations/admin/users');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eseltokens/users/:id', requireRole('admin'), async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Ungueltige User-ID.' });
+    const { balance, role, xp } = req.body || {};
+    if (balance === undefined && role === undefined && xp === undefined) {
+        return res.status(400).json({ error: 'Nichts zu aendern.' });
+    }
+    try {
+        const data = await callEselTokens('/api/integrations/admin/update-user', {
+            method: 'POST',
+            body: JSON.stringify({ userId: id, balance, role, xp }),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
 
 app.post('/api/eseltokens/credit', requireRole('admin'), async (req, res) => {
     const { discordId, username, amount, reason } = req.body || {};
