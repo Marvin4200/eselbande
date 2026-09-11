@@ -218,6 +218,23 @@ das schließen.
 **Der Pi hängt an einem USB-Stick.** Die sind weniger haltbar als SD-Karten oder
 SSDs. Wenn er ausfällt: Backups und Überwachung weg, die Dienste laufen weiter.
 
+**Alte Bots stillgelegt (2026-09-11).** `musikbot-docker-phase1`,
+`eselmoderator-phase1`, `eselmoderator-dashboard-phase1` und `eselbuilder-bot`
+sind per `docker stop` deaktiviert (NICHT gelöscht — `docker start
+<name>` bringt sie im Notfall sofort zurück). Nur noch zwei Bots aktiv:
+`fahrstuhl-phase1` und `eselbande-bot-phase1`. Vorher komplette
+Legacy-Datenübernahme gefahren (`scripts/migrate-legacy-data.ts` in
+`eselbande-bot`, siehe dessen README Abschnitt 4 #3) — alle Song-Stats,
+Mod-Cases, Tickets (18) und Server-Backups (11, inkl. Sections) sind jetzt in
+der neuen `eselbande`-Schema-DB. `eselbande-bot-phase1`s Speicherlimit wurde
+dafür dauerhaft von 512m auf 1024m erhöht (Host hat 9GB+ frei, kein Problem).
+**Nicht migriert (bewusst, siehe Skript-Kommentar):** `AiSound`/`SoundUser` —
+für `/sound` gibt es keine Vorgängerdaten. **Weiterhin ungetestet in echtem
+Gebrauch:** `/sound`, `/aisounds`, `/ticket`, `/serverbackup`, TempVoice — die
+alten Bots liefen bislang als Fallback, jetzt nicht mehr. Landingpage
+entsprechend aktualisiert (kein "Testbetrieb" mehr, EselMusic/Eselbuilder-
+Karten durch eine gemeinsame "EselBande-Bot"-Karte ersetzt).
+
 ~~`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
 neu an`~~ **BEHOBEN (2026-09-11).** Root Cause gefunden: Die Netzwerk-Definition
 in der Compose-Datei hatte nur `name: marvin_internal`, ohne `external: true`
