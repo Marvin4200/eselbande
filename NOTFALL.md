@@ -242,6 +242,25 @@ via `docker compose up -d fahrstuhl-docker` triggert den obigen
 Netzwerk-Bug, oder einen gezielten `docker stop`+`rm`+`run` mit denselben
 Flags/Netzwerken wie der aktuelle Container (ohne `docker compose`).
 
+**EselWorld: Auto-Deploy per GitHub-Webhook + Discord-DM (seit 2026-09-09).**
+`Marvin4200/eselworld`, Branch `main` → Push löst automatisch
+`git pull` + `docker compose up -d --build` in `/home/marvin/eselworld` aus.
+Läuft als eigenständiger systemd-Service `eselworld-deploy-webhook`
+(`/home/marvin/eselworld/deploy-webhook.py`, Python, NICHT in Docker — bewusst,
+damit ein Rebuild dieses Webhooks selbst nie `docker compose` auf einer der
+gemeinsamen Compose-Dateien anfasst). Public Endpoint:
+`https://world.eselbande.com/_deploy-webhook` (nginx proxied zu
+`127.0.0.1:9151`), HMAC-Secret in `/home/marvin/eselworld/deploy-webhook.env`
+(`ESELWORLD_DEPLOY_SECRET`, im GitHub-Repo unter Settings → Webhooks
+hinterlegt). Start-/Erfolgs-/Fehler-Meldungen kommen als **private Discord-DM**
+an Marvin (User-ID `740958995887685696`), nicht in einen Kanal — nutzt dafür
+den vorhandenen `eselbande-bot`-Token (`DISCORD_BOT_TOKEN` in derselben
+`.env`). Wichtiger Stolperstein: Discords API blockt Requests ohne
+`User-Agent`-Header mit Cloudflare-Fehler 1010 — der Header ist im Script
+gesetzt, falls das Script mal neu geschrieben wird, daran denken.
+Service-Status prüfen: `systemctl status eselworld-deploy-webhook`,
+Logs: `journalctl -u eselworld-deploy-webhook -f`.
+
 ---
 
 ## 8. Wenn eine Meldung kommt, die du nicht einordnen kannst
