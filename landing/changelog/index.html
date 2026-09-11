@@ -57,6 +57,15 @@
     // tag ist ein einzelnes Emoji, group fasst mehrere Eintraege desselben Tages zusammen.
     const ENTRIES = [
       {
+        date: "2026-09-11",
+        items: [
+          { tag: "🎧", title: "Fahrstuhl: EselTokens für Voice-Zeit funktionieren wieder", desc: "Ein interner Verbindungsfehler ließ die Token-Vergabe fürs gemeinsame Sprachchatten seit einigen Tagen ins Leere laufen — behoben. Wer mindestens 5 Minuten im Voice-Channel verbringt, bekommt wieder EselTokens gutgeschrieben." },
+          { tag: "🔑", title: "Eselbuilder: Login-Fehler nach längerer Sitzung behoben", desc: "Wer länger als eine Woche eingeloggt blieb, bekam beim Öffnen des Dashboards nur noch einen Netzwerkfehler. Die Sitzung erneuert sich jetzt automatisch im Hintergrund; bei einer wirklich abgelaufenen Sitzung gibt's jetzt einen klaren Re-Login-Hinweis statt einer kaputten Seite." },
+          { tag: "🪙", title: "Premium-Käufe: nur noch mit EselTokens", desc: "Alle Premium-Features (Fahrstuhl, EselModerator, Eselbuilder Pro) werden ab sofort ausschließlich mit EselTokens freigeschaltet, keine direkten Euro-Preise mehr. Die Freischaltseite unter eselbande.com/eseltokens/premium wurde außerdem überarbeitet und verlinkt jetzt direkt zum gewählten Produkt statt zur vollen Liste." },
+          { tag: "⚙️", title: "Neues zentrales Admin-Dashboard", desc: "Alle administrativen Aufgaben (Token vergeben, Fraud-Signale, Werbeflächen, Rabatt-Codes, Zugriffsverwaltung) laufen jetzt gesammelt über admin.eselbande.com statt über mehrere verstreute Einzelseiten." },
+        ],
+      },
+      {
         date: "2026-09-09",
         items: [
           { tag: "🤖", title: "EselBande: neuer, zusammengeführter Bot startet Testbetrieb", desc: "Musik, Moderation und AI-Sounds laufen künftig in einem einzigen Bot statt in mehreren getrennten. Läuft aktuell im Testbetrieb auf einem Test-Server — die bisherigen Bots (Moderation, Musik) bleiben so lange unverändert im Einsatz, bis der neue Bot sich im Alltag bewährt hat. Der Fahrstuhl-Bot bleibt dauerhaft eigenständig." },
