@@ -670,6 +670,152 @@ app.post('/api/eseltokens/users/:id', requireRole('admin'), async (req, res) => 
     }
 });
 
+// -- EselTokens: Fraud-Signale + Werbeflaechen (uebertragen aus eseltokens.com/admin) --
+app.get('/api/eseltokens/fraud-signals', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselTokens('/api/integrations/admin/fraud-signals');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.get('/api/eseltokens/ads', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselTokens('/api/integrations/admin/ads');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eseltokens/ads', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callEselTokens('/api/integrations/admin/ads', {
+            method: 'POST',
+            body: JSON.stringify(req.body || {}),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// -- Shop: Rabatt-/Team-Codes (uebertragen aus shop.eselbande.com/admin) --
+const SHOP_API_BASE = process.env.SHOP_API_BASE || 'http://shop:3000';
+const ADMIN_INTEGRATION_SECRET = process.env.ADMIN_INTEGRATION_SECRET || '';
+
+async function callShop(path, opts = {}) {
+    if (!ADMIN_INTEGRATION_SECRET) {
+        const err = new Error('ADMIN_INTEGRATION_SECRET ist nicht konfiguriert.');
+        err.status = 503;
+        throw err;
+    }
+    const res = await fetch(`${SHOP_API_BASE}${path}`, {
+        ...opts,
+        headers: {
+            'Authorization': `Bearer ${ADMIN_INTEGRATION_SECRET}`,
+            'Content-Type': 'application/json',
+            ...(opts.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(body.error || `shop antwortete mit ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return body;
+}
+
+app.get('/api/shop/codes', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callShop('/api/integrations/admin/codes');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/shop/codes', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callShop('/api/integrations/admin/codes', {
+            method: 'POST',
+            body: JSON.stringify({ ...req.body, createdBy: (req.session.discordUser || {}).id }),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/shop/codes/:id/revoke', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callShop('/api/integrations/admin/codes-revoke', {
+            method: 'POST',
+            body: JSON.stringify({ id: req.params.id }),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+// -- Eselbuilder: Team-Codes + Zugriffs-Uebersicht (uebertragen aus eselbuilder.eselbande.com/dashboard/admin) --
+app.get('/api/eselbuilder/codes', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselbuilder('/api/integrations/admin/codes');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eselbuilder/codes', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callEselbuilder('/api/integrations/admin/codes', {
+            method: 'POST',
+            body: JSON.stringify(req.body || {}),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eselbuilder/codes/:id/revoke', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callEselbuilder(`/api/integrations/admin/codes/${encodeURIComponent(req.params.id)}/revoke`, {
+            method: 'POST',
+            body: '{}',
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.get('/api/eselbuilder/access', requireRole('viewer'), async (req, res) => {
+    try {
+        const data = await callEselbuilder('/api/integrations/admin/access');
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
+app.post('/api/eselbuilder/access/revoke', requireRole('admin'), async (req, res) => {
+    try {
+        const data = await callEselbuilder('/api/integrations/admin/access/revoke', {
+            method: 'POST',
+            body: JSON.stringify(req.body || {}),
+        });
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
+    }
+});
+
 app.post('/api/eseltokens/credit', requireRole('admin'), async (req, res) => {
     const { discordId, username, amount, reason } = req.body || {};
     if (!discordId || typeof discordId !== 'string') return res.status(400).json({ error: 'discordId ist erforderlich.' });

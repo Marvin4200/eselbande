@@ -391,7 +391,8 @@ function anmeldungZeigen() {
 var SEITEN_TITEL = {
     start: "Start", nutzer: "Nutzer-Suche", infrastruktur: "Infrastruktur",
     produkte: "Produkte", protokoll: "Protokoll", eselfriend: "EselFreund", zugriff: "Zugriff",
-    eseltokens: "EselTokens-Nutzer"
+    eseltokens: "EselTokens-Nutzer", fraud: "Fraud-Signale", werbung: "Werbeflächen",
+    shopcodes: "Shop-Codes", ebcodes: "Eselbuilder-Codes", ebaccess: "Eselbuilder-Zugriff"
 };
 
 function geruestZeichnen(ich) {
@@ -449,6 +450,15 @@ function sidebarZeichnen() {
         ] },
         { titel: "EselTokens", punkte: [
             { id: "eseltokens", text: "Alle Nutzer", ico: "🪙" },
+            { id: "fraud", text: "Fraud-Signale", ico: "🚨" },
+            { id: "werbung", text: "Werbeflächen", ico: "📢" },
+        ] },
+        { titel: "Shop", punkte: [
+            { id: "shopcodes", text: "Codes", ico: "🎟️" },
+        ] },
+        { titel: "Eselbuilder", punkte: [
+            { id: "ebcodes", text: "Codes", ico: "🎟️" },
+            { id: "ebaccess", text: "Zugriff", ico: "🔓" },
         ] },
     ];
     if (zustand.rolle === "owner") {
@@ -556,6 +566,11 @@ function blattZeichnen() {
     else if (zustand.blatt === "nutzer") { ziel.innerHTML = nutzerBlatt(); nutzerVerdrahten(); }
     else if (zustand.blatt === "zugriff") { ziel.innerHTML = zugriffBlatt(); zugriffLaden(); }
     else if (zustand.blatt === "eseltokens") { ziel.innerHTML = eseltokensBlatt(); eseltokensLaden(); }
+    else if (zustand.blatt === "fraud") { ziel.innerHTML = fraudBlatt(); fraudLaden(); }
+    else if (zustand.blatt === "werbung") { ziel.innerHTML = werbungBlatt(); werbungLaden(); }
+    else if (zustand.blatt === "shopcodes") { ziel.innerHTML = shopcodesBlatt(); shopcodesVerdrahten(); shopcodesLaden(); }
+    else if (zustand.blatt === "ebcodes") { ziel.innerHTML = ebcodesBlatt(); ebcodesVerdrahten(); ebcodesLaden(); }
+    else if (zustand.blatt === "ebaccess") { ziel.innerHTML = ebaccessBlatt(); ebaccessLaden(); }
     else { ziel.innerHTML = startBlatt(); kennzahlenZeichnen(); startVerdrahten(); }
 }
 
@@ -743,7 +758,7 @@ function uebersichtBlatt() {
 function tabelle(kopf, zeilen, leerText) {
     if (!zeilen || !zeilen.length) return '<div class="leer">' + esc(leerText || "Keine Daten.") + "</div>";
     return '<div class="tabelle-scroll"><table><thead><tr>' +
-        kopf.map(function (h) { return "<th" + (h.num ? ' class="num"' : "") + ">" + esc(h.t || h) + "</th>"; }).join("") +
+        kopf.map(function (h) { return "<th" + (h.num ? ' class="num"' : "") + ">" + esc(typeof h === "string" ? h : (h.t || "")) + "</th>"; }).join("") +
         "</tr></thead><tbody>" +
         zeilen.map(function (r) {
             return "<tr>" + r.map(function (z, i) {
@@ -1317,6 +1332,364 @@ async function eseltokensSpeichern(id) {
         setTimeout(function () { if (status) status.textContent = ""; }, 2500);
     } catch (e) {
         status.textContent = "Fehlgeschlagen.";
+    }
+}
+
+// -- EselTokens: Fraud-Signale (uebertragen aus eseltokens.com/admin/fraud, rein lesend) -------
+function fraudBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Fraud-Signale</h2>' +
+        '<span class="neben">letzte 7 Tage, nur Hinweise, kein Auto-Enforcement</span></div>' +
+        '<div class="karte-koerper" id="fr-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div>";
+}
+
+async function fraudLaden() {
+    var inhalt = document.getElementById("fr-inhalt");
+    try {
+        var res = await fetch("/api/eseltokens/fraud-signals");
+        var d = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        var total = (d.funnelingPairs || []).length + (d.pingPongPairs || []).length +
+            (d.freshBigReceivers || []).length + (d.hubReceivers || []).length;
+        if (!total) { inhalt.innerHTML = '<div class="leer">Keine auffälligen Muster gefunden. ✅</div>'; return; }
+
+        var html = "";
+        if (d.funnelingPairs && d.funnelingPairs.length) {
+            html += '<h3 style="margin:16px 0 8px">🔁 Häufige/große Transfers zwischen zwei Accounts</h3>' +
+                tabelle([{ t: "Von" }, { t: "An" }, { t: "Anzahl", num: true }, { t: "Summe", num: true }, { t: "Zuletzt" }],
+                    d.funnelingPairs.map(function (p) { return [esc(p.fromUsername), esc(p.toUsername), p.transferCount, p.totalAmount, esc(p.lastAt)]; }));
+        }
+        if (d.pingPongPairs && d.pingPongPairs.length) {
+            html += '<h3 style="margin:16px 0 8px">↔️ Ping-Pong-Transfers</h3>' +
+                tabelle([{ t: "User A" }, { t: "User B" }, { t: "A→B", num: true }, { t: "A→B Summe", num: true }, { t: "B→A", num: true }, { t: "B→A Summe", num: true }],
+                    d.pingPongPairs.map(function (p) { return [esc(p.userAName), esc(p.userBName), p.forwardCount, p.forwardAmount, p.backwardCount, p.backwardAmount]; }));
+        }
+        if (d.freshBigReceivers && d.freshBigReceivers.length) {
+            html += '<h3 style="margin:16px 0 8px">🆕 Neue Accounts mit hohen Eingängen</h3>' +
+                tabelle([{ t: "User" }, { t: "Erstellt" }, { t: "Anzahl", num: true }, { t: "Summe", num: true }],
+                    d.freshBigReceivers.map(function (u) { return [esc(u.username), esc(u.createdAt), u.receivedCount, u.receivedAmount]; }));
+        }
+        if (d.hubReceivers && d.hubReceivers.length) {
+            html += '<h3 style="margin:16px 0 8px">🕸️ Sammel-Accounts</h3>' +
+                tabelle([{ t: "User" }, { t: "Verschiedene Absender", num: true }, { t: "Summe erhalten", num: true }],
+                    d.hubReceivers.map(function (u) { return [esc(u.username), u.distinctSenders, u.totalAmount]; }));
+        }
+        inhalt.innerHTML = html;
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+// -- EselTokens: Werbeflaechen (uebertragen aus eseltokens.com/admin/ads) ----------------------
+var werbungZustand = { slots: [] };
+
+function werbungBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Werbeflächen</h2>' +
+        '<span class="neben" id="wb-anzahl"></span></div>' +
+        '<div class="karte-koerper" id="wb-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div>";
+}
+
+async function werbungLaden() {
+    var inhalt = document.getElementById("wb-inhalt");
+    try {
+        var res = await fetch("/api/eseltokens/ads");
+        var slots = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(slots.error || res.status) + "</div>"; return; }
+        werbungZustand.slots = Array.isArray(slots) ? slots : [];
+        document.getElementById("wb-anzahl").textContent = werbungZustand.slots.length + " Slots";
+        werbungRendern();
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function werbungRendern() {
+    var inhalt = document.getElementById("wb-inhalt");
+    if (!werbungZustand.slots.length) { inhalt.innerHTML = '<div class="leer">Keine Werbeslots konfiguriert.</div>'; return; }
+    inhalt.innerHTML = werbungZustand.slots.map(function (s) {
+        var k = s.key;
+        return '<div class="game-card" style="padding:14px;margin-bottom:10px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+                '<strong>' + esc(k) + '</strong>' +
+                '<span class="neben">' + (s.stats ? s.stats.impressions + ' Impr. · ' + s.stats.clicks + ' Klicks' : '') + '</span>' +
+            '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+                '<label style="display:flex;align-items:center;gap:4px;font-size:.82rem"><input type="checkbox" data-wb-enabled="' + k + '"' + (s.enabled ? ' checked' : '') + '> Aktiv</label>' +
+                '<select class="suche" data-wb-mode="' + k + '">' +
+                    ["off", "house", "adsense", "custom"].map(function (m) { return '<option value="' + m + '"' + (m === s.mode ? " selected" : "") + ">" + m + "</option>"; }).join("") +
+                '</select>' +
+                '<input class="suche" style="width:70px" data-wb-emoji="' + k + '" value="' + esc(s.imageEmoji || "") + '" placeholder="✨">' +
+                '<input class="suche" style="flex:1;min-width:160px" data-wb-title="' + k + '" value="' + esc(s.title || "") + '" placeholder="Titel">' +
+                '<input class="suche" style="flex:2;min-width:200px" data-wb-desc="' + k + '" value="' + esc(s.description || "") + '" placeholder="Beschreibung">' +
+                '<input class="suche" style="flex:1;min-width:200px" data-wb-link="' + k + '" value="' + esc(s.linkUrl || "") + '" placeholder="https://…">' +
+                '<input class="suche" style="width:120px" data-wb-cta="' + k + '" value="' + esc(s.ctaText || "") + '" placeholder="CTA-Text">' +
+                '<input class="suche" style="width:110px" data-wb-badge="' + k + '" value="' + esc(s.badgeText || "") + '" placeholder="Badge">' +
+                '<button class="knopf" data-wb-speichern="' + k + '">Speichern</button>' +
+                '<span data-wb-status="' + k + '" style="font-size:.78rem;color:var(--gedaempft)"></span>' +
+            "</div></div>";
+    }).join("");
+
+    inhalt.querySelectorAll("[data-wb-speichern]").forEach(function (btn) {
+        btn.addEventListener("click", function () { werbungSpeichern(btn.getAttribute("data-wb-speichern")); });
+    });
+}
+
+async function werbungSpeichern(key) {
+    var get = function (attr) { return document.querySelector("[" + attr + '="' + key + '"]'); };
+    var status = get("data-wb-status");
+    status.textContent = "Speichere …";
+    var body = {
+        key: key,
+        enabled: get("data-wb-enabled").checked,
+        mode: get("data-wb-mode").value,
+        imageEmoji: get("data-wb-emoji").value,
+        title: get("data-wb-title").value,
+        description: get("data-wb-desc").value,
+        linkUrl: get("data-wb-link").value,
+        ctaText: get("data-wb-cta").value,
+        badgeText: get("data-wb-badge").value,
+    };
+    try {
+        var res = await fetch("/api/eseltokens/ads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        var d = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (d.error || res.status); return; }
+        status.textContent = "Gespeichert ✓";
+        setTimeout(function () { if (status) status.textContent = ""; }, 2500);
+    } catch (e) {
+        status.textContent = "Fehlgeschlagen.";
+    }
+}
+
+// -- Shop: Rabatt-/Team-Codes (uebertragen aus shop.eselbande.com/admin) -----------------------
+var SHOP_PRODUKTE = ["fahrstuhl_basic", "fahrstuhl_pro", "eselbuilder_pro", "eselmoderator_basic", "eselmoderator_pro"];
+var shopcodesZustand = { codes: [] };
+
+function shopcodesBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Shop — Rabatt-/Team-Codes</h2>' +
+        '<span class="neben" id="sc-anzahl"></span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center">' +
+                '<select class="suche" id="sc-produkt">' + SHOP_PRODUKTE.map(function (p) { return '<option value="' + p + '">' + p + "</option>"; }).join("") + '</select>' +
+                '<input class="suche" id="sc-tage" type="number" min="1" value="30" style="width:90px" title="Tage gültig">' +
+                '<input class="suche" id="sc-max" type="number" min="1" value="1" style="width:90px" title="Max. Einlösungen">' +
+                '<input class="suche" id="sc-notiz" placeholder="Notiz (optional)" style="flex:1;min-width:160px">' +
+                '<button class="knopf" id="sc-erstellen">Code erstellen</button>' +
+            "</div>" +
+            '<div id="sc-neu" style="margin-bottom:10px"></div>' +
+            '<div id="sc-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div></div>";
+}
+
+function shopcodesVerdrahten() {
+    document.getElementById("sc-erstellen").addEventListener("click", shopcodesErstellen);
+}
+
+async function shopcodesLaden() {
+    var inhalt = document.getElementById("sc-inhalt");
+    try {
+        var res = await fetch("/api/shop/codes");
+        var d = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        shopcodesZustand.codes = d.codes || [];
+        document.getElementById("sc-anzahl").textContent = shopcodesZustand.codes.length + " Codes";
+        shopcodesRendern();
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function shopcodesRendern() {
+    var inhalt = document.getElementById("sc-inhalt");
+    var rows = shopcodesZustand.codes.map(function (c) {
+        var status = c.isRevoked ? '<span class="pille ab">widerrufen</span>' : '<span class="pille auf">aktiv</span>';
+        var aktion = c.isRevoked ? "" : '<button class="knopf" data-sc-widerrufen="' + c.id + '">Widerrufen</button>';
+        return [esc(c.code), esc(c.productKey), c.grantDays + "d", c.maxRedemptions, esc(c.note || "–"), status, aktion];
+    });
+    inhalt.innerHTML = tabelle(
+        [{ t: "Code" }, { t: "Produkt" }, { t: "Dauer" }, { t: "Max.", num: true }, { t: "Notiz" }, { t: "Status" }, { t: "" }],
+        rows, "Noch keine Codes erstellt."
+    );
+    inhalt.querySelectorAll("[data-sc-widerrufen]").forEach(function (btn) {
+        btn.addEventListener("click", function () { shopcodesWiderrufen(Number(btn.getAttribute("data-sc-widerrufen"))); });
+    });
+}
+
+async function shopcodesErstellen() {
+    var neu = document.getElementById("sc-neu");
+    neu.textContent = "Erstelle …";
+    var body = {
+        productKey: document.getElementById("sc-produkt").value,
+        grantDays: Number(document.getElementById("sc-tage").value) || 30,
+        maxRedemptions: Number(document.getElementById("sc-max").value) || 1,
+        note: document.getElementById("sc-notiz").value,
+    };
+    try {
+        var res = await fetch("/api/shop/codes", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        var d = await res.json();
+        if (!res.ok) { neu.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        neu.innerHTML = '<div class="pille auf">Erstellt: ' + esc(d.code) + "</div>";
+        shopcodesLaden();
+    } catch (e) {
+        neu.innerHTML = '<div class="leer">Fehlgeschlagen.</div>';
+    }
+}
+
+async function shopcodesWiderrufen(id) {
+    if (!confirm("Diesen Code wirklich widerrufen?")) return;
+    try {
+        await fetch("/api/shop/codes/" + id + "/revoke", { method: "POST" });
+        shopcodesLaden();
+    } catch (e) {}
+}
+
+// -- Eselbuilder: Team-Codes (uebertragen aus eselbuilder.eselbande.com/dashboard/admin/codes) --
+var ebcodesZustand = { codes: [] };
+
+function ebcodesBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Eselbuilder — Team-Codes</h2>' +
+        '<span class="neben" id="ec-anzahl"></span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center">' +
+                '<select class="suche" id="ec-typ"><option value="DAYS">Tage</option><option value="USES">Nutzungen</option></select>' +
+                '<input class="suche" id="ec-wert" type="number" min="1" value="30" style="width:90px" title="Wert">' +
+                '<input class="suche" id="ec-max" type="number" min="1" value="1" style="width:90px" title="Max. Einlösungen">' +
+                '<input class="suche" id="ec-notiz" placeholder="Notiz (optional)" style="flex:1;min-width:160px">' +
+                '<button class="knopf" id="ec-erstellen">Code erstellen</button>' +
+            "</div>" +
+            '<div id="ec-neu" style="margin-bottom:10px"></div>' +
+            '<div id="ec-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div></div>";
+}
+
+function ebcodesVerdrahten() {
+    document.getElementById("ec-erstellen").addEventListener("click", ebcodesErstellen);
+}
+
+async function ebcodesLaden() {
+    var inhalt = document.getElementById("ec-inhalt");
+    try {
+        var res = await fetch("/api/eselbuilder/codes");
+        var d = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        ebcodesZustand.codes = d.codes || [];
+        document.getElementById("ec-anzahl").textContent = ebcodesZustand.codes.length + " Codes";
+        ebcodesRendern();
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function ebcodesRendern() {
+    var inhalt = document.getElementById("ec-inhalt");
+    var rows = ebcodesZustand.codes.map(function (c) {
+        var status = c.isRevoked ? '<span class="pille ab">widerrufen</span>' : '<span class="pille auf">aktiv</span>';
+        var aktion = c.isRevoked ? "" : '<button class="knopf" data-ec-widerrufen="' + c.id + '">Widerrufen</button>';
+        var wert = c.grantType === "DAYS" ? c.grantValue + "d" : c.grantValue + "×";
+        return [esc(c.code), wert, (c.redemptions || []).length + "/" + c.maxRedemptions, esc(c.note || "–"), status, aktion];
+    });
+    inhalt.innerHTML = tabelle(
+        [{ t: "Code" }, { t: "Wert" }, { t: "Eingelöst", num: true }, { t: "Notiz" }, { t: "Status" }, { t: "" }],
+        rows, "Noch keine Codes erstellt."
+    );
+    inhalt.querySelectorAll("[data-ec-widerrufen]").forEach(function (btn) {
+        btn.addEventListener("click", function () { ebcodesWiderrufen(btn.getAttribute("data-ec-widerrufen")); });
+    });
+}
+
+async function ebcodesErstellen() {
+    var neu = document.getElementById("ec-neu");
+    neu.textContent = "Erstelle …";
+    var body = {
+        grantType: document.getElementById("ec-typ").value,
+        grantValue: Number(document.getElementById("ec-wert").value) || 30,
+        maxRedemptions: Number(document.getElementById("ec-max").value) || 1,
+        note: document.getElementById("ec-notiz").value,
+    };
+    try {
+        var res = await fetch("/api/eselbuilder/codes", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        var d = await res.json();
+        if (!res.ok) { neu.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        neu.innerHTML = '<div class="pille auf">Erstellt: ' + esc(d.code.code) + "</div>";
+        ebcodesLaden();
+    } catch (e) {
+        neu.innerHTML = '<div class="leer">Fehlgeschlagen.</div>';
+    }
+}
+
+async function ebcodesWiderrufen(id) {
+    if (!confirm("Diesen Code wirklich widerrufen?")) return;
+    try {
+        await fetch("/api/eselbuilder/codes/" + id + "/revoke", { method: "POST" });
+        ebcodesLaden();
+    } catch (e) {}
+}
+
+// -- Eselbuilder: Zugriffs-Uebersicht (uebertragen aus .../dashboard/admin/access) --------------
+var ebaccessZustand = { holders: [] };
+
+function ebaccessBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>Eselbuilder — wer hat Zugriff</h2>' +
+        '<span class="neben" id="ea-anzahl"></span></div>' +
+        '<div class="karte-koerper" id="ea-inhalt"><div class="leer">Lädt …</div></div>' +
+        "</div>";
+}
+
+async function ebaccessLaden() {
+    var inhalt = document.getElementById("ea-inhalt");
+    try {
+        var res = await fetch("/api/eselbuilder/access");
+        var d = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(d.error || res.status) + "</div>"; return; }
+        ebaccessZustand.holders = d.holders || [];
+        document.getElementById("ea-anzahl").textContent = ebaccessZustand.holders.length + " mit Zugriff";
+        ebaccessRendern();
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+function ebaccessRendern() {
+    var inhalt = document.getElementById("ea-inhalt");
+    var rows = ebaccessZustand.holders.map(function (h, i) {
+        var quelle = h.source === "subscription" ? '<span class="pille auf">Abo</span>' : '<span class="pille" style="background:rgba(88,166,255,.18);color:#8ec2ff">Code</span>';
+        var aktion = '<button class="knopf" data-ea-widerrufen="' + i + '">Entziehen</button>';
+        return [esc(h.username), esc(h.discordId), quelle, esc(h.detail), aktion];
+    });
+    inhalt.innerHTML = tabelle(
+        [{ t: "Nutzer" }, { t: "Discord-ID" }, { t: "Quelle" }, { t: "Details" }, { t: "" }],
+        rows, "Niemand hat aktuell Zugriff."
+    );
+    inhalt.querySelectorAll("[data-ea-widerrufen]").forEach(function (btn) {
+        btn.addEventListener("click", function () { ebaccessWiderrufen(Number(btn.getAttribute("data-ea-widerrufen"))); });
+    });
+}
+
+async function ebaccessWiderrufen(i) {
+    var h = ebaccessZustand.holders[i];
+    if (!h) return;
+    var warnung = h.source === "subscription"
+        ? "Das kündigt das echte Zahlungs-Abo bei Paddle sofort. Wirklich entziehen?"
+        : "Zugriffscode-Einlösung wirklich entziehen?";
+    if (!confirm(warnung)) return;
+    var body = h.source === "subscription" ? { source: "subscription", userId: h.userId } : { source: "code", redemptionId: h.redemptionId };
+    try {
+        var res = await fetch("/api/eselbuilder/access/revoke", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        var d = await res.json();
+        if (!res.ok) { alert("Fehler: " + (d.error || res.status)); return; }
+        ebaccessLaden();
+    } catch (e) {
+        alert("Fehlgeschlagen.");
     }
 }
 
