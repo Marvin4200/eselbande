@@ -253,18 +253,17 @@ behoben — braucht eine eigene Untersuchung (vermutlich hilft ein
 Healthcheck-Block für `fahrstuhl-docker` sowie derselbe Config-Hash-Ansatz
 wie beim Netzwerk).
 
-**Fahrstuhl-Bot vergibt keine EselTokens für Voice-Zeit (offen seit
-2026-09-09) — jetzt lösbar.** `utils/voiceRewardBridge.js` scheitert mit
-`fetch failed` — Ursache: `ESELTOKENS_VOICE_REWARD_URL` in `fahrstuhl/.env`
-zeigte auf `http://127.0.0.1:3000/...`, was im `fahrstuhl-phase1`-Container
-auf sich selbst statt auf den `eseltokens-phase1`-Container zeigt. **Fix in
-der `.env` bereits eingetragen** (`http://eseltokens-phase1:3000/...`, altes
-Backup liegt als `.env.bak-voicereward-fix-<timestamp>` daneben), aber noch
-nicht aktiv — braucht ein echtes Recreate von `fahrstuhl-docker`. Der
-Netzwerk-Bug, der das bisher verhindert hat, ist behoben, ABER `fahrstuhl-docker`
-selbst ist von dem oben beschriebenen neuen Recreate/Healthcheck-Problem
-betroffen — `docker compose up -d fahrstuhl-docker` sollte deshalb weiterhin
-zuerst per `--dry-run` geprüft werden, bevor es real ausgeführt wird.
+~~Fahrstuhl-Bot vergibt keine EselTokens für Voice-Zeit~~ **BEHOBEN
+(2026-09-11).** War `ESELTOKENS_VOICE_REWARD_URL` in `fahrstuhl/.env`, die auf
+`http://127.0.0.1:3000/...` zeigte (im `fahrstuhl-phase1`-Container also auf
+sich selbst statt auf `eseltokens-phase1`). Fix in der `.env` eingetragen
+(`http://eseltokens-docker:3000/eseltokens/api/integrations/fahrstuhl/voice-reward/`),
+`fahrstuhl-docker` per manuellem `docker stop`+`rm`+`docker compose up -d`
+neu erstellt (Compose-eigener Auto-Remove griff wegen des oben beschriebenen
+Recreate-Problems nicht, deshalb der Umweg). Verifiziert per direktem
+Connectivity-Test aus dem Container (`ESELTOKENS_VOICE_REWARD_SECRET`
+korrekt, Endpoint antwortet mit erwarteter Validierung statt `fetch failed`).
+Läuft seither stabil, `RestartCount=0`.
 
 **EselWorld: Auto-Deploy per GitHub-Webhook + Discord-DM (seit 2026-09-09).**
 `Marvin4200/eselworld`, Branch `main` → Push löst automatisch
