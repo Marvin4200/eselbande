@@ -218,29 +218,53 @@ das schließen.
 **Der Pi hängt an einem USB-Stick.** Die sind weniger haltbar als SD-Karten oder
 SSDs. Wenn er ausfällt: Backups und Überwachung weg, die Dienste laufen weiter.
 
-**`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
-neu an** (bestätigt per `--dry-run` am 2026-09-09) — betrifft nicht nur
-`eselbande-bot` (siehe unten), sondern JEDEN Service in dieser Datei, auch
-`fahrstuhl-docker` selbst. Ein `--dry-run` davor zeigte: Netzwerk wird entfernt
-und neu erstellt, dabei werden `freegamesapi-phase1`, `musikbot-docker-phase1`,
-`redis-phase1` und `lavalink-docker-phase1` gestoppt/neu erstellt. Root Cause
-weiterhin ungeklärt (vermutlich Docker-Compose-Versions-/Netzwerk-Config-Hash-
-Problem). **Braucht ein eigenes Wartungsfenster**, siehe auch
-`eselbande-bot/README.md` Abschnitt 9c.
+~~`docker compose up` auf `fahrstuhl/docker-compose.yml` legt `marvin_internal`
+neu an`~~ **BEHOBEN (2026-09-11).** Root Cause gefunden: Die Netzwerk-Definition
+in der Compose-Datei hatte nur `name: marvin_internal`, ohne `external: true`
+— Compose versuchte deshalb bei jedem Lauf, die Live-Netzwerk-Config gegen
+einen gespeicherten `com.docker.compose.config-hash`-Label abzugleichen, und
+bei einer Diskrepanz (vermutlich durch die Compose-Versionshistorie auf
+diesem Server) landete das immer bei "Netzwerk entfernen + neu anlegen".
+**Fix:** `networks.marvin_internal.external: true` in
+`fahrstuhl/docker-compose.yml` ergänzt (Backup davor als
+`docker-compose.yml.bak-external-network-fix-<timestamp>` im selben Ordner).
+Damit fasst Compose die Netzwerk-Lifecycle nie mehr an. Verifiziert per
+`--dry-run` auf mehreren Services (kein "Network ... Removing/Creating" mehr)
+und durch einen echten `docker compose up -d` auf `admin-dashboard`,
+`eseltokens-docker` — Container-Zahl am Netzwerk vorher/nachher identisch (25).
+**`docker compose up -d <service>` auf dieser Datei ist ab jetzt wieder
+gefahrlos möglich** — der `--dry-run`-Vorbehalt aus den älteren Abschnitten
+dieses Dokuments gilt nicht mehr für das Netzwerk selbst (siehe aber unten,
+separates kleineres Problem).
+
+**Neu entdecktes, kleineres Folgeproblem (2026-09-11):** `musikbot-docker-phase1`
+und `fahrstuhl-docker` werden bei praktisch jedem `docker compose up` — auch
+wenn sie nicht Ziel des Befehls sind — als "Recreate" markiert (vermutlich
+derselbe Grundmechanismus wie beim Netzwerk, aber auf Service- statt
+Netzwerk-Ebene: Config-Hash-Drift). Folgen bisher beobachtet: `musikbot` blieb
+nach einem Recreate im Status "Created" statt zu starten (Musikbot kurzzeitig
+offline, durch `docker start musikbot-docker-phase1` behoben) und `shop`
+konnte wegen einer widersprüchlichen `depends_on: fahrstuhl-docker`-Bedingung
+(fehlender Healthcheck auf `fahrstuhl-docker`) nicht sauber über Compose neu
+erstellt werden (`shop` läuft deshalb weiterhin manuell erstellt, nicht
+Compose-getrackt). **Deutlich kleineres Risiko als der Netzwerk-Bug** (betrifft
+nur einzelne Container, nicht das gesamte Netzwerk), aber noch nicht
+behoben — braucht eine eigene Untersuchung (vermutlich hilft ein
+Healthcheck-Block für `fahrstuhl-docker` sowie derselbe Config-Hash-Ansatz
+wie beim Netzwerk).
 
 **Fahrstuhl-Bot vergibt keine EselTokens für Voice-Zeit (offen seit
-2026-09-09).** `utils/voiceRewardBridge.js` scheitert mit `fetch failed` —
-Ursache: `ESELTOKENS_VOICE_REWARD_URL` in `fahrstuhl/.env` zeigte auf
-`http://127.0.0.1:3000/...`, was im `fahrstuhl-phase1`-Container auf sich
-selbst statt auf den `eseltokens-phase1`-Container zeigt. **Fix in der `.env`
-bereits eingetragen** (`http://eseltokens-phase1:3000/...`, altes Backup liegt
-als `.env.bak-voicereward-fix-<timestamp>` daneben), **aber noch nicht aktiv**
-— ein reiner `docker restart fahrstuhl-phase1` übernimmt die neue Env NICHT
-(Env wird nur bei Container-Erstellung eingebrannt), und ein echtes Recreate
-via `docker compose up -d fahrstuhl-docker` triggert den obigen
-`marvin_internal`-Bug. Braucht entweder das Wartungsfenster für den
-Netzwerk-Bug, oder einen gezielten `docker stop`+`rm`+`run` mit denselben
-Flags/Netzwerken wie der aktuelle Container (ohne `docker compose`).
+2026-09-09) — jetzt lösbar.** `utils/voiceRewardBridge.js` scheitert mit
+`fetch failed` — Ursache: `ESELTOKENS_VOICE_REWARD_URL` in `fahrstuhl/.env`
+zeigte auf `http://127.0.0.1:3000/...`, was im `fahrstuhl-phase1`-Container
+auf sich selbst statt auf den `eseltokens-phase1`-Container zeigt. **Fix in
+der `.env` bereits eingetragen** (`http://eseltokens-phase1:3000/...`, altes
+Backup liegt als `.env.bak-voicereward-fix-<timestamp>` daneben), aber noch
+nicht aktiv — braucht ein echtes Recreate von `fahrstuhl-docker`. Der
+Netzwerk-Bug, der das bisher verhindert hat, ist behoben, ABER `fahrstuhl-docker`
+selbst ist von dem oben beschriebenen neuen Recreate/Healthcheck-Problem
+betroffen — `docker compose up -d fahrstuhl-docker` sollte deshalb weiterhin
+zuerst per `--dry-run` geprüft werden, bevor es real ausgeführt wird.
 
 **EselWorld: Auto-Deploy per GitHub-Webhook + Discord-DM (seit 2026-09-09).**
 `Marvin4200/eselworld`, Branch `main` → Push löst automatisch
