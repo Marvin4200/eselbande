@@ -392,7 +392,8 @@ var SEITEN_TITEL = {
     start: "Start", nutzer: "Nutzer-Suche", infrastruktur: "Infrastruktur",
     produkte: "Produkte", protokoll: "Protokoll", eselfriend: "EselFreund", zugriff: "Zugriff",
     eseltokens: "EselTokens-Nutzer", fraud: "Fraud-Signale", werbung: "Werbeflächen",
-    shopcodes: "Shop-Codes", ebcodes: "Eselbuilder-Codes", ebaccess: "Eselbuilder-Zugriff"
+    shopcodes: "Shop-Codes", ebcodes: "Eselbuilder-Codes", ebaccess: "Eselbuilder-Zugriff",
+    ebpremium: "EselBande-Bot Premium"
 };
 
 function geruestZeichnen(ich) {
@@ -447,6 +448,7 @@ function sidebarZeichnen() {
         ] },
         { titel: "Bots", punkte: [
             { id: "eselfriend", text: "EselFreund", ico: "🤖" },
+            { id: "ebpremium", text: "Guild Premium", ico: "💎" },
         ] },
         { titel: "EselTokens", punkte: [
             { id: "eseltokens", text: "Alle Nutzer", ico: "🪙" },
@@ -571,6 +573,7 @@ function blattZeichnen() {
     else if (zustand.blatt === "shopcodes") { ziel.innerHTML = shopcodesBlatt(); shopcodesVerdrahten(); shopcodesLaden(); }
     else if (zustand.blatt === "ebcodes") { ziel.innerHTML = ebcodesBlatt(); ebcodesVerdrahten(); ebcodesLaden(); }
     else if (zustand.blatt === "ebaccess") { ziel.innerHTML = ebaccessBlatt(); ebaccessLaden(); }
+    else if (zustand.blatt === "ebpremium") { ziel.innerHTML = ebpremiumBlatt(); ebpremiumVerdrahten(); }
     else { ziel.innerHTML = startBlatt(); kennzahlenZeichnen(); startVerdrahten(); }
 }
 
@@ -1693,6 +1696,85 @@ async function ebaccessWiderrufen(i) {
     }
 }
 
+// -- EselBande-Bot: Guild-Premium (Nachfolger der EselModerator-Personen-Suche) -----------------
+// Premium ist bei eselbande-bot guild-, nicht personenbezogen -- deshalb hier ein Server-ID-Feld
+// statt einer Discord-Nutzer-ID.
+function ebpremiumBlatt() {
+    return '<div class="karte"><div class="karte-kopf"><h2>EselBande-Bot — Premium pro Server</h2>' +
+        '<span class="neben">Server-ID eingeben, nicht Discord-Nutzer-ID</span></div>' +
+        '<div class="karte-koerper">' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+                '<input class="suche" id="ep-guild" type="text" placeholder="Server-ID (Guild-ID)" style="margin-left:0;min-width:220px">' +
+                '<button class="knopf" id="ep-laden">Laden</button>' +
+            "</div>" +
+            '<div id="ep-inhalt"><div class="leer">Server-ID eingeben und "Laden" klicken.</div></div>' +
+        "</div></div>";
+}
+
+function ebpremiumVerdrahten() {
+    document.getElementById("ep-laden").addEventListener("click", ebpremiumLaden);
+    document.getElementById("ep-guild").addEventListener("keydown", function (e) { if (e.key === "Enter") ebpremiumLaden(); });
+}
+
+async function ebpremiumLaden() {
+    var guildId = document.getElementById("ep-guild").value.trim();
+    var inhalt = document.getElementById("ep-inhalt");
+    if (!/^\d{5,25}$/.test(guildId)) { inhalt.innerHTML = '<div class="leer">Bitte eine gültige Server-ID eingeben (nur Ziffern).</div>'; return; }
+
+    inhalt.innerHTML = '<div class="leer">Lädt …</div>';
+    try {
+        var res = await fetch("/api/eselbande-bot/premium/" + encodeURIComponent(guildId));
+        var daten = await res.json();
+        if (!res.ok) { inhalt.innerHTML = '<div class="leer">Fehler: ' + esc(daten.error || res.status) + "</div>"; return; }
+        var d = daten.data || daten;
+        var html = '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:14px">' +
+            kennwert("Premium", d.isPremium ? (d.isPro ? "Pro" : "Ja") : "Nein") +
+            (d.expiresAt ? kennwert("Läuft ab", uhrzeit(d.expiresAt)) : "") +
+        "</div>";
+        if (kannSchreiben()) {
+            html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+                    '<select id="ep-tier" class="suche" style="margin-left:0">' +
+                        '<option value="basic">Basic</option><option value="pro">Pro</option>' +
+                    "</select>" +
+                    '<input class="suche" id="ep-tage" type="number" min="1" value="35" style="width:100px" title="Tage gueltig">' +
+                    '<button class="knopf" id="ep-setzen">Setzen</button>' +
+                    '<button class="knopf" id="ep-entfernen">Entfernen</button>' +
+                "</div>" +
+                '<div id="ep-status" style="margin-top:8px;font-size:.82rem;color:var(--gedaempft)"></div>';
+        }
+        inhalt.innerHTML = html;
+        if (kannSchreiben()) {
+            document.getElementById("ep-setzen").addEventListener("click", function () { ebpremiumSetzen(guildId, "activate"); });
+            document.getElementById("ep-entfernen").addEventListener("click", function () { ebpremiumSetzen(guildId, "deactivate"); });
+        }
+    } catch (e) {
+        inhalt.innerHTML = '<div class="leer">Anfrage fehlgeschlagen.</div>';
+    }
+}
+
+async function ebpremiumSetzen(guildId, aktion) {
+    var status = document.getElementById("ep-status");
+    status.textContent = "Speichere …";
+    try {
+        var res = await fetch("/api/eselbande-bot/premium", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                guildId: guildId,
+                action: aktion,
+                tier: document.getElementById("ep-tier").value,
+                daysValid: Number(document.getElementById("ep-tage").value) || 35,
+            }),
+        });
+        var daten = await res.json();
+        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
+        status.textContent = aktion === "deactivate" ? "Premium entfernt." : "Premium gesetzt.";
+        await ebpremiumLaden();
+    } catch (e) {
+        status.textContent = "Anfrage fehlgeschlagen.";
+    }
+}
+
 function nutzerBlatt() {
 
     return '<div class="karte"><div class="karte-kopf"><h2>Nutzer-Suche</h2>' +
@@ -1808,28 +1890,9 @@ function nutzerErgebnisHtml(d) {
         html += '<div class="leer">Kein Eselbuilder-Konto gefunden.</div>';
     }
 
-    // EselModerator
-    html += '<div class="kz-titel" style="margin:18px 0 8px">EselModerator</div>';
-    if (d.eselmoderator) {
-        var em = d.eselmoderator;
-        html += '<div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px">' +
-            kennwert("Premium", em.isPremium ? (em.isPro ? "Pro" : "Ja") : "Nein") +
-            (em.user && em.user.expires_at ? kennwert("Läuft ab", uhrzeit(em.user.expires_at)) : "") +
-        "</div>";
-    } else {
-        html += '<div class="leer" style="margin-bottom:12px">Kein EselModerator-Premium.</div>';
-    }
-    if (kannSchreiben()) {
-        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
-                '<select id="nu-em-tier" class="suche" style="margin-left:0">' +
-                    '<option value="basic">Basic</option><option value="pro">Pro</option>' +
-                "</select>" +
-                '<input class="suche" id="nu-em-tage" type="number" min="1" value="35" style="width:100px" title="Tage gueltig">' +
-                '<button class="knopf" data-em-aktion="activate">Setzen</button>' +
-                '<button class="knopf" data-em-aktion="deactivate">Entfernen</button>' +
-            "</div>" +
-            '<div id="nu-em-status" style="margin-top:8px;font-size:.82rem;color:var(--gedaempft)"></div>';
-    }
+    // EselModerator/EselMusic sind Teil von EselBande-Bot geworden -- dessen Premium ist
+    // guild- statt personenbezogen, passt deshalb nicht mehr in eine Personen-Suche.
+    // Siehe eigenes Panel unter "EselBande-Bot" in der Seitenleiste.
 
     // EselTokens (manuelle Gutschrift, siehe README Abschnitt zur PayPal-Freunde&Familie-Zahlung)
     html += '<div class="kz-titel" style="margin:18px 0 8px">EselTokens</div>';
@@ -1865,29 +1928,6 @@ async function eseltokensGutschreiben() {
         if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
         status.textContent = menge + " Tokens gutgeschrieben. Neuer Kontostand: " + daten.newBalance;
         mengeInput.value = "";
-    } catch (e) {
-        status.textContent = "Anfrage fehlgeschlagen.";
-    }
-}
-
-async function eselmoderatorPremiumSetzen(aktion) {
-    var status = document.getElementById("nu-em-status");
-    status.textContent = "Speichere …";
-    try {
-        var res = await fetch("/api/eselmoderator/premium", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                discordId: nutzerZustand.discordId,
-                action: aktion,
-                tier: document.getElementById("nu-em-tier").value,
-                daysValid: Number(document.getElementById("nu-em-tage").value) || 35
-            })
-        });
-        var daten = await res.json();
-        if (!res.ok) { status.textContent = "Fehler: " + (daten.error || res.status); return; }
-        status.textContent = aktion === "deactivate" ? "Premium entfernt." : "Premium gesetzt.";
-        await nutzerSuchen();
     } catch (e) {
         status.textContent = "Anfrage fehlgeschlagen.";
     }
@@ -1974,8 +2014,6 @@ document.addEventListener("click", function (e) {
     if (logBtn) { logModalOeffnen(logBtn.dataset.dockerLogs); return; }
     var aktionBtn = e.target.closest("[data-docker-aktion]");
     if (aktionBtn) { dockerAktionAusfuehren(aktionBtn, aktionBtn.dataset.dockerName, aktionBtn.dataset.dockerAktion); return; }
-    var emBtn = e.target.closest("[data-em-aktion]");
-    if (emBtn) { eselmoderatorPremiumSetzen(emBtn.dataset.emAktion); return; }
     var etBtn = e.target.closest("[data-et-aktion]");
     if (etBtn) { eseltokensGutschreiben(); return; }
     var shopBtn = e.target.closest("[data-shop-sperren]");

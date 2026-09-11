@@ -546,57 +546,59 @@ async function callFahrstuhl(path, opts = {}) {
     return body;
 }
 
-// ── EselModerator ─────────────────────────────────────────────────────────────
-// Gleiches Muster wie Fahrstuhl -- Premium ist dort ebenfalls user- statt guild-gebunden (die
-// Guild-Ebene faellt nur auf das Premium des Server-Owners zurueck). GET /premium/user/:id wurde
-// eigens fuer diese Nutzer-Suche ergaenzt (existierte vorher nicht, nur POST activate/deactivate).
-const ESELMODERATOR_API_BASE = process.env.ESELMODERATOR_API_BASE || 'http://eselmoderator:3003';
-const ESELMODERATOR_BOT_API_TOKEN = process.env.ESELMODERATOR_BOT_API_TOKEN || '';
+// ── EselBande-Bot (Moderation/Musik/Sound/EselFriend -- Nachfolger von EselModerator+EselMusic) ──
+// ACHTUNG Naming-Falle: eselbande-bots eigene /api/mod/premium/*-Routen erwarten das Feld
+// weiterhin "userId" (1:1 aus Fahrstuhls user-zentriertem Premium-Code uebernommen), obwohl
+// premiumManager.ts dort seit dem Bot-Merge tatsaechlich rein guild-zentriert arbeitet
+// (ModPremium.guildId @id im Schema). Wir schicken hier deshalb bewusst die guildId unter dem
+// Feldnamen "userId" mit -- nicht umbenennen, ohne auch eselbande-bot selbst anzupassen.
+const ESELBANDE_BOT_API_BASE = process.env.ESELBANDE_BOT_API_BASE || 'http://eselbande-bot-phase1:3003';
+const BOT_API_TOKEN = process.env.BOT_API_TOKEN || '';
 
-async function callEselmoderator(path, opts = {}) {
-    if (!ESELMODERATOR_BOT_API_TOKEN) {
-        const err = new Error('ESELMODERATOR_BOT_API_TOKEN ist nicht konfiguriert.');
+async function callEselbandeBotMod(path, opts = {}) {
+    if (!BOT_API_TOKEN) {
+        const err = new Error('BOT_API_TOKEN ist nicht konfiguriert.');
         err.status = 503;
         throw err;
     }
-    const res = await fetch(`${ESELMODERATOR_API_BASE}${path}`, {
+    const res = await fetch(`${ESELBANDE_BOT_API_BASE}/api/mod${path}`, {
         ...opts,
         headers: {
-            'Authorization': `Bearer ${ESELMODERATOR_BOT_API_TOKEN}`,
+            'Authorization': `Bearer ${BOT_API_TOKEN}`,
             'Content-Type': 'application/json',
             ...(opts.headers || {}),
         },
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-        const err = new Error(body.error || `eselmoderator antwortete mit ${res.status}`);
+        const err = new Error(body.error || `eselbande-bot antwortete mit ${res.status}`);
         err.status = res.status;
         throw err;
     }
     return body;
 }
 
-async function eselmoderatorPremiumUser(discordId) {
+app.get('/api/eselbande-bot/premium/:guildId', requireRole('viewer'), async (req, res) => {
     try {
-        const body = await callEselmoderator(`/premium/user/${encodeURIComponent(discordId)}`);
-        return body.data || null;
-    } catch {
-        return null; // eselmoderator gerade nicht erreichbar -- der Rest der Suche soll trotzdem klappen
+        const data = await callEselbandeBotMod(`/guilds/${encodeURIComponent(req.params.guildId)}/premium`);
+        res.json(data);
+    } catch (err) {
+        res.status(err.status || 502).json({ error: err.message });
     }
-}
+});
 
-app.post('/api/eselmoderator/premium', requireRole('admin'), async (req, res) => {
-    const { discordId, action, tier, daysValid } = req.body || {};
-    if (!discordId || typeof discordId !== 'string') return res.status(400).json({ error: 'discordId ist erforderlich.' });
+app.post('/api/eselbande-bot/premium', requireRole('admin'), async (req, res) => {
+    const { guildId, action, tier, daysValid } = req.body || {};
+    if (!guildId || typeof guildId !== 'string') return res.status(400).json({ error: 'guildId ist erforderlich.' });
     try {
         if (action === 'deactivate') {
-            const data = await callEselmoderator('/premium/deactivate', { method: 'POST', body: JSON.stringify({ userId: discordId }) });
+            const data = await callEselbandeBotMod('/premium/deactivate', { method: 'POST', body: JSON.stringify({ userId: guildId }) });
             return res.json(data);
         }
         if (action === 'activate') {
-            const data = await callEselmoderator('/premium/activate', {
+            const data = await callEselbandeBotMod('/premium/activate', {
                 method: 'POST',
-                body: JSON.stringify({ userId: discordId, tier: tier === 'pro' ? 'pro' : 'basic', daysValid: Number(daysValid) || 35, mode: 'set' }),
+                body: JSON.stringify({ userId: guildId, tier: tier === 'pro' ? 'pro' : 'basic', daysValid: Number(daysValid) || 35, mode: 'set' }),
             });
             return res.json(data);
         }
@@ -937,16 +939,14 @@ app.get('/api/whois', requireRole('viewer'), async (req, res) => {
         }
     }
 
-    const [discord, fahrstuhl, eselbuilder, eselmoderator] = await Promise.all([
+    const [discord, fahrstuhl, eselbuilder] = await Promise.all([
         discordUserLookup(discordId),
         fahrstuhlPremiumUser(discordId),
         callEselbuilder(`/api/internal/eselfriend/voice-limit?discordId=${encodeURIComponent(discordId)}`).catch(() => null),
-        eselmoderatorPremiumUser(discordId),
     ]);
     result.discord = discord;
     result.fahrstuhl = fahrstuhl;
     result.eselbuilder = eselbuilder;
-    result.eselmoderator = eselmoderator;
 
     res.json(result);
 });
